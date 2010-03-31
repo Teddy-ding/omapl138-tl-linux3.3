@@ -281,10 +281,10 @@ void arch_pick_mmap_layout(struct mm_struct *mm)
  */
 int valid_phys_addr_range(unsigned long addr, size_t size)
 {
-	if (addr < PHYS_OFFSET)
-		return 0;
-	if (addr + size > __pa(high_memory - 1) + 1)
-		return 0;
+	/* if (addr < PHYS_OFFSET) */
+	/* 	return 0; */
+	/* if (addr + size > __pa(high_memory - 1) + 1) */
+	/* 	return 0; */
 
 	return 1;
 }
@@ -296,7 +296,8 @@ int valid_phys_addr_range(unsigned long addr, size_t size)
  */
 int valid_mmap_phys_addr_range(unsigned long pfn, size_t size)
 {
-	return !(pfn + (size >> PAGE_SHIFT) > 0x00100000);
+//	return !(pfn + (size >> PAGE_SHIFT) > 0x00100000);
+	return 1;
 }
 
 #ifdef CONFIG_STRICT_DEVMEM
