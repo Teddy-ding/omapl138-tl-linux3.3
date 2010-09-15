@@ -625,11 +625,17 @@ static int tfp_probe(struct i2c_client *client,
 	struct tfp_reg regData[] = {
 	    { 0x02, 0xff },
 	    { 0x06, 0xff },
+	    { 0x07, 0xfe },
+	    { 0x03, 0xfe },
+	    { 0x03, 0xff },
 	};
 #else
 	struct tfp_reg regData[] = {
 	    { 0x02, 0xfb },
 	    { 0x06, 0xfb },
+	    { 0x07, 0xfe },
+	    { 0x03, 0xfe },
+	    { 0x03, 0xff },
 	};
 #endif
 
@@ -1208,7 +1214,7 @@ static __init void da850_evm_usb_init(void)
 static struct i2c_gpio_platform_data da850_gpio_i2c_pdata = {
 	.sda_pin	= GPIO_TO_PIN(1, 4),
 	.scl_pin	= GPIO_TO_PIN(1, 5),
-	.udelay		= 2,			/* 250 KHz */
+	.udelay		= 9,			/* 250 KHz */
 };
 
 static struct platform_device da850_gpio_i2c = {
