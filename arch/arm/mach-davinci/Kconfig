@@ -170,7 +170,7 @@ endchoice
 
 config WIFI_CONTROL_FUNC
 	bool "Wireless Card Support"
-	depends on MACH_DAVINCI_DA850_EVM
+	depends on ARCH_DAVINCI_DA850
 
 choice DA850_MMC_CONTROLLER
 	prompt "Select MMC host controller to be used on board"
