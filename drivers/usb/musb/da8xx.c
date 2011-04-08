@@ -756,10 +756,51 @@ static int __exit da8xx_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
+static int da8xx_suspend(struct device *dev)
+{
+	struct da8xx_glue	*glue = dev_get_drvdata(dev);
+
+	/* Shutdown the on-chip PHY and its PLL. */
+	phy_off();
+
+	clk_disable(glue->clk);
+
+	return 0;
+}
+
+static int da8xx_resume(struct device *dev)
+{
+	struct da8xx_glue	*glue = dev_get_drvdata(dev);
+	int			ret;
+
+	/* Start the on-chip PHY and its PLL. */
+	phy_on();
+
+	ret = clk_enable(glue->clk);
+	if (ret) {
+		dev_err(dev, "failed to enable clock\n");
+		return ret;
+	}
+
+	return 0;
+}
+
+static const struct dev_pm_ops da8xx_pm_ops = {
+	.suspend	= da8xx_suspend,
+	.resume		= da8xx_resume,
+};
+
+#define DEV_PM_OPS	(&da8xx_pm_ops)
+#else
+#define DEV_PM_OPS	NULL
+#endif
+
 static struct platform_driver da8xx_driver = {
 	.remove		= __exit_p(da8xx_remove),
 	.driver		= {
 		.name	= "musb-da8xx",
+		.pm     = DEV_PM_OPS,
 	},
 };
 
