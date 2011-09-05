@@ -728,6 +728,38 @@ int pwm_register(struct pwm_device *p, struct device *parent, int id)
 }
 EXPORT_SYMBOL(pwm_register);
 
+struct device *capture_dev_register(struct device *dev)
+{
+	int *ret;
+	char name[100];
+	struct device *new_dev;
+
+	scnprintf(name, sizeof name, "%s", dev_name(dev));
+
+	mutex_lock(&device_list_mutex);
+	new_dev = class_find_device(&pwm_class, NULL, (char *)name,
+						pwm_match_name);
+	if (new_dev)
+		ret = NULL;
+
+	new_dev = device_create(&pwm_class, dev, MKDEV(0, 0), NULL,
+								name);
+	mutex_unlock(&device_list_mutex);
+	return new_dev;
+}
+EXPORT_SYMBOL(capture_dev_register);
+
+struct device *capture_request_device(char *name)
+{
+	struct device *dev = NULL;
+
+	mutex_lock(&device_list_mutex);
+	dev = class_find_device(&pwm_class, NULL, (char *)name,
+						pwm_match_name);
+	mutex_unlock(&device_list_mutex);
+	return dev;
+}
+EXPORT_SYMBOL(capture_request_device);
 
 int pwm_unregister(struct pwm_device *p)
 {

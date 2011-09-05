@@ -170,4 +170,6 @@ int pwm_set_period_ticks(struct pwm_device *p,
 unsigned long pwm_get_duty_percent(struct pwm_device *p);
 int pwm_set_duty_ticks(struct pwm_device *p,
 					unsigned long ticks);
+struct device *capture_request_device(char *name);
+struct device *capture_dev_register(struct device *dev);
 #endif

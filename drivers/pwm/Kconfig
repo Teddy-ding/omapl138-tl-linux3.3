@@ -27,3 +27,13 @@ config ECAP_PWM
 	  of PWM waveforms. Maximum frequency generated is equal to half
 	  the system clock frequency.
 	  Say Y to enable the eCAP support. If unsure, say N.
+
+config ECAP_CAP
+	tristate "eCAP capture support"
+	select HAVE_PWM
+	depends on GENERIC_PWM && ARCH_DAVINCI_DA850
+	help
+	  This option enables device driver support for eCAP module found
+	  on DA850 Processors. This eCAP module is used to capture PWM wave
+	  Say Y to enable the eCAP capture support. If unsure, say N.
+
