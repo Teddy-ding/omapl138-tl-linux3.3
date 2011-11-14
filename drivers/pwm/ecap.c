@@ -34,6 +34,9 @@
 #define ECTRL2_PLSL_LOW			BIT(10)
 #define ECTRL2_SYNC_EN			BIT(5)
 
+#define CLK_DISABLE			0
+#define CLK_ENABLE			1
+
 struct ecap_pwm {
 	struct pwm_device pwm;
 	struct pwm_device_ops ops;
@@ -53,18 +56,16 @@ static int ecap_pwm_stop(struct pwm_device *p)
 	unsigned long flags;
 	struct ecap_pwm *ep = to_ecap_pwm(p);
 
-	clk_enable(ep->clk);
+	if (ep->clk_enabled == CLK_DISABLE)
+		return 0;
 
 	spin_lock_irqsave(&ep->lock, flags);
 	__raw_writew(__raw_readw(ep->mmio_base + CAPTURE_CTRL2_REG) &
 		~BIT(4), ep->mmio_base + CAPTURE_CTRL2_REG);
 	spin_unlock_irqrestore(&ep->lock, flags);
 
+	ep->clk_enabled = CLK_DISABLE;
 	clk_disable(ep->clk);
-	if (ep->clk_enabled) {
-		clk_disable(ep->clk);
-		ep->clk_enabled = 0;
-	}
 	clear_bit(FLAG_RUNNING, &p->flags);
 
 	return 0;
@@ -76,19 +77,15 @@ static int ecap_pwm_start(struct pwm_device *p)
 	unsigned long flags;
 	struct ecap_pwm *ep = to_ecap_pwm(p);
 
+	if (ep->clk_enabled == CLK_ENABLE)
+		return 0;
+
 	clk_enable(ep->clk);
+	ep->clk_enabled = CLK_ENABLE;
 	spin_lock_irqsave(&ep->lock, flags);
 	__raw_writew(__raw_readw(ep->mmio_base + CAPTURE_CTRL2_REG) |
 		BIT(4), ep->mmio_base + CAPTURE_CTRL2_REG);
 	spin_unlock_irqrestore(&ep->lock, flags);
-
-	clk_disable(ep->clk);
-	if (!ep->clk_enabled) {
-		ret = clk_enable(ep->clk);
-		if (ret)
-			return ret;
-		ep->clk_enabled = 1;
-	}
 	set_bit(FLAG_RUNNING, &p->flags);
 
 	return ret;
@@ -275,7 +272,8 @@ static int ecap_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct ecap_pwm *ep = platform_get_drvdata(pdev);
 
-	clk_disable(ep->clk);
+	if (ep->clk_enabled == CLK_ENABLE)
+		clk_disable(ep->clk);
 
 	return 0;
 }
@@ -284,7 +282,8 @@ static int ecap_resume(struct platform_device *pdev)
 {
 	struct ecap_pwm *ep = platform_get_drvdata(pdev);
 
-	clk_enable(ep->clk);
+	if (ep->clk_enabled == CLK_ENABLE)
+		clk_enable(ep->clk);
 
 	return 0;
 }
