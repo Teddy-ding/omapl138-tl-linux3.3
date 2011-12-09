@@ -454,9 +454,9 @@ static void da850_evm_ui_keys_init(unsigned gpio)
 #ifdef CONFIG_DA850_UI_CLCD
 static inline void da850_evm_setup_char_lcd(int a, int b, int c)
 {
-	gpio_set_value(a, 0);
-	gpio_set_value(b, 0);
-	gpio_set_value(c, 0);
+	gpio_set_value_cansleep(a, 0);
+	gpio_set_value_cansleep(b, 0);
+	gpio_set_value_cansleep(c, 0);
 }
 #else
 static inline void da850_evm_setup_char_lcd(int a, int b, int c) { }
@@ -808,10 +808,10 @@ static const short da850_evm_mmcsd0_pins[] __initconst = {
 static void da850_panel_power_ctrl(int val)
 {
 	/* lcd backlight */
-	gpio_set_value(DA850_LCD_BL_PIN, val);
+	gpio_set_value_cansleep(DA850_LCD_BL_PIN, val);
 
 	/* lcd power */
-	gpio_set_value(DA850_LCD_PWR_PIN, val);
+	gpio_set_value_cansleep(DA850_LCD_PWR_PIN, val);
 }
 
 static int da850_lcd_hw_init(void)
@@ -1175,14 +1175,14 @@ static void wl12xx_set_power(int index, bool power_on)
 
 	if (power_on) {
 		/* Power up sequence required for wl127x devices */
-		gpio_set_value(DA850_WLAN_EN, 1);
+		gpio_set_value_cansleep(DA850_WLAN_EN, 1);
 		usleep_range(15000, 15000);
-		gpio_set_value(DA850_WLAN_EN, 0);
+		gpio_set_value_cansleep(DA850_WLAN_EN, 0);
 		usleep_range(1000, 1000);
-		gpio_set_value(DA850_WLAN_EN, 1);
+		gpio_set_value_cansleep(DA850_WLAN_EN, 1);
 		msleep(70);
 	} else {
-		gpio_set_value(DA850_WLAN_EN, 0);
+		gpio_set_value_cansleep(DA850_WLAN_EN, 0);
 	}
 }
 
