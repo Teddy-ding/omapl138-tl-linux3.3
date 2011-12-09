@@ -1457,7 +1457,7 @@ void lcd_init(void)
 		/* parallel mode, 8 bits, hantronix-like */
 	default:
 		if (lcd_proto < 0)
-			lcd_proto = LCD_PROTO_PARALLEL;
+			lcd_proto = LCD_PROTO_TI_DA8XX_LCD;
 		if (lcd_charset < 0)
 			lcd_charset = LCD_CHARSET_NORMAL;
 		if (lcd_e_pin == PIN_NOT_SET)
