@@ -482,7 +482,7 @@ static ssize_t pwm_duty_ns_store(struct device *dev,
 	unsigned long duty_ns;
 	struct pwm_device *p = dev_get_drvdata(dev);
 
-	if (!strict_strtoul(buf, 10, &duty_ns))
+	if (!kstrtoul(buf, 10, &duty_ns))
 		pwm_set_duty_ns(p, duty_ns);
 	return len;
 }
@@ -505,7 +505,7 @@ static ssize_t pwm_duty_percent_store(struct device *dev,
 	unsigned long duty_ns;
 	struct pwm_device *p = dev_get_drvdata(dev);
 
-	if (!strict_strtoul(buf, 10, &duty_ns))
+	if (!kstrtoul(buf, 10, &duty_ns))
 		pwm_set_duty_percent(p, duty_ns);
 	return len;
 }
@@ -527,7 +527,7 @@ static ssize_t pwm_period_ns_store(struct device *dev,
 	unsigned long period_ns;
 	struct pwm_device *p = dev_get_drvdata(dev);
 
-	if (!strict_strtoul(buf, 10, &period_ns))
+	if (!kstrtoul(buf, 10, &period_ns))
 		pwm_set_period_ns(p, period_ns);
 	return len;
 }
@@ -550,7 +550,7 @@ static ssize_t pwm_period_freq_store(struct device *dev,
 	unsigned long freq_hz;
 
 	struct pwm_device *p = dev_get_drvdata(dev);
-	if (!strict_strtoul(buf, 10, &freq_hz))
+	if (!kstrtoul(buf, 10, &freq_hz))
 		pwm_set_frequency(p, freq_hz);
 	return len;
 }
@@ -573,7 +573,7 @@ static ssize_t pwm_polarity_store(struct device *dev,
 	unsigned long polarity;
 	struct pwm_device *p = dev_get_drvdata(dev);
 
-	if (!strict_strtoul(buf, 10, &polarity))
+	if (!kstrtoul(buf, 10, &polarity))
 		pwm_set_polarity(p, polarity);
 	return len;
 }
