@@ -1165,10 +1165,22 @@ static struct resource da850_ecap0_resource[] = {
 	.end		= DA8XX_ECAP0_BASE + 0xfff,
 	.flags		= IORESOURCE_MEM,
 	},
+	{
+	.start          = IRQ_DA8XX_ECAP0,
+	.end            = IRQ_DA8XX_ECAP0,
+	.flags          = IORESOURCE_IRQ,
+	},
 };
 
 static struct platform_device da850_ecap0_dev = {
 	.name		= "ecap",
+	.id		= 0,
+	.resource       = da850_ecap0_resource,
+	.num_resources  = ARRAY_SIZE(da850_ecap0_resource),
+};
+
+static struct platform_device da850_ecap0_cap_dev = {
+	.name		= "ecap_cap",
 	.id		= 0,
 	.resource       = da850_ecap0_resource,
 	.num_resources  = ARRAY_SIZE(da850_ecap0_resource),
@@ -1182,10 +1194,22 @@ static struct resource da850_ecap1_resource[] = {
 	.end		= DA8XX_ECAP1_BASE + 0xfff,
 	.flags		= IORESOURCE_MEM,
 	},
+	{
+	.start		= IRQ_DA8XX_ECAP1,
+	.end		= IRQ_DA8XX_ECAP1,
+	.flags		= IORESOURCE_IRQ,
+	},
 };
 
 static struct platform_device da850_ecap1_dev = {
 	.name		= "ecap",
+	.id		= 1,
+	.resource	= da850_ecap1_resource,
+	.num_resources	= ARRAY_SIZE(da850_ecap1_resource),
+};
+
+static struct platform_device da850_ecap1_cap_dev = {
+	.name		= "ecap_cap",
 	.id		= 1,
 	.resource	= da850_ecap1_resource,
 	.num_resources	= ARRAY_SIZE(da850_ecap1_resource),
@@ -1199,10 +1223,22 @@ static struct resource da850_ecap2_resource[] = {
 	.end		= DA8XX_ECAP2_BASE + 0xfff,
 	.flags		= IORESOURCE_MEM,
 	},
+	{
+	.start		= IRQ_DA8XX_ECAP2,
+	.end		= IRQ_DA8XX_ECAP2,
+	.flags		= IORESOURCE_IRQ,
+	},
 };
 
 static struct platform_device da850_ecap2_dev = {
 	.name		= "ecap",
+	.id		= 2,
+	.resource	= da850_ecap2_resource,
+	.num_resources	= ARRAY_SIZE(da850_ecap2_resource),
+};
+
+static struct platform_device da850_ecap2_cap_dev = {
+	.name		= "ecap_cap",
 	.id		= 2,
 	.resource	= da850_ecap2_resource,
 	.num_resources	= ARRAY_SIZE(da850_ecap2_resource),
@@ -1216,6 +1252,18 @@ int __init da850_register_ecap(char instance)
 		return platform_device_register(&da850_ecap1_dev);
 	else if (instance == 2)
 		return platform_device_register(&da850_ecap2_dev);
+	else
+		return -EINVAL;
+}
+
+int __init da850_register_ecap_cap(char instance)
+{
+	if (instance == 0)
+		return platform_device_register(&da850_ecap0_cap_dev);
+	else if (instance == 1)
+		return platform_device_register(&da850_ecap1_cap_dev);
+	else if (instance == 2)
+		return platform_device_register(&da850_ecap2_cap_dev);
 	else
 		return -EINVAL;
 }

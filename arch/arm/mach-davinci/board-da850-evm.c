@@ -355,6 +355,12 @@ static const short da850_evm_nor_pins[] = {
 #define HAS_MCASP 0
 #endif
 
+#if defined(CONFIG_ECAP_CAP) || defined(CONFIG_ECAP_CAP_MODULE)
+#define HAS_ECAP_CAP 1
+#else
+#define HAS_ECAP_CAP 0
+#endif
+
 static inline void da850_evm_setup_nor_nand(void)
 {
 	int ret = 0;
@@ -1469,6 +1475,24 @@ static __init void da850_evm_init(void)
 	if (ret)
 		pr_warning("da850_evm_init: eCAP registration failed: %d\n",
 			       ret);
+	if (HAS_ECAP_CAP) {
+		if (HAS_MCASP)
+			pr_warning("da850_evm_init:"
+				"ecap module 1 cannot be used "
+				"since it shares pins with McASP\n");
+		else {
+			ret = davinci_cfg_reg(DA850_ECAP1_APWM1);
+			if (ret)
+				pr_warning("da850_evm_init:ecap mux failed:%d\n"
+						, ret);
+			else {
+				ret = da850_register_ecap_cap(1);
+				if (ret)
+					pr_warning("da850_evm_init"
+					"eCAP registration failed: %d\n", ret);
+			}
+		}
+	}
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
