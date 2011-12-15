@@ -17,6 +17,7 @@
 #include <linux/platform_device.h>
 #include <linux/cpufreq.h>
 #include <linux/regulator/consumer.h>
+#include <linux/pwm/ehrpwm.h>
 
 #include <asm/mach/map.h>
 
@@ -355,6 +356,14 @@ static struct clk sata_clk = {
 	.flags		= PSC_FORCE,
 };
 
+static struct clk ehrpwm_clk = {
+	.name		= "ehrpwm",
+	.parent		= &pll0_sysclk2,
+	.lpsc		= DA8XX_LPSC1_PWM,
+	.gpsc		= 1,
+	.flags          = DA850_CLK_ASYNC3,
+};
+
 static struct clk_lookup da850_clks[] = {
 	CLK(NULL,		"ref",		&ref_clk),
 	CLK(NULL,		"pll0",		&pll0_clk),
@@ -398,6 +407,7 @@ static struct clk_lookup da850_clks[] = {
 	CLK("spi_davinci.0",	NULL,		&spi0_clk),
 	CLK("spi_davinci.1",	NULL,		&spi1_clk),
 	CLK("ahci",		NULL,		&sata_clk),
+	CLK(NULL,               "ehrpwm",       &ehrpwm_clk),
 	CLK(NULL,		NULL,		NULL),
 };
 
@@ -574,6 +584,14 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850, GPIO6_10,	13,	20,	15,	8,	false)
 	MUX_CFG(DA850, GPIO6_13,	13,	8,	15,	8,	false)
 	MUX_CFG(DA850, RTC_ALARM,	0,	28,	15,	2,	false)
+	/* eHRPWM0 function */
+	MUX_CFG(DA850,	EHRPWM0_A,	3,	0,	15,	2,	false)
+	MUX_CFG(DA850,	EHRPWM0_B,	3,	4,	15,	2,	false)
+	MUX_CFG(DA850,	EHRPWM0_TZ,	1,	0,	15,	2,	false)
+	/* eHRPWM1 function */
+	MUX_CFG(DA850,	EHRPWM1_A,	5,	0,	15,	2,	false)
+	MUX_CFG(DA850,	EHRPWM1_B,	5,	4,	15,	2,	false)
+	MUX_CFG(DA850,	EHRPWM1_TZ,	2,	0,	15,	8,	false)
 #endif
 };
 
@@ -594,6 +612,16 @@ const short da850_lcdcntl_pins[] __initdata = {
 	DA850_LCD_D_12, DA850_LCD_D_13, DA850_LCD_D_14, DA850_LCD_D_15,
 	DA850_LCD_PCLK, DA850_LCD_MCLK, DA850_LCD_HSYNC, DA850_LCD_VSYNC,
 	DA850_NLCD_AC_ENB_CS,
+	-1
+};
+
+const short da850_ehrpwm0_pins[] __initdata = {
+	DA850_EHRPWM0_A, DA850_EHRPWM0_B, DA850_EHRPWM0_TZ,
+	-1
+};
+
+const short da850_ehrpwm1_pins[] __initdata = {
+	DA850_EHRPWM1_A, DA850_EHRPWM1_TZ,
 	-1
 };
 
@@ -1027,6 +1055,93 @@ static int da850_round_armrate(struct clk *clk, unsigned long rate)
 	return clk->rate;
 }
 #endif
+
+#define DA8XX_EHRPWM0_BASE	0x01F00000
+
+static struct resource da850_ehrpwm0_resource[] = {
+	{
+		.start	= DA8XX_EHRPWM0_BASE,
+		.end	= DA8XX_EHRPWM0_BASE + 0x1fff,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.start	= IRQ_DA8XX_EHRPWM0TZ,
+		.end	= IRQ_DA8XX_EHRPWM0TZ,
+		.flags	= IORESOURCE_IRQ,
+	},
+	{
+		.start	= IRQ_DA8XX_EHRPWM0,
+		.end	= IRQ_DA8XX_EHRPWM0,
+		.flags	= IORESOURCE_IRQ,
+	 },
+};
+
+static struct ehrpwm_platform_data da850_ehrpwm0_data;
+
+static struct platform_device da850_ehrpwm0_dev = {
+	.name		= "ehrpwm",
+	.id		= 0,
+	.dev		= {
+		.platform_data	= &da850_ehrpwm0_data,
+	},
+	.resource	= da850_ehrpwm0_resource,
+	.num_resources	= ARRAY_SIZE(da850_ehrpwm0_resource),
+};
+
+#define DA8XX_EHRPWM1_BASE	0x01F02000
+
+static struct resource da850_ehrpwm1_resource[] = {
+	{
+		.start	= DA8XX_EHRPWM1_BASE,
+		.end	= DA8XX_EHRPWM1_BASE + 0x1fff,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.start	= IRQ_DA8XX_EHRPWM1TZ,
+		.end	= IRQ_DA8XX_EHRPWM1TZ,
+		.flags	= IORESOURCE_IRQ,
+	},
+	{
+		.start	= IRQ_DA8XX_EHRPWM1,
+		.end	= IRQ_DA8XX_EHRPWM1,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct ehrpwm_platform_data da850_ehrpwm1_data;
+
+static struct platform_device da850_ehrpwm1_dev = {
+	.name		= "ehrpwm",
+	.id		= 1,
+	.dev		= {
+		.platform_data	= &da850_ehrpwm1_data,
+	},
+	.resource	= da850_ehrpwm1_resource,
+	.num_resources	= ARRAY_SIZE(da850_ehrpwm1_resource),
+};
+
+#define DA8XX_CHIPCFG1		DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG)
+
+void __init da850_register_ehrpwm(char mask)
+{
+	int ret = 0;
+
+	__raw_writew(__raw_readw(DA8XX_CHIPCFG1) | BIT(12), DA8XX_CHIPCFG1);
+	if (mask & 0x3) {
+		da850_ehrpwm0_data.channel_mask = mask & 0x3;
+		ret = platform_device_register(&da850_ehrpwm0_dev);
+		if (ret)
+			pr_warning("da850_evm_init: eHRPWM module0 registration failed\n");
+	}
+
+	if ((mask >> 0x2) & 0x3) {
+		da850_ehrpwm1_data.channel_mask = mask >> 0x2;
+		ret = platform_device_register(&da850_ehrpwm1_dev);
+		if (ret)
+			pr_warning("da850_evm_init: eHRPWM module1 registration failed\n");
+	}
+}
+
 
 int __init da850_register_pm(struct platform_device *pdev)
 {
