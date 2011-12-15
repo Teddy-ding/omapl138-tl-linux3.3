@@ -1454,6 +1454,14 @@ static __init void da850_evm_init(void)
 	}
 
 	da850_register_ehrpwm(mask);
+	ret = davinci_cfg_reg(DA850_ECAP2_APWM2);
+	if (ret)
+		pr_warning("da850_evm_init:ecap mux failed: %d\n", ret);
+
+	ret = da850_register_ecap(2);
+	if (ret)
+		pr_warning("da850_evm_init: eCAP registration failed: %d\n",
+			       ret);
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
