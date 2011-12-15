@@ -93,6 +93,7 @@ void __iomem * __init da8xx_get_mem_ctlr(void);
 int da850_register_pm(struct platform_device *pdev);
 int __init da850_register_sata(unsigned long refclkpn);
 void __init da850_register_ehrpwm(char);
+int __init da850_register_ecap(char);
 void da8xx_restart(char mode, const char *cmd);
 
 extern struct platform_device da8xx_serial_device;

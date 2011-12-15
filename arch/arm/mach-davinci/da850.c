@@ -364,6 +364,14 @@ static struct clk ehrpwm_clk = {
 	.flags          = DA850_CLK_ASYNC3,
 };
 
+static struct clk ecap_clk = {
+	.name		= "ecap",
+	.parent		= &pll0_sysclk2,
+	.lpsc		= DA8XX_LPSC1_ECAP,
+	.gpsc		= 1,
+	.flags          = DA850_CLK_ASYNC3,
+};
+
 static struct clk_lookup da850_clks[] = {
 	CLK(NULL,		"ref",		&ref_clk),
 	CLK(NULL,		"pll0",		&pll0_clk),
@@ -408,6 +416,7 @@ static struct clk_lookup da850_clks[] = {
 	CLK("spi_davinci.1",	NULL,		&spi1_clk),
 	CLK("ahci",		NULL,		&sata_clk),
 	CLK(NULL,               "ehrpwm",       &ehrpwm_clk),
+	CLK(NULL,		"ecap",		&ecap_clk),
 	CLK(NULL,		NULL,		NULL),
 };
 
@@ -592,6 +601,12 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850,	EHRPWM1_A,	5,	0,	15,	2,	false)
 	MUX_CFG(DA850,	EHRPWM1_B,	5,	4,	15,	2,	false)
 	MUX_CFG(DA850,	EHRPWM1_TZ,	2,	0,	15,	8,	false)
+	/* eCAP0 function */
+	MUX_CFG(DA850, ECAP0_APWM0,	2,	28,	15,	2,	false)
+	/* eCAP1 function */
+	MUX_CFG(DA850, ECAP1_APWM1,	1,	28,	15,	4,	false)
+	/* eCAP2 function */
+	MUX_CFG(DA850, ECAP2_APWM2,	1,	0,	15,	4,	false)
 #endif
 };
 
@@ -1142,6 +1157,68 @@ void __init da850_register_ehrpwm(char mask)
 	}
 }
 
+#define DA8XX_ECAP0_BASE        0x01F06000
+
+static struct resource da850_ecap0_resource[] = {
+	{
+	.start		= DA8XX_ECAP0_BASE,
+	.end		= DA8XX_ECAP0_BASE + 0xfff,
+	.flags		= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device da850_ecap0_dev = {
+	.name		= "ecap",
+	.id		= 0,
+	.resource       = da850_ecap0_resource,
+	.num_resources  = ARRAY_SIZE(da850_ecap0_resource),
+};
+
+#define DA8XX_ECAP1_BASE        0x01F07000
+
+static struct resource da850_ecap1_resource[] = {
+	{
+	.start		= DA8XX_ECAP1_BASE,
+	.end		= DA8XX_ECAP1_BASE + 0xfff,
+	.flags		= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device da850_ecap1_dev = {
+	.name		= "ecap",
+	.id		= 1,
+	.resource	= da850_ecap1_resource,
+	.num_resources	= ARRAY_SIZE(da850_ecap1_resource),
+};
+
+#define DA8XX_ECAP2_BASE        0x01F08000
+
+static struct resource da850_ecap2_resource[] = {
+	{
+	.start		= DA8XX_ECAP2_BASE,
+	.end		= DA8XX_ECAP2_BASE + 0xfff,
+	.flags		= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device da850_ecap2_dev = {
+	.name		= "ecap",
+	.id		= 2,
+	.resource	= da850_ecap2_resource,
+	.num_resources	= ARRAY_SIZE(da850_ecap2_resource),
+};
+
+int __init da850_register_ecap(char instance)
+{
+	if (instance == 0)
+		return platform_device_register(&da850_ecap0_dev);
+	else if (instance == 1)
+		return platform_device_register(&da850_ecap1_dev);
+	else if (instance == 2)
+		return platform_device_register(&da850_ecap2_dev);
+	else
+		return -EINVAL;
+}
 
 int __init da850_register_pm(struct platform_device *pdev)
 {

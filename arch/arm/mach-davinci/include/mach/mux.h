@@ -939,6 +939,12 @@ enum davinci_da850_index {
 	DA850_EHRPWM1_A,
 	DA850_EHRPWM1_B,
 	DA850_EHRPWM1_TZ,
+
+	/* eCAP functions */
+	DA850_ECAP0_APWM0,
+	DA850_ECAP1_APWM1,
+	DA850_ECAP2_APWM2,
+
 };
 
 enum davinci_tnetv107x_index {
