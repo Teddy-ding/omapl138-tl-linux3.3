@@ -348,6 +348,13 @@ static const short da850_evm_nor_pins[] = {
 #define HAS_LCD	0
 #endif
 
+#if defined(CONFIG_SND_DA850_SOC_EVM) || \
+	defined(CONFIG_SND_DA850_SOC_EVM_MODULE)
+#define HAS_MCASP 1
+#else
+#define HAS_MCASP 0
+#endif
+
 static inline void da850_evm_setup_nor_nand(void)
 {
 	int ret = 0;
