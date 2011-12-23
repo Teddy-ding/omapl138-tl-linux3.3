@@ -61,13 +61,13 @@
 
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
-#define DAVINCI_PWM_PERIOD_NANO_SECONDS		(10000 * 10)
+#define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
 
 #define PWM_DEVICE_ID	"ehrpwm.1"
 
 static struct platform_pwm_backlight_data da850evm_backlight_data = {
 	.pwm_id		= PWM_DEVICE_ID,
-	.ch		= 0,
+	.ch		= 1,
 	.max_brightness	= DAVINCI_BACKLIGHT_MAX_BRIGHTNESS,
 	.dft_brightness	= DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS,
 	.pwm_period_ns	= DAVINCI_PWM_PERIOD_NANO_SECONDS,
