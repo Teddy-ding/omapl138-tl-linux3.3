@@ -18,6 +18,7 @@
 #include <linux/cpufreq.h>
 #include <linux/regulator/consumer.h>
 #include <linux/pwm/ehrpwm.h>
+#include <linux/pwm_backlight.h>
 
 #include <asm/mach/map.h>
 
@@ -1304,6 +1305,30 @@ no_ddrpsc_mem:
 no_ddrpll_mem:
 	iounmap(pdata->cpupll_reg_base);
 	return ret;
+}
+
+int __init da850_register_backlight(struct platform_device *pdev,
+			struct platform_pwm_backlight_data *backlight_data)
+{
+	int		variant;
+	void __iomem	*base;
+
+	base = ioremap(DA8XX_SYSCFG0_BASE + DA8XX_JTAG_ID_REG, SZ_4K);
+	if (!base)
+		return -ENOMEM;
+	variant = (__raw_readl(base) & 0xf0000000) >> 28;
+	if (variant == 0) {
+		backlight_data->pwm_id	= "ecap.2";
+		backlight_data->ch     = -1;
+	}
+	else if (variant == 1) {
+		backlight_data->pwm_id	= "ehrpwm.1";
+		backlight_data->ch	= 1;
+	}
+	iounmap(base);
+
+	pdev->dev.platform_data = backlight_data;
+	return platform_device_register(pdev);
 }
 
 static struct davinci_soc_info davinci_soc_info_da850 = {

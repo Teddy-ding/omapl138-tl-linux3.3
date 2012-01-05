@@ -19,6 +19,7 @@
 
 #include <mach/serial.h>
 #include <mach/edma.h>
+#include <linux/pwm_backlight.h>
 #include <mach/i2c.h>
 #include <mach/asp.h>
 #include <mach/mmc.h>
@@ -95,6 +96,8 @@ int __init da850_register_sata(unsigned long refclkpn);
 void __init da850_register_ehrpwm(char);
 int __init da850_register_ecap(char);
 int __init da850_register_ecap_cap(char);
+int __init da850_register_backlight(struct platform_device *pdev,
+		 struct platform_pwm_backlight_data *backlight_data);
 void da8xx_restart(char mode, const char *cmd);
 
 extern struct platform_device da8xx_serial_device;

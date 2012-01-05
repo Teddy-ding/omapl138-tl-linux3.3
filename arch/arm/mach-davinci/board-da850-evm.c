@@ -63,11 +63,8 @@
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
 #define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
 
-#define PWM_DEVICE_ID	"ehrpwm.1"
 
 static struct platform_pwm_backlight_data da850evm_backlight_data = {
-	.pwm_id		= PWM_DEVICE_ID,
-	.ch		= 1,
 	.max_brightness	= DAVINCI_BACKLIGHT_MAX_BRIGHTNESS,
 	.dft_brightness	= DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS,
 	.pwm_period_ns	= DAVINCI_PWM_PERIOD_NANO_SECONDS,
@@ -76,9 +73,6 @@ static struct platform_pwm_backlight_data da850evm_backlight_data = {
 static struct platform_device da850evm_backlight = {
 	.name		= "pwm-backlight",
 	.id		= -1,
-	.dev		= {
-		.platform_data	= &da850evm_backlight_data,
-	}
 };
 
 static struct mtd_partition da850evm_spiflash_part[] = {
@@ -1612,7 +1606,8 @@ static __init void da850_evm_init(void)
 	}
 
 	da850_register_ehrpwm(mask);
-	ret = platform_device_register(&da850evm_backlight);
+	da850_register_backlight(&da850evm_backlight,
+				&da850evm_backlight_data);
 	if (ret)
 		pr_warning("da850_evm_init: backlight device registration"
 				" failed: %d\n", ret);
