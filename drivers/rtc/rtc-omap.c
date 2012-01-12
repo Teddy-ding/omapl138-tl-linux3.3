@@ -63,6 +63,7 @@
 #define OMAP_RTC_COMP_LSB_REG		0x4c
 #define OMAP_RTC_COMP_MSB_REG		0x50
 #define OMAP_RTC_OSC_REG		0x54
+#define OMAP_RTC_SCRATCH0_REG		0x60
 
 /* OMAP_RTC_CTRL_REG bit fields: */
 #define OMAP_RTC_CTRL_SPLIT		(1<<7)
@@ -87,6 +88,12 @@
 /* OMAP_RTC_INTERRUPTS_REG bit fields: */
 #define OMAP_RTC_INTERRUPTS_IT_ALARM    (1<<3)
 #define OMAP_RTC_INTERRUPTS_IT_TIMER    (1<<2)
+
+/* OMAP_RTC_OSC_REG bit fields */
+#define OMAP_RTC_OSC_SWRESET		(1<<5)
+#define OMAP_RTC_OSC_RESERVED		(0x7)
+
+#define OMAP_RTC_SCRATCH0_PATTERN	0xaa
 
 static void __iomem	*rtc_base;
 
@@ -211,6 +218,20 @@ static int omap_rtc_set_time(struct device *dev, struct rtc_time *tm)
 		return -EINVAL;
 	local_irq_disable();
 	rtc_wait_not_busy();
+
+	/* do a dummy write to scratch register */
+	rtc_write(OMAP_RTC_SCRATCH0_PATTERN, OMAP_RTC_SCRATCH0_REG);
+
+	/* reset RTC */
+	rtc_write(OMAP_RTC_OSC_SWRESET | OMAP_RTC_OSC_RESERVED,
+			OMAP_RTC_OSC_REG);
+
+	/* resume RTC counter */
+	rtc_write(OMAP_RTC_CTRL_SPLIT | OMAP_RTC_CTRL_STOP,
+			OMAP_RTC_CTRL_REG);
+
+	/* wait for three 32-kHz reference periods after reset */
+	udelay(100);
 
 	rtc_write(tm->tm_year, OMAP_RTC_YEARS_REG);
 	rtc_write(tm->tm_mon, OMAP_RTC_MONTHS_REG);
