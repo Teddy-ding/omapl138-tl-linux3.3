@@ -27,6 +27,7 @@
 #include <linux/input.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/eeprom.h>
+#include <linux/mfd/davinci_aemif.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -156,13 +157,16 @@ static struct resource davinci_nand_resources[] = {
 	},
 };
 
-static struct platform_device davinci_nand_device = {
-	.name			= "davinci_nand",
-	.id			= 0,
-	.num_resources		= ARRAY_SIZE(davinci_nand_resources),
-	.resource		= davinci_nand_resources,
-	.dev			= {
-		.platform_data	= &davinci_nand_data,
+static struct platform_device dm365_emif_devices[] __initdata = {
+	{
+		.name		= "davinci_nand",
+		.id		= 0,
+
+		.resource		= davinci_nand_resources,
+		.num_resources		= ARRAY_SIZE(davinci_nand_resources),
+		.dev		= {
+			.platform_data	= &davinci_nand_data,
+		},
 	},
 };
 
@@ -383,8 +387,17 @@ static void __init evm_init_i2c(void)
 	i2c_register_board_info(1, i2c_info, ARRAY_SIZE(i2c_info));
 }
 
-static struct platform_device *dm365_evm_nand_devices[] __initdata = {
-	&davinci_nand_device,
+static struct davinci_aemif_devices davinci_emif_devices = {
+	.devices	= dm365_emif_devices,
+	.num_devices	= ARRAY_SIZE(dm365_emif_devices),
+};
+
+static struct platform_device davinci_emif_device = {
+	.name	= "davinci_aemif",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &davinci_emif_devices,
+	},
 };
 
 static inline int have_leds(void)
@@ -506,8 +519,7 @@ fail:
 		/* external keypad mux */
 		mux |= BIT(7);
 
-		platform_add_devices(dm365_evm_nand_devices,
-				ARRAY_SIZE(dm365_evm_nand_devices));
+		platform_device_register(&davinci_emif_device);
 	} else {
 		/* no OneNAND support yet */
 	}

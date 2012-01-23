@@ -199,16 +199,6 @@ static struct resource da850_evm_norflash_resource[] = {
 	},
 };
 
-static struct platform_device da850_evm_norflash_device = {
-	.name		= "physmap-flash",
-	.id		= 0,
-	.dev		= {
-		.platform_data  = &da850_evm_norflash_data,
-	},
-	.num_resources	= 1,
-	.resource	= da850_evm_norflash_resource,
-};
-
 static struct davinci_pm_config da850_pm_pdata = {
 	.sleepcount = 128,
 };
@@ -291,19 +281,39 @@ static struct resource da850_evm_nandflash_resource[] = {
 	},
 };
 
-static struct platform_device da850_evm_nandflash_device = {
-	.name		= "davinci_nand",
-	.id		= 1,
-	.dev		= {
-		.platform_data	= &da850_evm_nandflash_data,
+static struct platform_device da850_evm_devices[] __initdata = {
+	{
+		.name		= "davinci_nand",
+		.id		= 1,
+		.dev		= {
+			.platform_data	= &da850_evm_nandflash_data,
+		},
+		.num_resources	= ARRAY_SIZE(da850_evm_nandflash_resource),
+		.resource	= da850_evm_nandflash_resource,
 	},
-	.num_resources	= ARRAY_SIZE(da850_evm_nandflash_resource),
-	.resource	= da850_evm_nandflash_resource,
+	{
+		.name		= "physmap-flash",
+		.id		= 0,
+		.dev		= {
+			.platform_data  = &da850_evm_norflash_data,
+		},
+		.num_resources	= 1,
+		.resource	= da850_evm_norflash_resource,
+
+	},
+
+};
+static struct davinci_aemif_devices da850_emif_devices = {
+	.devices	= da850_evm_devices,
+	.num_devices	= ARRAY_SIZE(da850_evm_devices),
 };
 
-static struct platform_device *da850_evm_devices[] __initdata = {
-	&da850_evm_nandflash_device,
-	&da850_evm_norflash_device,
+static struct platform_device davinci_emif_device = {
+	.name	= "davinci_aemif",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &da850_emif_devices,
+	},
 };
 
 #define DA8XX_AEMIF_CE2CFG_OFFSET	0x10
@@ -395,9 +405,7 @@ static inline void da850_evm_setup_nor_nand(void)
 				ret);
 
 		da850_evm_init_nor();
-
-		platform_add_devices(da850_evm_devices,
-					ARRAY_SIZE(da850_evm_devices));
+		platform_device_register(&davinci_emif_device);
 	}
 }
 

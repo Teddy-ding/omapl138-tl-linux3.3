@@ -22,6 +22,7 @@
 #include <media/tvp514x.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/eeprom.h>
+#include <linux/mfd/davinci_aemif.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -94,15 +95,16 @@ static struct resource davinci_nand_resources[] = {
 	},
 };
 
-static struct platform_device davinci_nand_device = {
-	.name			= "davinci_nand",
-	.id			= 0,
+static struct platform_device dm355_evm_devices[] __initdata = {
+	{
+		.name		= "davinci_nand",
+		.id		= 0,
 
-	.num_resources		= ARRAY_SIZE(davinci_nand_resources),
-	.resource		= davinci_nand_resources,
-
-	.dev			= {
-		.platform_data	= &davinci_nand_data,
+		.resource		= davinci_nand_resources,
+		.num_resources		= ARRAY_SIZE(davinci_nand_resources),
+		.dev		= {
+			.platform_data	= &davinci_nand_data,
+		},
 	},
 };
 
@@ -242,9 +244,22 @@ static struct vpfe_config vpfe_cfg = {
 	.ccdc = "DM355 CCDC",
 };
 
+static struct davinci_aemif_devices davinci_emif_devices = {
+	.devices	= dm355_evm_devices,
+	.num_devices	= ARRAY_SIZE(dm355_evm_devices),
+};
+
+static struct platform_device davinci_emif_device = {
+	.name	= "davinci_aemif",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &davinci_emif_devices,
+	},
+};
+
 static struct platform_device *davinci_evm_devices[] __initdata = {
 	&dm355evm_dm9000,
-	&davinci_nand_device,
+	&davinci_emif_device,
 };
 
 static struct davinci_uart_config uart_config __initdata = {

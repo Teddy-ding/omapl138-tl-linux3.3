@@ -30,6 +30,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
+#include <linux/mfd/davinci_aemif.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -82,14 +83,31 @@ static struct resource davinci_sffsdr_nandflash_resource[] = {
 	},
 };
 
-static struct platform_device davinci_sffsdr_nandflash_device = {
-	.name		= "davinci_nand", /* Name of driver */
-	.id		= 0,
-	.dev		= {
-		.platform_data	= &davinci_sffsdr_nandflash_data,
+static struct platform_device davinci_sffsdr_emif_devices[] __initdata = {
+	{
+		.name		= "davinci_nand",
+		.id		= 0,
+
+		.resource		= davinci_sffsdr_nandflash_resource,
+		.num_resources		=
+			ARRAY_SIZE(davinci_sffsdr_nandflash_resource),
+		.dev		= {
+			.platform_data	= &davinci_sffsdr_nandflash_data,
+		},
 	},
-	.num_resources	= ARRAY_SIZE(davinci_sffsdr_nandflash_resource),
-	.resource	= davinci_sffsdr_nandflash_resource,
+};
+
+static struct davinci_aemif_devices davinci_emif_devices = {
+	.devices	= davinci_sffsdr_emif_devices,
+	.num_devices	= ARRAY_SIZE(davinci_sffsdr_emif_devices),
+};
+
+static struct platform_device davinci_emif_device = {
+	.name	= "davinci_aemif",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &davinci_emif_devices,
+	},
 };
 
 static struct at24_platform_data eeprom_info = {
@@ -122,7 +140,7 @@ static void __init sffsdr_init_i2c(void)
 }
 
 static struct platform_device *davinci_sffsdr_devices[] __initdata = {
-	&davinci_sffsdr_nandflash_device,
+	&davinci_emif_device,
 };
 
 static struct davinci_uart_config uart_config __initdata = {

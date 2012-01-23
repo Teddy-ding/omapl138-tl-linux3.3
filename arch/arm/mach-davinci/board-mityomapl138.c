@@ -19,6 +19,7 @@
 #include <linux/etherdevice.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/mfd/davinci_aemif.h>
 
 #include <asm/io.h>
 #include <asm/mach-types.h>
@@ -414,18 +415,35 @@ static struct resource mityomapl138_nandflash_resource[] = {
 	},
 };
 
-static struct platform_device mityomapl138_nandflash_device = {
-	.name		= "davinci_nand",
-	.id		= 1,
-	.dev		= {
-		.platform_data	= &mityomapl138_nandflash_data,
+static struct platform_device mityomapl138_emif_devices[] __initdata = {
+	{
+		.name		= "davinci_nand",
+		.id		= 1,
+
+		.resource		= mityomapl138_nandflash_resource,
+		.num_resources		=
+			ARRAY_SIZE(mityomapl138_nandflash_resource),
+		.dev		= {
+			.platform_data	= &mityomapl138_nandflash_data,
+		},
 	},
-	.num_resources	= ARRAY_SIZE(mityomapl138_nandflash_resource),
-	.resource	= mityomapl138_nandflash_resource,
+};
+
+static struct davinci_aemif_devices davinci_emif_devices = {
+	.devices	= mityomapl138_emif_devices,
+	.num_devices	= ARRAY_SIZE(mityomapl138_emif_devices),
+};
+
+static struct platform_device davinci_emif_device = {
+	.name	= "davinci_aemif",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &davinci_emif_devices,
+	},
 };
 
 static struct platform_device *mityomapl138_devices[] __initdata = {
-	&mityomapl138_nandflash_device,
+	&davinci_emif_device,
 };
 
 static void __init mityomapl138_setup_nand(void)

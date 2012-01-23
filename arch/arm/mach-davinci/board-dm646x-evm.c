@@ -104,15 +104,29 @@ static struct resource davinci_nand_resources[] = {
 	},
 };
 
-static struct platform_device davinci_nand_device = {
-	.name			= "davinci_nand",
-	.id			= 0,
+static struct platform_device dm646x_emif_devices[] __initdata = {
+	{
+		.name		= "davinci_nand",
+		.id		= 0,
 
-	.num_resources		= ARRAY_SIZE(davinci_nand_resources),
-	.resource		= davinci_nand_resources,
+		.resource		= davinci_nand_resources,
+		.num_resources		= ARRAY_SIZE(davinci_nand_resources),
+		.dev		= {
+			.platform_data	= &davinci_nand_data,
+		},
+	},
+};
 
-	.dev			= {
-		.platform_data	= &davinci_nand_data,
+static struct davinci_aemif_devices davinci_emif_devices = {
+	.devices	= dm646x_emif_devices,
+	.num_devices	= ARRAY_SIZE(dm646x_emif_devices),
+};
+
+static struct platform_device davinci_emif_device = {
+	.name	= "davinci_aemif",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &davinci_emif_devices,
 	},
 };
 
@@ -772,7 +786,7 @@ static __init void evm_init(void)
 	if (machine_is_davinci_dm6467tevm())
 		davinci_nand_data.timing = &dm6467tevm_nandflash_timing;
 
-	platform_device_register(&davinci_nand_device);
+	platform_device_register(&davinci_emif_device);
 
 	dm646x_init_edma(dm646x_edma_rsv);
 

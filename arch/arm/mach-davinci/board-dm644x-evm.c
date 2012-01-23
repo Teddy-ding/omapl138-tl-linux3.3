@@ -45,61 +45,21 @@
 #define LXT971_PHY_ID	(0x001378e2)
 #define LXT971_PHY_MASK	(0xfffffff0)
 
-static struct mtd_partition davinci_evm_norflash_partitions[] = {
-	/* bootloader (UBL, U-Boot, etc) in first 5 sectors */
-	{
-		.name		= "bootloader",
-		.offset		= 0,
-		.size		= 5 * SZ_64K,
-		.mask_flags	= MTD_WRITEABLE, /* force read-only */
-	},
-	/* bootloader params in the next 1 sectors */
-	{
-		.name		= "params",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_64K,
-		.mask_flags	= 0,
-	},
-	/* kernel */
-	{
-		.name		= "kernel",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_2M,
-		.mask_flags	= 0
-	},
-	/* file system */
-	{
-		.name		= "filesystem",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= MTDPART_SIZ_FULL,
-		.mask_flags	= 0
-	}
-};
+#if defined(CONFIG_MTD_PHYSMAP) || \
+	defined(CONFIG_MTD_PHYSMAP_MODULE)
+#define HAS_NOR 1
+#else
+#define HAS_NOR 0
+#endif
 
-static struct physmap_flash_data davinci_evm_norflash_data = {
-	.width		= 2,
-	.parts		= davinci_evm_norflash_partitions,
-	.nr_parts	= ARRAY_SIZE(davinci_evm_norflash_partitions),
-};
+#if defined(CONFIG_MTD_NAND_DAVINCI) || \
+	defined(CONFIG_MTD_NAND_DAVINCI_MODULE)
+#define HAS_NAND 1
+#else
+#define HAS_NAND 0
+#endif
 
-/* NOTE: CFI probe will correctly detect flash part as 32M, but EMIF
- * limits addresses to 16M, so using addresses past 16M will wrap */
-static struct resource davinci_evm_norflash_resource = {
-	.start		= DM644X_ASYNC_EMIF_DATA_CE0_BASE,
-	.end		= DM644X_ASYNC_EMIF_DATA_CE0_BASE + SZ_16M - 1,
-	.flags		= IORESOURCE_MEM,
-};
-
-static struct platform_device davinci_evm_norflash_device = {
-	.name		= "physmap-flash",
-	.id		= 0,
-	.dev		= {
-		.platform_data	= &davinci_evm_norflash_data,
-	},
-	.num_resources	= 1,
-	.resource	= &davinci_evm_norflash_resource,
-};
-
+#if (HAS_NAND == 1)
 /* DM644x EVM includes a 64 MByte small-page NAND flash (16K blocks).
  * It may used instead of the (default) NOR chip to boot, using TI's
  * tools to install the secondary boot loader (UBL) and U-Boot.
@@ -167,15 +127,79 @@ static struct resource davinci_evm_nandflash_resource[] = {
 		.flags		= IORESOURCE_MEM,
 	},
 };
-
-static struct platform_device davinci_evm_nandflash_device = {
-	.name		= "davinci_nand",
-	.id		= 0,
-	.dev		= {
-		.platform_data	= &davinci_evm_nandflash_data,
+#elif (HAS_NOR == 1)
+static struct mtd_partition davinci_evm_norflash_partitions[] = {
+	/* bootloader (UBL, U-Boot, etc) in first 5 sectors */
+	{
+		.name		= "bootloader",
+		.offset		= 0,
+		.size		= 5 * SZ_64K,
+		.mask_flags	= MTD_WRITEABLE, /* force read-only */
 	},
-	.num_resources	= ARRAY_SIZE(davinci_evm_nandflash_resource),
-	.resource	= davinci_evm_nandflash_resource,
+	/* bootloader params in the next 1 sectors */
+	{
+		.name		= "params",
+		.offset		= MTDPART_OFS_APPEND,
+		.size		= SZ_64K,
+		.mask_flags	= 0,
+	},
+	/* kernel */
+	{
+		.name		= "kernel",
+		.offset		= MTDPART_OFS_APPEND,
+		.size		= SZ_2M,
+		.mask_flags	= 0
+	},
+	/* file system */
+	{
+		.name		= "filesystem",
+		.offset		= MTDPART_OFS_APPEND,
+		.size		= MTDPART_SIZ_FULL,
+		.mask_flags	= 0
+	}
+};
+
+static struct physmap_flash_data davinci_evm_norflash_data = {
+	.width		= 2,
+	.parts		= davinci_evm_norflash_partitions,
+	.nr_parts	= ARRAY_SIZE(davinci_evm_norflash_partitions),
+};
+
+/* NOTE: CFI probe will correctly detect flash part as 32M, but EMIF
+ * limits addresses to 16M, so using addresses past 16M will wrap */
+static struct resource davinci_evm_norflash_resource[] = {
+	{
+		.start		= DM644X_ASYNC_EMIF_DATA_CE0_BASE,
+		.end		= DM644X_ASYNC_EMIF_DATA_CE0_BASE + SZ_16M - 1,
+		.flags		= IORESOURCE_MEM,
+	},
+};
+#endif
+
+static struct platform_device dm644x_emif_devices[] __initdata = {
+#if (HAS_NAND == 1)
+	{
+		.name		= "davinci_nand",
+		.id		= 0,
+		.resource		= davinci_evm_nandflash_resource,
+		.num_resources		=
+			ARRAY_SIZE(davinci_evm_nandflash_resource),
+		.dev		= {
+			.platform_data	= &davinci_evm_nandflash_data,
+		},
+	},
+#elif (HAS_NOR == 1)
+	{
+		.name		= "physmap-flash",
+		.id		= 0,
+		.resource		= davinci_evm_norflash_resource,
+		.num_resources		=
+			ARRAY_SIZE(davinci_evm_norflash_resource),
+		.dev		= {
+			.platform_data	= &davinci_evm_norflash_data,
+		},
+	},
+#endif
 };
 
 static u64 davinci_fb_dma_mask = DMA_BIT_MASK(32);
@@ -648,19 +672,19 @@ static int davinci_phy_fixup(struct phy_device *phydev)
 #define HAS_ATA 0
 #endif
 
-#if defined(CONFIG_MTD_PHYSMAP) || \
-    defined(CONFIG_MTD_PHYSMAP_MODULE)
-#define HAS_NOR 1
-#else
-#define HAS_NOR 0
-#endif
+static struct davinci_aemif_devices davinci_emif_devices = {
+	.devices	= dm644x_emif_devices,
+	.num_devices	= ARRAY_SIZE(dm644x_emif_devices),
+};
 
-#if defined(CONFIG_MTD_NAND_DAVINCI) || \
-    defined(CONFIG_MTD_NAND_DAVINCI_MODULE)
-#define HAS_NAND 1
-#else
-#define HAS_NAND 0
-#endif
+static struct platform_device davinci_emif_device = {
+	.name	= "davinci_aemif",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &davinci_emif_devices,
+	},
+};
+
 
 static __init void davinci_evm_init(void)
 {
@@ -682,13 +706,12 @@ static __init void davinci_evm_init(void)
 
 		/* only one device will be jumpered and detected */
 		if (HAS_NAND) {
-			platform_device_register(&davinci_evm_nandflash_device);
 			evm_leds[7].default_trigger = "nand-disk";
 			if (HAS_NOR)
 				pr_warning("WARNING: both NAND and NOR flash "
 					"are enabled; disable one of them.\n");
-		} else if (HAS_NOR)
-			platform_device_register(&davinci_evm_norflash_device);
+		}
+		platform_device_register(&davinci_emif_device);
 	}
 
 	platform_add_devices(davinci_evm_devices,

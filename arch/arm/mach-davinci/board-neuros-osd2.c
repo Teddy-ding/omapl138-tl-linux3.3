@@ -26,6 +26,7 @@
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
 #include <linux/mtd/partitions.h>
+#include <linux/mfd/davinci_aemif.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>

@@ -334,14 +334,29 @@ static struct resource da830_evm_nand_resources[] = {
 	},
 };
 
-static struct platform_device da830_evm_nand_device = {
-	.name		= "davinci_nand",
-	.id		= 1,
-	.dev		= {
-		.platform_data	= &da830_evm_nand_pdata,
+static struct platform_device da830_evm_devices[] __initdata = {
+	{
+		.name		= "davinci_nand",
+		.id		= 1,
+		.dev		= {
+			.platform_data	= &da830_evm_nand_pdata,
+		},
+		.num_resources	= ARRAY_SIZE(da830_evm_nand_resources),
+		.resource	= da830_evm_nand_resources,
 	},
-	.num_resources	= ARRAY_SIZE(da830_evm_nand_resources),
-	.resource	= da830_evm_nand_resources,
+};
+
+static struct davinci_aemif_devices da830_emif_devices = {
+	.devices	= da830_evm_devices,
+	.num_devices	= ARRAY_SIZE(da830_evm_devices),
+};
+
+static struct platform_device davinci_emif_device = {
+	.name	= "davinci_aemif",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &da830_emif_devices,
+	},
 };
 
 static inline void da830_evm_init_nand(int mux_mode)
@@ -360,7 +375,7 @@ static inline void da830_evm_init_nand(int mux_mode)
 		pr_warning("da830_evm_init: emif25 mux setup failed: %d\n",
 				ret);
 
-	ret = platform_device_register(&da830_evm_nand_device);
+	ret = platform_device_register(&davinci_emif_device);
 	if (ret)
 		pr_warning("da830_evm_init: NAND device not registered.\n");
 
