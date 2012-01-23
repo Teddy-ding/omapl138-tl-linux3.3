@@ -42,7 +42,7 @@
 #include <mach/nand.h>
 #include <mach/clock.h>
 #include <mach/cdce949.h>
-#include <mach/aemif.h>
+#include <linux/mfd/davinci_aemif.h>
 
 #include "davinci.h"
 #include "clock.h"
