@@ -934,6 +934,7 @@ config ARCH_DAVINCI
 	select GENERIC_ALLOCATOR
 	select GENERIC_IRQ_CHIP
 	select ARCH_HAS_HOLES_MEMORYMODEL
+	select MFD_CORE
 	help
 	  Support for TI's DaVinci platform.
 

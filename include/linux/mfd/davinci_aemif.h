@@ -10,6 +10,10 @@
 #ifndef _MACH_DAVINCI_AEMIF_H
 #define _MACH_DAVINCI_AEMIF_H
 
+#include <linux/kernel.h>
+#include <linux/platform_device.h>
+#include <linux/mfd/core.h>
+
 #define NRCSR_OFFSET		0x00
 #define AWCCR_OFFSET		0x04
 #define A1CR_OFFSET		0x10
@@ -17,6 +21,16 @@
 #define ACR_ASIZE_MASK		0x3
 #define ACR_EW_MASK		BIT(30)
 #define ACR_SS_MASK		BIT(31)
+
+enum davinci_emif_cells {
+	DAVINCI_NAND_DEVICE_CELL,
+	DAVINCI_NOR_FLASH_CELL,
+};
+
+struct davinci_aemif_devices {
+	struct platform_device *devices;
+	unsigned int num_devices;
+};
 
 /* All timings in nanoseconds */
 struct davinci_aemif_timing {

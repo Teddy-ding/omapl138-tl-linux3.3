@@ -14,8 +14,10 @@
 #include <linux/clk.h>
 #include <linux/module.h>
 #include <linux/time.h>
-
 #include <linux/mfd/davinci_aemif.h>
+#include <linux/mtd/physmap.h>
+#include <linux/slab.h>
+#include <mach/nand.h>
 
 /* Timing value configuration */
 
@@ -131,3 +133,74 @@ int davinci_aemif_setup_timing(struct davinci_aemif_timing *t,
 	return 0;
 }
 EXPORT_SYMBOL(davinci_aemif_setup_timing);
+
+static int __init davinci_aemif_probe(struct platform_device *pdev)
+{
+	struct davinci_aemif_devices *davinci_aemif_devices =
+		pdev->dev.platform_data;
+	struct platform_device *devices;
+	struct mfd_cell *cells;
+	int i, ret, count;
+
+	devices = davinci_aemif_devices->devices;
+
+	cells = kzalloc(sizeof(struct mfd_cell) *
+			davinci_aemif_devices->num_devices, GFP_KERNEL);
+
+	for (i = 0, count = 0; i < davinci_aemif_devices->num_devices; i++) {
+		if (!strcmp(devices[i].name, "davinci_nand")) {
+			cells[count].pdata_size =
+				sizeof(struct davinci_nand_pdata);
+		} else if (!strcmp(devices[i].name, "physmap-flash")) {
+			cells[count].pdata_size =
+				sizeof(struct physmap_flash_data);
+		} else
+			continue;
+
+		cells[count].name = devices[i].name;
+		cells[count].platform_data =
+			devices[i].dev.platform_data;
+		cells[count].id = devices[i].id;
+		cells[count].resources = devices[i].resource;
+		cells[count].num_resources = devices[i].num_resources;
+		count++;
+	}
+
+	ret = mfd_add_devices(&pdev->dev, 0, cells,
+			      count, NULL, 0);
+	if (ret != 0)
+		dev_err(&pdev->dev, "fail to register client devices\n");
+
+	return 0;
+}
+
+static int __devexit davinci_aemif_remove(struct platform_device *pdev)
+{
+	mfd_remove_devices(&pdev->dev);
+	return 0;
+}
+
+static struct platform_driver davinci_aemif_driver = {
+	.driver	= {
+		.name = "davinci_aemif",
+		.owner = THIS_MODULE,
+	},
+	.remove	= __devexit_p(davinci_aemif_remove),
+};
+
+static int __init davinci_aemif_init(void)
+{
+	return platform_driver_probe(&davinci_aemif_driver,
+			davinci_aemif_probe);
+}
+module_init(davinci_aemif_init);
+
+static void __exit davinci_aemif_exit(void)
+{
+	platform_driver_unregister(&davinci_aemif_driver);
+}
+module_exit(davinci_aemif_exit);
+
+MODULE_AUTHOR("Prakash Manjunathappa");
+MODULE_DESCRIPTION("Texas Instruments AEMIF Interface");
+MODULE_LICENSE("GPL");
