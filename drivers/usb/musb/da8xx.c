@@ -438,7 +438,7 @@ static irqreturn_t da8xx_musb_interrupt(int irq, void *hci)
 			u32 tx = (pend0 >> 24) & 0x3;
 			u32 rx = (pend0 >> 26) & 0x3;
 
-			DBG(4, "CPPI 4.1 IRQ: Tx %x, Rx %x\n", tx, rx);
+			pr_debug("CPPI 4.1 IRQ: Tx %x, Rx %x\n", tx, rx);
 			cppi41_completion(musb, rx, tx);
 			ret = IRQ_HANDLED;
 		}
