@@ -191,13 +191,8 @@ static int __devinit cppi41_controller_start(struct dma_controller *controller)
 	cppi_info = cppi->cppi_info;
 	musb = cppi->musb;
 
-	if (cpu_is_ti816x() || cpu_is_am33xx()) {
-		cppi->automode_reg_offs = TI81XX_USB_AUTOREQ_REG;
-		cppi->teardown_reg_offs = TI81XX_USB_TEARDOWN_REG;
-	} else {
-		cppi->automode_reg_offs = USB_AUTOREQ_REG;
-		cppi->teardown_reg_offs = USB_TEARDOWN_REG;
-	}
+	cppi->automode_reg_offs = USB_AUTOREQ_REG;
+	cppi->teardown_reg_offs = USB_TEARDOWN_REG;
 
 	/*
 	 * TODO: We may need to check USB_CPPI41_MAX_PD here since CPPI 4.1
@@ -1353,12 +1348,6 @@ cppi41_dma_controller_create(struct musb  *musb, void __iomem *mregs)
 	cppi->cppi_info = (struct usb_cppi41_info *)&usb_cppi41_info[musb->id];;
 	cppi->en_bd_intr = cppi->cppi_info->bd_intr_ctrl;
 	INIT_WORK(&cppi->txdma_work, txdma_completion_work);
-
-	/* enable infinite mode only for ti81xx silicon rev2 */
-	if (cpu_is_am33xx() || cpu_is_ti816x()) {
-		dev_dbg(musb->controller, "cppi41dma supports infinite mode\n");
-		cppi->inf_mode = 1;
-	}
 
 	return &cppi->controller;
 }
