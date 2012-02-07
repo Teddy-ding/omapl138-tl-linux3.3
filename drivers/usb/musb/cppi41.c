@@ -82,11 +82,9 @@ struct cppi41_dma_sched_tbl_t dma_sched_tbl[MAX_SCHED_TBL_ENTRY] = {
 	{ 7,    3,      1,      1}
 };
 
-struct cppi41_queue_mgr cppi41_queue_mgr[CPPI41_NUM_QUEUE_MGR];
-EXPORT_SYMBOL(cppi41_queue_mgr);
+extern struct cppi41_queue_mgr cppi41_queue_mgr[CPPI41_NUM_QUEUE_MGR];
 
-struct cppi41_dma_block cppi41_dma_block[CPPI41_NUM_DMA_BLOCK];
-EXPORT_SYMBOL(cppi41_dma_block);
+extern struct cppi41_dma_block cppi41_dma_block[CPPI41_NUM_DMA_BLOCK];
 /******************** CPPI 4.1 Functions (External Interface) *****************/
 
 int cppi41_queue_mgr_init(u8 q_mgr, dma_addr_t rgn0_base, u16 rgn0_size)

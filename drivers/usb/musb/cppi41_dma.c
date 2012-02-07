@@ -133,9 +133,6 @@ struct cppi41 {
 	u8  inf_mode;
 };
 
-struct usb_cppi41_info usb_cppi41_info[2];
-EXPORT_SYMBOL(usb_cppi41_info);
-
 #ifdef DEBUG_CPPI_TD
 static void print_pd_list(struct usb_pkt_desc *pd_pool_head)
 {
