@@ -73,6 +73,34 @@ extern void (*musb_writeb)(void __iomem *addr, unsigned offset, u8 data);
 #include <linux/usb/hcd.h>
 #include "musb_host.h"
 
+#if 0
+#define	is_peripheral_enabled(musb)	((musb)->board_mode != MUSB_HOST)
+#define	is_host_enabled(musb)		((musb)->board_mode != MUSB_PERIPHERAL)
+#define	is_otg_enabled(musb)		((musb)->board_mode == MUSB_OTG)
+#endif
+
+#ifdef CONFIG_USB_GADGET_MUSB_HDRC
+
+#define	is_peripheral_capable()	(1)
+
+#else
+
+#define	is_peripheral_capable()	(0)
+#endif
+
+#ifdef CONFIG_USB_MUSB_HDRC_HCD
+
+#define	is_host_capable()	(1)
+
+#else
+
+#define	is_host_capable()	(0)
+
+static inline irqreturn_t musb_h_ep0_irq(struct musb *m) { return IRQ_NONE; }
+#endif
+
+#ifdef CONFIG_USB_MUSB_OTG
+
 #define	is_peripheral_enabled(musb)	((musb)->board_mode != MUSB_HOST)
 #define	is_host_enabled(musb)		((musb)->board_mode != MUSB_PERIPHERAL)
 #define	is_otg_enabled(musb)		((musb)->board_mode == MUSB_OTG)
@@ -82,6 +110,28 @@ extern void (*musb_writeb)(void __iomem *addr, unsigned offset, u8 data);
  */
 #define is_peripheral_active(m)		(!(m)->is_host)
 #define is_host_active(m)		((m)->is_host)
+
+#else
+#define	is_peripheral_enabled(musb)	is_peripheral_capable()
+#define	is_host_enabled(musb)		is_host_capable()
+#define	is_otg_enabled(musb)		0
+
+#define	is_peripheral_active(musb)	is_peripheral_capable()
+#define	is_host_active(musb)		is_host_capable()
+#endif
+
+#if defined(CONFIG_USB_MUSB_OTG) || defined(CONFIG_USB_MUSB_PERIPHERAL)
+/* for some reason, the "select USB_GADGET_MUSB_HDRC" doesn't always
+ * override that choice selection (often USB_GADGET_DUMMY_HCD).
+ */
+#ifndef CONFIG_USB_GADGET_MUSB_HDRC
+#error bogus Kconfig output ... select CONFIG_USB_GADGET_MUSB_HDRC
+#endif
+#endif	/* need MUSB gadget selection */
+
+/* NOTE:  otg and peripheral-only state machines start at B_IDLE.
+ * OTG or host-only go to A_IDLE when ID is sensed.
+ */
 
 #ifndef CONFIG_HAVE_CLK
 /* Dummy stub for clk framework */

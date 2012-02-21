@@ -90,6 +90,7 @@ struct da8xx_glue {
 };
 
 #ifdef CONFIG_USB_TI_CPPI41_DMA
+#define CPPI41_QMGR_REG0SIZE	0x3fff
 /*
  * CPPI 4.1 resources used for USB OTG controller module:
  *
@@ -186,6 +187,53 @@ u32 dma_sched_table[] = {
 	0x81018000, 0x83038202,
 };
 
+int __devinit cppi41_init(struct musb *musb)
+{
+	struct usb_cppi41_info *cppi_info = &usb_cppi41_info[musb->id];
+	u16 numch, blknum, order, i;
+
+	/* init cppi info structure  */
+	cppi_info->dma_block = 0;
+	for (i = 0 ; i < USB_CPPI41_NUM_CH ; i++)
+		cppi_info->ep_dma_ch[i] = i;
+
+	cppi_info->q_mgr = 0;
+	cppi_info->num_tx_comp_q = 2;
+	cppi_info->num_rx_comp_q = 2;
+	cppi_info->tx_comp_q = tx_comp_q;
+	cppi_info->rx_comp_q = rx_comp_q;
+	cppi_info->bd_intr_ctrl = 0; /* am35x dont support bd interrupt */
+
+	blknum = cppi_info->dma_block;
+
+	/* Queue manager information */
+	cppi41_queue_mgr[0].num_queue = 64;
+	cppi41_queue_mgr[0].queue_types = CPPI41_FREE_DESC_BUF_QUEUE |
+						CPPI41_UNASSIGNED_QUEUE;
+	cppi41_queue_mgr[0].base_fdbq_num = 0;
+	cppi41_queue_mgr[0].assigned = assigned_queues;
+
+	/* init DMA block */
+	cppi41_dma_block[0].num_tx_ch = 4;
+	cppi41_dma_block[0].num_rx_ch = 4;
+	cppi41_dma_block[0].tx_ch_info = tx_ch_info;
+
+	/* Initialize for Linking RAM region 0 alone */
+	cppi41_queue_mgr_init(cppi_info->q_mgr, 0, CPPI41_QMGR_REG0SIZE);
+
+	numch =  USB_CPPI41_NUM_CH * 2;
+	order = get_count_order(numch);
+
+	/* TODO: check two teardown desc per channel (5 or 7 ?)*/
+	if (order < 5)
+		order = 5;
+
+	cppi41_dma_block_init(blknum, cppi_info->q_mgr, order,
+			dma_sched_table, numch);
+	return 0;
+}
+
+#if 0
 int cppi41_init(void)
 {
 	u16 order;
@@ -207,6 +255,7 @@ int cppi41_init(void)
 	}
 	return 0;
 }
+#endif
 EXPORT_SYMBOL(cppi41_init);
 #endif /* CONFIG_USB_TI_CPPI41_DMA */
 
@@ -584,7 +633,7 @@ static int da8xx_musb_init(struct musb *musb)
 	msleep(5);
 
 #ifdef CONFIG_USB_TI_CPPI41_DMA
-	cppi41_init();
+	cppi41_init(musb);
 #endif
 
 	/* NOTE: IRQs are in mixed mode, not bypass to pure MUSB */

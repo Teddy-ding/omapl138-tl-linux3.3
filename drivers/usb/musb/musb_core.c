@@ -776,6 +776,7 @@ static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
 		handled = IRQ_HANDLED;
 
 		switch (musb->xceiv->state) {
+#ifdef CONFIG_USB_MUSB_HDRC_HCD
 		case OTG_STATE_A_HOST:
 		case OTG_STATE_A_SUSPEND:
 			if (is_host_enabled(musb)) {
@@ -787,6 +788,8 @@ static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
 					+ msecs_to_jiffies(musb->a_wait_bcon));
 			}
 			break;
+#endif
+#ifdef CONFIG_USB_MUSB_OTG
 		case OTG_STATE_B_HOST:
 			if (is_otg_enabled(musb))
 				musb_hnp_stop(musb);
@@ -800,6 +803,7 @@ static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
 		case OTG_STATE_B_WAIT_ACON:
 			if (!is_otg_enabled(musb))
 				break;
+#endif
 			/* FALLTHROUGH */
 		case OTG_STATE_B_PERIPHERAL:
 		case OTG_STATE_B_IDLE:
@@ -1854,7 +1858,7 @@ allocate_instance(struct device *dev,
 	struct usb_hcd	*hcd;
 	struct musb_hdrc_platform_data *plat = dev->platform_data;
 
-	if (plat->mode != MUSB_PERIPHERAL) {
+#ifdef CONFIG_USB_MUSB_HDRC_HCD
 		hcd = usb_create_hcd(&musb_hc_driver, dev, dev_name(dev));
 		if (!hcd)
 			return NULL;
@@ -1871,11 +1875,11 @@ allocate_instance(struct device *dev,
 		hcd->uses_new_polling = 1;
 		hcd->has_tt = 1;
 		musb->vbuserr_retry = VBUSERR_RETRY_COUNT;
-	} else {
+#else
 		musb = kzalloc(sizeof *musb, GFP_KERNEL);
 		if (!musb)
 			return NULL;
-	}
+#endif
 	dev_set_drvdata(dev, musb);
 	musb->mregs = mbase;
 	musb->ctrl_base = mbase;
@@ -2520,14 +2524,20 @@ static struct platform_driver musb_driver = {
 
 static int __init musb_init(void)
 {
+#ifdef CONFIG_USB_MUSB_HDRC_HCD
 	if (usb_disabled())
 		return 0;
+#endif
 
 	pr_info("%s: version " MUSB_VERSION ", "
-		"?dma?"
-		", "
-		"otg (peripheral+host)",
-		musb_driver_name);
+#ifdef CONFIG_USB_MUSB_OTG
+		"otg (peripheral+host)"
+#elif defined(CONFIG_USB_GADGET_MUSB_HDRC)
+		"peripheral"
+#elif defined(CONFIG_USB_MUSB_HDRC_HCD)
+		"host"
+#endif
+		,musb_driver_name);
 	return platform_driver_register(&musb_driver);
 }
 
