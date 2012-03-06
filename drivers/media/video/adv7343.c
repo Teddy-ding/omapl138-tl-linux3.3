@@ -218,11 +218,11 @@ static int adv7343_setoutput(struct v4l2_subdev *sd, u32 output_type)
 	val = state->reg00 & 0x03;
 
 	if (output_type == ADV7343_COMPOSITE_ID)
-		val |= ADV7343_COMPOSITE_POWER_VALUE;
+		val |= /*ADV7343_COMPOSITE_POWER_VALUE*/0x10;
 	else if (output_type == ADV7343_COMPONENT_ID)
 		val |= ADV7343_COMPONENT_POWER_VALUE;
 	else
-		val |= ADV7343_SVIDEO_POWER_VALUE;
+		val |= /*ADV7343_SVIDEO_POWER_VALUE*/0x0C;
 
 	err = adv7343_write(sd, ADV7343_POWER_MODE_REG, val);
 	if (err < 0)
@@ -239,7 +239,8 @@ static int adv7343_setoutput(struct v4l2_subdev *sd, u32 output_type)
 	state->reg02 = val;
 
 	/* configure SD DAC Output 2 and SD DAC Output 1 bit to zero */
-	val = state->reg82 & (SD_DAC_1_DI & SD_DAC_2_DI);
+	/*val = state->reg82 & (SD_DAC_1_DI & SD_DAC_2_DI);*/
+	val = (state->reg82 | 0x2) & SD_DAC_2_DI;
 	err = adv7343_write(sd, ADV7343_SD_MODE_REG2, val);
 	if (err < 0)
 		goto setoutput_exit;
