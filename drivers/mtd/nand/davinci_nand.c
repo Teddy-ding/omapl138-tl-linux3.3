@@ -33,6 +33,7 @@
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
 #include <linux/slab.h>
+#include <linux/cpufreq.h>
 
 #include <mach/nand.h>
 #include <linux/mfd/davinci_aemif.h>
@@ -73,6 +74,10 @@ struct davinci_nand_info {
 	uint32_t		core_chipsel;
 
 	struct davinci_aemif_timing	*timing;
+#ifdef CONFIG_CPU_FREQ
+	struct notifier_block	freq_transition;
+#endif
+
 };
 
 static DEFINE_SPINLOCK(davinci_nand_lock);
@@ -518,6 +523,47 @@ static struct nand_ecclayout hwecc4_2048 __initconst = {
 	},
 };
 
+#ifdef CONFIG_CPU_FREQ
+static int nand_davinci_cpufreq_transition(struct notifier_block *nb,
+		unsigned long val, void *data)
+{
+	struct davinci_nand_info *info;
+
+	info = container_of(nb, struct davinci_nand_info, freq_transition);
+
+	if (val == CPUFREQ_POSTCHANGE)
+		davinci_aemif_setup_timing(info->timing, info->base,
+				info->core_chipsel);
+
+	return 0;
+}
+
+static inline int nand_davinci_cpufreq_register(struct davinci_nand_info *info)
+{
+	info->freq_transition.notifier_call = nand_davinci_cpufreq_transition;
+
+	return cpufreq_register_notifier(&info->freq_transition,
+			CPUFREQ_TRANSITION_NOTIFIER);
+}
+
+static inline void nand_davinci_cpufreq_deregister(struct davinci_nand_info
+		*info)
+{
+	cpufreq_unregister_notifier(&info->freq_transition,
+			CPUFREQ_TRANSITION_NOTIFIER);
+}
+#else
+static inline int nand_davinci_cpufreq_register(struct davinci_nand_info *info)
+{
+	return 0;
+}
+
+static inline void nand_davinci_cpufreq_deregister(struct davinci_nand_info
+		*info)
+{
+}
+#endif
+
 static int __init nand_davinci_probe(struct platform_device *pdev)
 {
 	struct davinci_nand_pdata	*pdata = pdev->dev.platform_data;
@@ -752,6 +798,13 @@ syndrome_done:
 	if (ret < 0)
 		goto err_scan;
 
+	ret = nand_davinci_cpufreq_register(info);
+	if (ret) {
+		dev_err(&pdev->dev, "failed to register cpufreq\n");
+		goto err_cpu_freq_fail;
+	}
+
+
 	ret = mtd_device_parse_register(&info->mtd, NULL, 0,
 			pdata->parts, pdata->nr_parts);
 
@@ -764,6 +817,7 @@ syndrome_done:
 
 	return 0;
 
+err_cpu_freq_fail:
 err_scan:
 err_timing:
 	clk_disable(info->clk);
@@ -793,6 +847,7 @@ static int __exit nand_davinci_remove(struct platform_device *pdev)
 {
 	struct davinci_nand_info *info = platform_get_drvdata(pdev);
 
+	nand_davinci_cpufreq_deregister(info);
 	spin_lock_irq(&davinci_nand_lock);
 	if (info->chip.ecc.mode == NAND_ECC_HW_SYNDROME)
 		ecc4_busy = false;
