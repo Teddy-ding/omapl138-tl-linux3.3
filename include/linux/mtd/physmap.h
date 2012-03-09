@@ -31,6 +31,7 @@ struct physmap_flash_data {
 	char                    *probe_type;
 	struct mtd_partition	*parts;
 	const char		**part_probe_types;
+	struct davinci_aemif_timing *timing;
 };
 
 #endif /* __LINUX_MTD_PHYSMAP__ */

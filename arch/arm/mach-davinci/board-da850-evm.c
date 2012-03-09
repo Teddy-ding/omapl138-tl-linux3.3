@@ -185,10 +185,21 @@ static struct mtd_partition da850_evm_norflash_partition[] = {
 	},
 };
 
+static struct davinci_aemif_timing da850_evm_norflash_timing = {
+	.wsetup		= 10,
+	.wstrobe	= 60,
+	.whold		= 10,
+	.rsetup		= 10,
+	.rstrobe	= 110,
+	.rhold		= 10,
+	.ta		= 30,
+};
+
 static struct physmap_flash_data da850_evm_norflash_data = {
 	.width		= 2,
 	.parts		= da850_evm_norflash_partition,
 	.nr_parts	= ARRAY_SIZE(da850_evm_norflash_partition),
+	.timing		= &da850_evm_norflash_timing,
 };
 
 static struct resource da850_evm_norflash_resource[] = {
