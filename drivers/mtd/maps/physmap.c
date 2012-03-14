@@ -20,6 +20,7 @@
 #include <linux/mtd/physmap.h>
 #include <linux/mtd/concat.h>
 #include <linux/io.h>
+#include <linux/mfd/davinci_aemif.h>
 
 #define MAX_RESOURCES		4
 
@@ -27,6 +28,8 @@ struct physmap_flash_info {
 	struct mtd_info		*mtd[MAX_RESOURCES];
 	struct mtd_info		*cmtd;
 	struct map_info		map[MAX_RESOURCES];
+	unsigned int			cs;
+	struct davinci_aemif_timing	*timing;
 };
 
 static int physmap_flash_remove(struct platform_device *dev)
@@ -158,6 +161,8 @@ static int physmap_flash_probe(struct platform_device *dev)
 		info->mtd[i]->owner = THIS_MODULE;
 		info->mtd[i]->dev.parent = &dev->dev;
 	}
+		info->cs = dev->id;
+		info->timing = physmap_data->timing;
 
 	if (devices_found == 1) {
 		info->cmtd = info->mtd[0];
@@ -174,10 +179,19 @@ static int physmap_flash_probe(struct platform_device *dev)
 
 	part_types = physmap_data->part_probe_types ? : part_probe_types;
 
+	if (info->timing)
+		err = davinci_aemif_setup_timing(info->timing,
+				info->map[0].virt, info->cs);
+	if (err < 0) {
+		dev_dbg(&dev->dev, "NOR timing values setup fail\n");
+		goto err_timing;
+	}
+
 	mtd_device_parse_register(info->cmtd, part_types, 0,
 				  physmap_data->parts, physmap_data->nr_parts);
 	return 0;
 
+err_timing:
 err_out:
 	physmap_flash_remove(dev);
 	return err;
