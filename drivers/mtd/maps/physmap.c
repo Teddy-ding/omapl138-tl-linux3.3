@@ -21,6 +21,7 @@
 #include <linux/mtd/concat.h>
 #include <linux/io.h>
 #include <linux/mfd/davinci_aemif.h>
+#include <linux/cpufreq.h>
 
 #define MAX_RESOURCES		4
 
@@ -30,7 +31,53 @@ struct physmap_flash_info {
 	struct map_info		map[MAX_RESOURCES];
 	unsigned int			cs;
 	struct davinci_aemif_timing	*timing;
+#ifdef CONFIG_CPU_FREQ
+	struct notifier_block	freq_transition;
+#endif
 };
+
+#ifdef CONFIG_CPU_FREQ
+static int nor_davinci_cpufreq_transition(struct notifier_block *nb,
+		unsigned long val, void *data)
+{
+	struct physmap_flash_info *info;
+
+	info = container_of(nb, struct physmap_flash_info, freq_transition);
+
+	if (val == CPUFREQ_POSTCHANGE)
+		davinci_aemif_setup_timing(info->timing, info->map[0].virt,
+				info->cs);
+	return 0;
+}
+
+static inline int nor_davinci_cpufreq_register(struct physmap_flash_info
+			*info)
+{
+	info->freq_transition.notifier_call = nor_davinci_cpufreq_transition;
+	return cpufreq_register_notifier(&info->freq_transition,
+			CPUFREQ_TRANSITION_NOTIFIER);
+}
+
+static inline void nor_davinci_cpufreq_deregister(struct physmap_flash_info
+			*info)
+{
+	cpufreq_unregister_notifier(&info->freq_transition,
+			CPUFREQ_TRANSITION_NOTIFIER);
+}
+#else
+static inline int nor_davinci_cpufreq_register(struct physmap_flash_info
+			*info)
+{
+	return 0;
+}
+
+static inline void nor_davinci_cpufreq_deregister(struct physmap_flash_info
+			*info)
+{
+	return;
+}
+#endif
+
 
 static int physmap_flash_remove(struct platform_device *dev)
 {
@@ -55,6 +102,7 @@ static int physmap_flash_remove(struct platform_device *dev)
 		if (info->mtd[i] != NULL)
 			map_destroy(info->mtd[i]);
 	}
+	nor_davinci_cpufreq_deregister(info);
 
 	if (physmap_data->exit)
 		physmap_data->exit(dev);
@@ -187,10 +235,17 @@ static int physmap_flash_probe(struct platform_device *dev)
 		goto err_timing;
 	}
 
+	err = nor_davinci_cpufreq_register(info);
+	if (err) {
+		dev_err(&dev->dev, "failed to register cpufreq\n");
+		goto err_cpu_freq_fail;
+	}
+
 	mtd_device_parse_register(info->cmtd, part_types, 0,
 				  physmap_data->parts, physmap_data->nr_parts);
 	return 0;
 
+err_cpu_freq_fail:
 err_timing:
 err_out:
 	physmap_flash_remove(dev);
