@@ -44,6 +44,7 @@
 #include <mach/mux.h>
 #include <mach/aemif.h>
 #include <mach/spi.h>
+#include <mach/usb.h>
 
 #define DA850_EVM_PHY_ID		"davinci_mdio-0:00"
 #define DA850_LCD_PWR_PIN		GPIO_TO_PIN(2, 8)
@@ -789,6 +790,65 @@ static struct davinci_i2c_platform_data da850_evm_i2c_0_pdata = {
 	.bus_delay	= 0,	/* usec */
 };
 
+/*
+ * USB1 VBUS is controlled by GPIO2[4], over-current is reported on GPIO6[13].
+ */
+#define ON_BD_USB_DRV	GPIO_TO_PIN(2, 4)
+#define ON_BD_USB_OVC	GPIO_TO_PIN(6, 13)
+
+static const short da850_evm_usb11_pins[] = {
+	DA850_GPIO2_4, DA850_GPIO6_13,
+	-1
+};
+
+static irqreturn_t da850_evm_usb_ocic_irq(int, void *);
+
+static struct da8xx_ohci_root_hub da850_evm_usb11_pdata = {
+	.type			= GPIO_BASED,
+	.method	= {
+		.gpio_method = {
+			.power_control_pin	= ON_BD_USB_DRV,
+			.over_current_indicator = ON_BD_USB_OVC,
+		},
+	},
+	.board_ocic_handler	= da850_evm_usb_ocic_irq,
+};
+
+static irqreturn_t da850_evm_usb_ocic_irq(int irq, void *handler)
+{
+	if (handler != NULL)
+		((da8xx_ocic_handler_t)handler)(&da850_evm_usb11_pdata, 1);
+	return IRQ_HANDLED;
+}
+
+static __init void da850_evm_usb_init(void)
+{
+	u32 cfgchip2;
+
+	/*
+	 * Set up USB clock/mode in the CFGCHIP2 register.
+	 * FYI:  CFGCHIP2 is 0x0000ef00 initially.
+	 */
+	cfgchip2 = __raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+
+	/* USB2.0 PHY reference clock is 24 MHz */
+	cfgchip2 &= ~CFGCHIP2_REFFREQ;
+	cfgchip2 |=  CFGCHIP2_REFFREQ_24MHZ;
+
+	/*
+	 * Select internal reference clock for USB 2.0 PHY
+	 * and use it as a clock source for USB 1.1 PHY
+	 * (this is the default setting anyway).
+	 */
+	cfgchip2 &= ~CFGCHIP2_USB1PHYCLKMUX;
+	cfgchip2 |=  CFGCHIP2_USB2PHYCLKMUX;
+
+	__raw_writel(cfgchip2, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+
+	/* initilaize usb module */
+	da8xx_board_usb_init(da850_evm_usb11_pins, &da850_evm_usb11_pdata);
+}
+
 static struct davinci_uart_config da850_evm_uart_config __initdata = {
 	.enabled_uarts = 0x7,
 };
@@ -1445,6 +1505,8 @@ static __init void da850_evm_init(void)
 				ret);
 
 	da850_evm_setup_mac_addr();
+
+	da850_evm_usb_init();
 
 	if (rmii_en) {
 		ret = davinci_cfg_reg_list(da850_ehrpwm0_pins);
