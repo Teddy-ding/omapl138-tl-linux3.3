@@ -14,6 +14,8 @@
 #define DA8XX_USB0_BASE		0x01e00000
 #define DA8XX_USB1_BASE		0x01e25000
 
+#include <linux/interrupt.h>
+
 /* DA8xx CFGCHIP2 (USB 2.0 PHY Control) register bits */
 #define CFGCHIP2_PHYCLKGD	(1 << 17)
 #define CFGCHIP2_VBUSSENSE	(1 << 16)
@@ -36,6 +38,10 @@
 #define CFGCHIP2_REFFREQ_12MHZ	(1 << 0)
 #define CFGCHIP2_REFFREQ_24MHZ	(2 << 0)
 #define CFGCHIP2_REFFREQ_48MHZ	(3 << 0)
+
+enum usb_power_n_ovc_method {
+	GPIO_BASED = 1,
+};
 
 /* DA8xx CPPI4.1 DMA registers */
 #define USB_REVISION_REG        0x00
@@ -101,20 +107,37 @@ struct	da8xx_ohci_root_hub;
 
 typedef void (*da8xx_ocic_handler_t)(struct da8xx_ohci_root_hub *hub,
 				     unsigned port);
+struct gpio_based {
+	u32 power_control_pin;
+	u32 over_current_indicator;
+};
 
 /* Passed as the platform data to the OHCI driver */
 struct	da8xx_ohci_root_hub {
 	/* Switch the port power on/off */
-	int	(*set_power)(unsigned port, int on);
+	int	(*set_power)(unsigned port, struct da8xx_ohci_root_hub *hub,
+			int on);
 	/* Read the port power status */
-	int	(*get_power)(unsigned port);
+	int	(*get_power)(unsigned port, struct da8xx_ohci_root_hub *hub);
 	/* Read the port over-current indicator */
-	int	(*get_oci)(unsigned port);
+	int	(*get_oci)(unsigned port, struct da8xx_ohci_root_hub *hub);
 	/* Over-current indicator change notification (pass NULL to disable) */
-	int	(*ocic_notify)(da8xx_ocic_handler_t handler);
-
+	int	(*ocic_notify)(da8xx_ocic_handler_t handler,
+			struct da8xx_ohci_root_hub *hub);
 	/* Time from power on to power good (in 2 ms units) */
 	u8	potpgt;
+
+	/* Power control and over current control method */
+	unsigned int type;
+	union power_n_overcurrent_pins {
+		struct gpio_based gpio_method;
+		/* Add data pertaining other methods here. For example if its
+		 * I2C based.
+		 */
+	} method;
+
+	/* board specific handler */
+	irq_handler_t board_ocic_handler;
 };
 
 void davinci_setup_usb(unsigned mA, unsigned potpgt_ms);

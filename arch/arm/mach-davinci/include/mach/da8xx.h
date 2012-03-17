@@ -80,6 +80,8 @@ int da850_register_edma(struct edma_rsv_info *rsv[2]);
 int da8xx_register_i2c(int instance, struct davinci_i2c_platform_data *pdata);
 int da8xx_register_spi(int instance, struct spi_board_info *info, unsigned len);
 int da8xx_register_watchdog(void);
+void __init da8xx_board_usb_init(const short pins[],
+		struct da8xx_ohci_root_hub *usb11_pdata);
 int da8xx_register_usb20(unsigned mA, unsigned potpgt);
 int da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata);
 int da8xx_register_emac(void);

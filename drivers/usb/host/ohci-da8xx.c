@@ -78,8 +78,8 @@ static void ohci_da8xx_ocic_handler(struct da8xx_ohci_root_hub *hub,
 	ocic_mask |= 1 << port;
 
 	/* Once over-current is detected, the port needs to be powered down */
-	if (hub->get_oci(port) > 0)
-		hub->set_power(port, 0);
+	if (hub->get_oci(port, hub) > 0)
+		hub->set_power(port, hub, 0);
 }
 
 static int ohci_da8xx_init(struct usb_hcd *hcd)
@@ -185,11 +185,11 @@ static int ohci_da8xx_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		temp = roothub_portstatus(hcd_to_ohci(hcd), wIndex - 1);
 
 		/* The port power status (PPS) bit defaults to 1 */
-		if (hub->get_power && hub->get_power(wIndex) == 0)
+		if (hub->get_power && hub->get_power(wIndex, hub) == 0)
 			temp &= ~RH_PS_PPS;
 
 		/* The port over-current indicator (POCI) bit is always 0 */
-		if (hub->get_oci && hub->get_oci(wIndex) > 0)
+		if (hub->get_oci && hub->get_oci(wIndex, hub) > 0)
 			temp |=  RH_PS_POCI;
 
 		/* The over-current indicator change (OCIC) bit is 0 too */
@@ -217,7 +217,8 @@ check_port:
 			if (!hub->set_power)
 				return -EPIPE;
 
-			return hub->set_power(wIndex, temp) ? -EPIPE : 0;
+			return hub->set_power(wIndex, hub,
+					temp) ? -EPIPE : 0;
 		case USB_PORT_FEAT_C_OVER_CURRENT:
 			dev_dbg(dev, "%sPortFeature(%u): %s\n",
 				temp ? "Set" : "Clear", wIndex,
@@ -349,7 +350,7 @@ static int usb_hcd_da8xx_probe(const struct hc_driver *driver,
 		goto err4;
 
 	if (hub->ocic_notify) {
-		error = hub->ocic_notify(ohci_da8xx_ocic_handler);
+		error = hub->ocic_notify(ohci_da8xx_ocic_handler, hub);
 		if (!error)
 			return 0;
 	}
@@ -382,7 +383,7 @@ usb_hcd_da8xx_remove(struct usb_hcd *hcd, struct platform_device *pdev)
 {
 	struct da8xx_ohci_root_hub *hub	= pdev->dev.platform_data;
 
-	hub->ocic_notify(NULL);
+	hub->ocic_notify(NULL, NULL);
 	usb_remove_hcd(hcd);
 	iounmap(hcd->regs);
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
