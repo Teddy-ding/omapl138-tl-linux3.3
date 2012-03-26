@@ -34,6 +34,7 @@
 #include <linux/delay.h>
 #include <linux/wl12xx.h>
 #include <linux/pwm_backlight.h>
+#include <linux/i2c-gpio.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -804,11 +805,6 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	},
 };
 
-static struct davinci_i2c_platform_data da850_evm_i2c_0_pdata = {
-	.bus_freq	= 100,	/* kHz */
-	.bus_delay	= 0,	/* usec */
-};
-
 /*
  * USB1 VBUS is controlled by GPIO2[4], over-current is reported on GPIO6[13].
  */
@@ -1408,6 +1404,20 @@ static __init int da850_wl12xx_init(void)
 
 #endif /* CONFIG_DA850_WL12XX */
 
+static struct i2c_gpio_platform_data da850_gpio_i2c_pdata = {
+	.sda_pin	= GPIO_TO_PIN(1, 4),
+	.scl_pin	= GPIO_TO_PIN(1, 5),
+	.udelay		= 2,			/* 250 KHz */
+};
+
+static struct platform_device da850_gpio_i2c = {
+	.name		= "i2c-gpio",
+	.id		= 1,
+	.dev		= {
+		.platform_data	= &da850_gpio_i2c_pdata,
+	},
+};
+
 #define DA850EVM_SATA_REFCLKPN_RATE	(100 * 1000 * 1000)
 
 static __init void da850_evm_init(void)
@@ -1433,11 +1443,7 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init: i2c0 mux setup failed: %d\n",
 				ret);
 
-	ret = da8xx_register_i2c(0, &da850_evm_i2c_0_pdata);
-	if (ret)
-		pr_warning("da850_evm_init: i2c0 registration failed: %d\n",
-				ret);
-
+	platform_device_register(&da850_gpio_i2c);
 
 	ret = da8xx_register_watchdog();
 	if (ret)

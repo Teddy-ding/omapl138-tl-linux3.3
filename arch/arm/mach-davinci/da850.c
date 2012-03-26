@@ -593,6 +593,8 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850, GPIO6_9,		13,	24,	15,	8,	false)
 	MUX_CFG(DA850, GPIO6_10,	13,	20,	15,	8,	false)
 	MUX_CFG(DA850, GPIO6_13,	13,	8,	15,	8,	false)
+	MUX_CFG(DA850, GPIO1_4,		4,	12,	15,	8,	false)
+	MUX_CFG(DA850, GPIO1_5,		4,	8,	15,	8,	false)
 	MUX_CFG(DA850, RTC_ALARM,	0,	28,	15,	2,	false)
 	/* eHRPWM0 function */
 	MUX_CFG(DA850,	EHRPWM0_A,	3,	0,	15,	2,	false)
@@ -612,7 +614,7 @@ static const struct mux_config da850_pins[] = {
 };
 
 const short da850_i2c0_pins[] __initdata = {
-	DA850_I2C0_SDA, DA850_I2C0_SCL,
+	DA850_GPIO1_4, DA850_GPIO1_5,
 	-1
 };
 
