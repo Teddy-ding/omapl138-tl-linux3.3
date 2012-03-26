@@ -97,6 +97,7 @@ int __init davinci_serial_init(struct davinci_uart_config *info)
 
 		clk_enable(uart_clk);
 		p->uartclk = clk_get_rate(uart_clk);
+		p->clk = uart_clk;
 
 		if (!p->membase && p->mapbase) {
 			p->membase = ioremap(p->mapbase, SZ_4K);
