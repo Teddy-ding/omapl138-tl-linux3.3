@@ -36,6 +36,7 @@
 #include <linux/wl12xx.h>
 #include <linux/pwm_backlight.h>
 #include <linux/i2c-gpio.h>
+#include <linux/videodev2.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -47,6 +48,8 @@
 #include <linux/mfd/davinci_aemif.h>
 #include <mach/spi.h>
 #include <mach/usb.h>
+#include <media/tvp514x.h>
+#include <media/davinci/vpif_types.h>
 
 #define DA850_EVM_PHY_ID		"davinci_mdio-0:00"
 #define DA850_LCD_PWR_PIN		GPIO_TO_PIN(2, 8)
@@ -139,6 +142,12 @@ static struct spi_board_info da850evm_spi_info[] = {
 		.chip_select		= 0,
 	},
 };
+
+#define TVP5147_CH0		"tvp514x-0"
+#define TVP5147_CH1		"tvp514x-1"
+
+#define VPIF_STATUS		0x002c
+#define VPIF_STATUS_CLR		0x0030
 
 #ifdef CONFIG_MTD
 static void da850_evm_m25p80_notify_add(struct mtd_info *mtd)
@@ -526,6 +535,15 @@ static inline void da850_evm_setup_char_lcd(int a, int b, int c)
 static inline void da850_evm_setup_char_lcd(int a, int b, int c) { }
 #endif
 
+#ifdef CONFIG_DA850_UI_SD_VIDEO_PORT
+static inline void da850_evm_setup_video_port(int video_sel)
+{
+	gpio_set_value_cansleep(video_sel, 0);
+}
+#else
+static inline void da850_evm_setup_video_port(int video_sel) { }
+#endif
+
 static int da850_evm_ui_expander_setup(struct i2c_client *client, unsigned gpio,
 						unsigned ngpio, void *c)
 {
@@ -572,6 +590,8 @@ static int da850_evm_ui_expander_setup(struct i2c_client *client, unsigned gpio,
 	da850_evm_setup_emac_rmii(sel_a);
 
 	da850_evm_setup_char_lcd(sel_a, sel_b, sel_c);
+
+	da850_evm_setup_video_port(sel_c);
 
 	return 0;
 
@@ -1136,6 +1156,9 @@ static struct i2c_board_info __initdata da850_evm_tps65070_info[] = {
 		I2C_BOARD_INFO("tps6507x", 0x48),
 		.platform_data = &tps_board,
 	},
+	{
+		I2C_BOARD_INFO("cdce913", 0x65),
+	},
 };
 
 static int __init pmic_tps65070_init(void)
@@ -1301,6 +1324,168 @@ static __init int da850_evm_init_cpufreq(void) { return 0; }
 #define HAS_UART1_AFE 1
 #else
 #define HAS_UART1_AFE 0
+#endif
+
+/* Retaining these APIs, since the VPIF drivers do not check NULL handlers */
+static int da850_set_vpif_clock(int mux_mode, int hd)
+{
+	return 0;
+}
+
+static int da850_setup_vpif_input_channel_mode(int mux_mode)
+{
+	return 0;
+}
+
+int da850_vpif_setup_input_path(int ch, const char *name)
+{
+	return 0;
+}
+
+static int da850_vpif_intr_status(void __iomem *vpif_base, int channel)
+{
+	int status = 0;
+	int mask;
+
+	if (channel < 0 || channel > 3)
+		return 0;
+
+	mask = 1 << channel;
+	status = __raw_readl((vpif_base + VPIF_STATUS)) & mask;
+	__raw_writel(status, (vpif_base + VPIF_STATUS_CLR));
+
+	return status;
+}
+
+#if defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
+/* VPIF capture configuration */
+static struct tvp514x_platform_data tvp5146_pdata = {
+	.clk_polarity = 0,
+	.hs_polarity = 1,
+	.vs_polarity = 1
+};
+#endif
+
+#define TVP514X_STD_ALL (V4L2_STD_NTSC | V4L2_STD_PAL)
+
+static struct vpif_subdev_info da850_vpif_capture_sdev_info[] = {
+#if defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
+	{
+		.name	= TVP5147_CH0,
+		.board_info = {
+			I2C_BOARD_INFO("tvp5146", 0x5d),
+			.platform_data = &tvp5146_pdata,
+		},
+		.input = INPUT_CVBS_VI2B,
+		.output = OUTPUT_10BIT_422_EMBEDDED_SYNC,
+		.can_route = 1,
+		.vpif_if = {
+			.if_type = VPIF_IF_BT656,
+			.hd_pol = 1,
+			.vd_pol = 1,
+			.fid_pol = 0,
+		},
+	},
+	{
+		.name	= TVP5147_CH1,
+		.board_info = {
+			I2C_BOARD_INFO("tvp5146", 0x5c),
+			.platform_data = &tvp5146_pdata,
+		},
+		.input = INPUT_SVIDEO_VI2C_VI1C,
+		.output = OUTPUT_10BIT_422_EMBEDDED_SYNC,
+		.can_route = 1,
+		.vpif_if = {
+			.if_type = VPIF_IF_BT656,
+			.hd_pol = 1,
+			.vd_pol = 1,
+			.fid_pol = 0,
+		},
+	},
+#endif
+};
+
+static const struct vpif_input da850_ch0_inputs[] = {
+	{
+		.input = {
+			.index = 0,
+			.name = "Composite",
+			.type = V4L2_INPUT_TYPE_CAMERA,
+			.std = TVP514X_STD_ALL,
+		},
+		.subdev_name = TVP5147_CH0,
+	},
+};
+
+static const struct vpif_input da850_ch1_inputs[] = {
+	{
+		.input = {
+			.index = 0,
+			.name = "S-Video",
+			.type = V4L2_INPUT_TYPE_CAMERA,
+			.std = TVP514X_STD_ALL,
+		},
+		.subdev_name = TVP5147_CH1,
+	},
+};
+
+static struct vpif_capture_config da850_vpif_capture_config = {
+	.setup_input_channel_mode = da850_setup_vpif_input_channel_mode,
+	.setup_input_path = da850_vpif_setup_input_path,
+	.intr_status = da850_vpif_intr_status,
+	.subdev_info = da850_vpif_capture_sdev_info,
+	.subdev_count = ARRAY_SIZE(da850_vpif_capture_sdev_info),
+#if defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
+	.chan_config[0] = {
+		.inputs = da850_ch0_inputs,
+		.input_count = ARRAY_SIZE(da850_ch0_inputs),
+	},
+	.chan_config[1] = {
+		.inputs = da850_ch1_inputs,
+		.input_count = ARRAY_SIZE(da850_ch1_inputs),
+	},
+#endif
+	.card_name      = "DA850/OMAP-L138 Video Capture",
+};
+
+/* VPIF display configuration */
+static struct vpif_subdev_info da850_vpif_subdev[] = {
+	{
+		.name	= "adv7343",
+		.board_info = {
+			I2C_BOARD_INFO("adv7343", 0x2a),
+		},
+	},
+};
+
+static const char *vpif_output[] = {
+	"Composite",
+	"Component",
+	"S-Video",
+};
+
+static struct vpif_display_config da850_vpif_display_config = {
+	.set_clock	= da850_set_vpif_clock,
+	.intr_status	= da850_vpif_intr_status,
+	.subdevinfo	= da850_vpif_subdev,
+	.subdev_count	= ARRAY_SIZE(da850_vpif_subdev),
+	.output		= vpif_output,
+	.output_count	= ARRAY_SIZE(vpif_output),
+	.card_name	= "DA850/OMAP-L138 Video Display",
+};
+
+#if defined(CONFIG_VIDEO_DAVINCI_VPIF_DISPLAY) ||\
+		defined(CONFIG_VIDEO_DAVINCI_VPIF_DISPLAY_MODULE)
+#define HAS_VPIF_DISPLAY 1
+#else
+#define HAS_VPIF_DISPLAY 0
+#endif
+
+#if defined(CONFIG_VIDEO_DAVINCI_VPIF_CAPTURE) ||\
+		defined(CONFIG_VIDEO_DAVINCI_VPIF_CAPTURE_MODULE)
+#define HAS_VPIF_CAPTURE 1
+#else
+#define HAS_VPIF_CAPTURE 0
 #endif
 
 #ifdef CONFIG_DA850_WL12XX
@@ -1575,6 +1760,37 @@ static __init void da850_evm_init(void)
 	if (ret)
 		pr_warning("da850_evm_init: suspend registration failed: %d\n",
 				ret);
+
+	if (HAS_VPIF_DISPLAY || HAS_VPIF_CAPTURE) {
+		ret = da850_register_vpif();
+		if (ret)
+			pr_warning("da850_evm_init: VPIF setup failed: %d\n",
+				   ret);
+	}
+
+	if (HAS_VPIF_CAPTURE) {
+		ret = davinci_cfg_reg_list(da850_vpif_capture_pins);
+		if (ret)
+			pr_warning("da850_evm_init: VPIF capture mux failed:"
+					"%d\n", ret);
+
+		ret = da850_register_vpif_capture(&da850_vpif_capture_config);
+		if (ret)
+			pr_warning("da850_evm_init: VPIF capture setup failed:"
+					"%d\n", ret);
+	}
+
+	if (HAS_VPIF_DISPLAY) {
+		ret = davinci_cfg_reg_list(da850_vpif_display_pins);
+		if (ret)
+			pr_warning("da850_evm_init : VPIF capture mux failed :"
+					"%d\n", ret);
+
+		ret = da850_register_vpif_display(&da850_vpif_display_config);
+		if (ret)
+			pr_warning("da850_evm_init: VPIF display setup failed:"
+					"%d\n", ret);
+	}
 
 	ret = da8xx_register_spi(1, da850evm_spi_info,
 				 ARRAY_SIZE(da850evm_spi_info));
