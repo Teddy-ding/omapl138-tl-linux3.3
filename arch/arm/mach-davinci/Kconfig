@@ -216,6 +216,14 @@ config DA850_UI_SD_VIDEO_PORT
 	  NOTE: Please make sure to disable RMII and CLCD options when you
 	  select Video Port Interface.
 
+config DA850_UI_CAMERA
+	bool "CAMERA"
+	help
+	  Say Y if you want to use camera interface on the DA850/OMAP-L138 EVM.
+	  Camera can be mounted on the UI daughter card.
+	  NOTE: Please make sure to disable RMII, CLCD and VIDEO_PORT options
+	  when you select Video Port Interface.
+
 endchoice
 
 config DA850_FIX_PLL0_SYSCLK3RATE

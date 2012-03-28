@@ -37,6 +37,7 @@
 #include <linux/pwm_backlight.h>
 #include <linux/i2c-gpio.h>
 #include <linux/videodev2.h>
+#include <linux/module.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -411,6 +412,16 @@ static const short da850_evm_nor_pins[] = {
 #define HAS_ECAP_CAP 0
 #endif
 
+/* have_imager() - Check if we have support for imager interface */
+static inline int have_imager(void)
+{
+#if defined(CONFIG_DA850_UI_CAMERA)
+	return 1;
+#else
+	return 0;
+#endif
+}
+
 static inline void da850_evm_setup_nor_nand(void)
 {
 	int ret = 0;
@@ -544,6 +555,15 @@ static inline void da850_evm_setup_video_port(int video_sel)
 static inline void da850_evm_setup_video_port(int video_sel) { }
 #endif
 
+#ifdef CONFIG_DA850_UI_CAMERA
+static inline void da850_evm_setup_camera(int camera_sel)
+{
+	gpio_set_value_cansleep(camera_sel, 0);
+}
+#else
+static inline void da850_evm_setup_camera(int camera_sel) { }
+#endif
+
 static int da850_evm_ui_expander_setup(struct i2c_client *client, unsigned gpio,
 						unsigned ngpio, void *c)
 {
@@ -592,6 +612,8 @@ static int da850_evm_ui_expander_setup(struct i2c_client *client, unsigned gpio,
 	da850_evm_setup_char_lcd(sel_a, sel_b, sel_c);
 
 	da850_evm_setup_video_port(sel_c);
+
+	da850_evm_setup_camera(sel_b);
 
 	return 0;
 
@@ -823,6 +845,12 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	{
 		I2C_BOARD_INFO("tca6416", 0x21),
 		.platform_data = &da850_evm_bb_expander_info,
+	},
+	{
+		I2C_BOARD_INFO("cdce913", 0x65),
+	},
+	{
+		I2C_BOARD_INFO("PCA9543A", 0x73),
 	},
 };
 
@@ -1156,9 +1184,6 @@ static struct i2c_board_info __initdata da850_evm_tps65070_info[] = {
 		I2C_BOARD_INFO("tps6507x", 0x48),
 		.platform_data = &tps_board,
 	},
-	{
-		I2C_BOARD_INFO("cdce913", 0x65),
-	},
 };
 
 static int __init pmic_tps65070_init(void)
@@ -1171,6 +1196,63 @@ static const short da850_evm_lcdc_pins[] = {
 	DA850_GPIO2_8, DA850_GPIO2_15,
 	-1
 };
+
+static struct i2c_client *pca9543a;
+
+static int pca9543a_probe(struct i2c_client *client,
+		const struct i2c_device_id *id)
+{
+	pr_info("pca9543a_probe");
+	pca9543a = client;
+	return 0;
+}
+
+static int pca9543a_remove(struct i2c_client *client)
+{
+	pca9543a = NULL;
+	return 0;
+}
+
+static const struct i2c_device_id pca9543a_ids[] = {
+	{ "PCA9543A", 0, },
+	{ /* end of list */ },
+};
+
+/* This is for i2c driver for the MT9T031 header i2c switch */
+static struct i2c_driver pca9543a_driver = {
+	.driver.name	= "PCA9543A",
+	.id_table	= pca9543a_ids,
+	.probe		= pca9543a_probe,
+	.remove		= pca9543a_remove,
+};
+
+/**
+ * da850_enable_pca9543a() - Enable/Disable I2C switch PCA9543A for sensor
+ * @en: enable/disable flag
+ */
+static int da850_enable_pca9543a(int en)
+{
+	static char val = 1;
+	int status;
+	struct i2c_msg msg = {
+			.flags = 0,
+			.len = 1,
+			.buf = &val,
+		};
+
+	pr_info("da850evm_enable_pca9543a\n");
+	if (!en)
+		val = 0;
+
+	if (!pca9543a)
+		return -ENXIO;
+
+	msg.addr = pca9543a->addr;
+	/* turn i2c switch, pca9543a, on/off */
+	status = i2c_transfer(pca9543a->adapter, &msg, 1);
+	pr_info("da850evm_enable_pca9543a, status = %d\n", status);
+	return status;
+}
 
 static const short da850_evm_mii_pins[] = {
 	DA850_MII_TXEN, DA850_MII_TXCLK, DA850_MII_COL, DA850_MII_TXD_3,
@@ -1248,6 +1330,18 @@ static int __init da850_evm_config_emac(void)
 	return 0;
 }
 device_initcall(da850_evm_config_emac);
+
+static const struct vpif_input da850_ch2_inputs[] = {
+		{
+		.input = {
+			.index = 0,
+			.name = "Camera",
+			.type = V4L2_INPUT_TYPE_CAMERA,
+			.std = V4L2_STD_BAYER_ALL
+		},
+		.subdev_name = "mt9t031",
+	},
+};
 
 /*
  * The following EDMA channels/slots are not being used by drivers (for
@@ -1339,7 +1433,12 @@ static int da850_setup_vpif_input_channel_mode(int mux_mode)
 
 int da850_vpif_setup_input_path(int ch, const char *name)
 {
-	return 0;
+	int ret = 1;
+
+	 if (!strcmp(name, "mt9t031") && have_imager())
+		ret = da850_enable_pca9543a(1);
+
+	return ret;
 }
 
 static int da850_vpif_intr_status(void __iomem *vpif_base, int channel)
@@ -1369,7 +1468,21 @@ static struct tvp514x_platform_data tvp5146_pdata = {
 #define TVP514X_STD_ALL (V4L2_STD_NTSC | V4L2_STD_PAL)
 
 static struct vpif_subdev_info da850_vpif_capture_sdev_info[] = {
-#if defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
+#if defined(CONFIG_DA850_UI_CAMERA)
+	{
+		.name	= "mt9t031",
+		.board_info = {
+			I2C_BOARD_INFO("mt9t031", 0x5d),
+			.platform_data = (void *)1,
+		},
+		.vpif_if = {
+			.if_type = VPIF_IF_RAW_BAYER,
+			.hd_pol = 0,
+			.vd_pol = 0,
+			.fid_pol = 0,
+		},
+	},
+#elif defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
 	{
 		.name	= TVP5147_CH0,
 		.board_info = {
@@ -1443,6 +1556,11 @@ static struct vpif_capture_config da850_vpif_capture_config = {
 	.chan_config[1] = {
 		.inputs = da850_ch1_inputs,
 		.input_count = ARRAY_SIZE(da850_ch1_inputs),
+	},
+#elif defined(CONFIG_DA850_UI_CAMERA)
+	.chan_config[0] = {
+		.inputs = da850_ch2_inputs,
+		.input_count = ARRAY_SIZE(da850_ch2_inputs),
 	},
 #endif
 	.card_name      = "DA850/OMAP-L138 Video Capture",
@@ -1695,6 +1813,9 @@ static __init void da850_evm_init(void)
 	}
 
 	davinci_serial_init(&da850_evm_uart_config);
+
+	if (have_imager())
+		i2c_add_driver(&pca9543a_driver);
 
 	i2c_register_board_info(1, da850_evm_i2c_devices,
 			ARRAY_SIZE(da850_evm_i2c_devices));
