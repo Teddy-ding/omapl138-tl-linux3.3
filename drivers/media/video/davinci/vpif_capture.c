@@ -1587,8 +1587,10 @@ static int vpif_s_fmt_vid_cap(struct file *file, void *priv,
 {
 	struct vpif_fh *fh = priv;
 	struct channel_obj *ch = fh->channel;
+	struct vpif_params *vpifparams = &ch->vpifparams;
 	struct common_obj *common = &ch->common[VPIF_VIDEO_INDEX];
 	struct v4l2_pix_format *pixfmt;
+	struct v4l2_mbus_framefmt mf;
 	int ret = 0;
 
 	vpif_dbg(2, debug, "%s\n", __func__);
@@ -1619,6 +1621,19 @@ static int vpif_s_fmt_vid_cap(struct file *file, void *priv,
 
 	if (ret)
 		return ret;
+
+	if (vpifparams->iface.if_type == VPIF_IF_RAW_BAYER) {
+		mf.width = fmt->fmt.pix.width;
+		mf.height = fmt->fmt.pix.height;
+		ret = v4l2_subdev_call(vpif_obj.sd[ch->curr_sd_index],
+				video, s_mbus_fmt, &mf);
+		if (ret)
+			return ret;
+		pixfmt->pixelformat = V4L2_PIX_FMT_SBGGR8;
+	} else {
+		pixfmt->pixelformat = V4L2_PIX_FMT_YUV422P;
+	}
+
 	/* store the format in the channel object */
 	common->fmt = *fmt;
 	return 0;
@@ -2247,6 +2262,16 @@ static __init int vpif_probe(struct platform_device *pdev)
 
 	for (i = 0; i < subdev_count; i++) {
 		subdevdata = &config->subdev_info[i];
+		if (config->setup_input_path) {
+			if (config->setup_input_path(ch->channel_id,
+					subdevdata->name) != 1) {
+				err = -EFAULT;
+				v4l2_info(vpif_dev->driver,
+					"could not setup input for %s\n",
+					subdevdata->name);
+				goto probe_subdev_out;
+			}
+		}
 		vpif_obj.sd[i] =
 			v4l2_i2c_new_subdev_board(&vpif_obj.v4l2_dev,
 						  i2c_adap,
