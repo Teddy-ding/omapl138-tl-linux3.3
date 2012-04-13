@@ -826,6 +826,16 @@ typedef __u64 v4l2_std_id;
 #define V4L2_STD_ATSC_8_VSB     ((v4l2_std_id)0x01000000)
 #define V4L2_STD_ATSC_16_VSB    ((v4l2_std_id)0x02000000)
 
+/* MT9T031 camera std_id's */
+#define V4L2_STD_BAYER_640      ((v4l2_std_id)(0x0100000000000000ULL))
+#define V4L2_STD_BAYER_1024     ((v4l2_std_id)(0x0200000000000000ULL))
+#define V4L2_STD_BAYER_1280     ((v4l2_std_id)(0x0400000000000000ULL))
+#define V4L2_STD_BAYER_1600     ((v4l2_std_id)(0x0800000000000000ULL))
+#define V4L2_STD_BAYER_2048     ((v4l2_std_id)(0x1000000000000000ULL))
+#define V4L2_STD_BAYER_ALL      (V4L2_STD_BAYER_640 | V4L2_STD_BAYER_1024 |\
+				V4L2_STD_BAYER_1280 | V4L2_STD_BAYER_1600 |\
+				V4L2_STD_BAYER_2048)
+
 /* FIXME:
    Although std_id is 64 bits, there is an issue on PPC32 architecture that
    makes switch(__u64) to break. So, there's a hack on v4l2-common.c rounding
