@@ -299,6 +299,7 @@ static void process_interlaced_mode(int fid, struct common_obj *common)
  */
 static irqreturn_t vpif_channel_isr(int irq, void *dev_id)
 {
+	struct vpif_display_config *config = vpif_dev->platform_data;
 	struct vpif_device *dev = &vpif_obj;
 	struct channel_obj *ch;
 	struct common_obj *common;
@@ -307,6 +308,10 @@ static irqreturn_t vpif_channel_isr(int irq, void *dev_id)
 	int channel_id = 0;
 
 	channel_id = *(int *)(dev_id);
+	if (!config->intr_status ||
+		!config->intr_status(vpif_base, channel_id + 2))
+		return IRQ_NONE;
+
 	ch = dev->dev[channel_id];
 	field = ch->common[VPIF_VIDEO_INDEX].fmt.fmt.pix.field;
 	for (i = 0; i < VPIF_NUMOBJECTS; i++) {
