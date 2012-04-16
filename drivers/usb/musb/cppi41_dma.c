@@ -131,7 +131,10 @@ struct cppi41 {
 	u32 teardown_reg_offs;		/* USB_TEARDOWN_REG offset */
 	u32 bd_size;
 	u8  inf_mode;
+	u8  txfifo_intr_enable;		/* txfifo empty interrupt logic */
 };
+struct usb_cppi41_info usb_cppi41_info[2];
+EXPORT_SYMBOL(usb_cppi41_info);
 
 #ifdef DEBUG_CPPI_TD
 static void print_pd_list(struct usb_pkt_desc *pd_pool_head)
@@ -1342,9 +1345,10 @@ cppi41_dma_controller_create(struct musb  *musb, void __iomem *mregs)
 	cppi->controller.channel_release = cppi41_channel_release;
 	cppi->controller.channel_program = cppi41_channel_program;
 	cppi->controller.channel_abort = cppi41_channel_abort;
-	cppi->cppi_info = (struct usb_cppi41_info *)&usb_cppi41_info[musb->id];;
+	cppi->cppi_info = (struct usb_cppi41_info *)&usb_cppi41_info[0];;
 	cppi->en_bd_intr = cppi->cppi_info->bd_intr_ctrl;
 	INIT_WORK(&cppi->txdma_work, txdma_completion_work);
+	cppi->inf_mode = 1;
 
 	return &cppi->controller;
 }
@@ -1496,7 +1500,9 @@ static void usb_process_rx_queue(struct cppi41 *cppi, unsigned index)
 		if (unlikely(rx_ch->channel.actual_len >= rx_ch->length ||
 			     length < orig_buf_len)) {
 
-#if defined(CONFIG_SOC_OMAPTI81XX) || defined(CONFIG_SOC_OMAPAM33XX)
+#if defined(CONFIG_SOC_OMAPTI81XX) || defined(CONFIG_SOC_OMAPAM33XX) ||\
+			defined(CONFIG_ARCH_DAVINCI_DA850)
+
 			struct musb_hw_ep *ep;
 			u8 isoc, next_seg = 0;
 

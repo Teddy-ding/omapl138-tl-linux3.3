@@ -2376,7 +2376,7 @@ static int musb_bus_suspend(struct usb_hcd *hcd)
 		return 0;
 	}
 
-	if (!is_host_active(musb))
+	if (!is_host_enabled(musb))
 		return 0;
 
 	switch (musb->xceiv->state) {

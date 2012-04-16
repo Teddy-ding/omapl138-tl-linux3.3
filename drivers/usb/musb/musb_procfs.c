@@ -210,7 +210,7 @@ dump_end_info(struct musb *musb, u8 epnum, char *aBuffer, unsigned max)
 
 	do {
 		musb_ep_select(musb, musb->mregs, epnum);
-		if (is_host_active(musb)) {
+		if (is_host_enabled(musb)) {
 			int		dump_rx, dump_tx;
 			void __iomem	*regs = hw_ep->regs;
 
@@ -418,7 +418,7 @@ dump_end_info(struct musb *musb, u8 epnum, char *aBuffer, unsigned max)
 				}
 			}
 		}
-		if (is_peripheral_active(musb)) {
+		if (is_peripheral_enabled(musb)) {
 			code = 0;
 
 			if (hw_ep->ep_in.desc || !epnum) {

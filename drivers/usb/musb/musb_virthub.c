@@ -50,7 +50,7 @@ static void musb_port_suspend(struct musb *musb, bool do_suspend)
 	u8		power;
 	void __iomem	*mbase = musb->mregs;
 
-	if (!is_host_active(musb))
+	if (!is_host_enabled(musb))
 		return;
 
 	/* NOTE:  this doesn't necessarily put PHY into low power mode,
@@ -120,7 +120,7 @@ static void musb_port_reset(struct musb *musb, bool do_reset)
 		return;
 	}
 
-	if (!is_host_active(musb))
+	if (!is_host_enabled(musb))
 		return;
 
 	/* NOTE:  caller guarantees it will turn off the reset when
@@ -367,7 +367,7 @@ int musb_hub_control(
 			musb_port_suspend(musb, true);
 			break;
 		case USB_PORT_FEAT_TEST:
-			if (unlikely(is_host_active(musb)))
+			if (unlikely(is_host_enabled(musb)))
 				goto error;
 
 			wIndex >>= 8;

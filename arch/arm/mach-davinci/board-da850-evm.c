@@ -865,11 +865,7 @@ static __init void da850_evm_usb_init(void)
 	 * Otherwise, we want to use the OTG mode and enable VBUS comparators.
 	 */
 	cfgchip2 &= ~CFGCHIP2_OTGMODE;
-#ifdef CONFIG_USB_MUSB_HOST
-	cfgchip2 |=  CFGCHIP2_FORCE_HOST;
-#else
 	cfgchip2 |=  CFGCHIP2_SESENDEN | CFGCHIP2_VBDTCTEN;
-#endif
 
 	__raw_writel(cfgchip2, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
 
