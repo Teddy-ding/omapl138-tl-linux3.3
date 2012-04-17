@@ -159,6 +159,11 @@ int __devinit cppi41_init(struct musb *musb)
 	cppi_info->num_rx_comp_q = 2;
 	cppi_info->tx_comp_q = tx_comp_q;
 	cppi_info->rx_comp_q = rx_comp_q;
+#ifdef CONFIG_USB_TI_CPPI41_IN_TRANSPARENT
+	cppi_info->use_grndis_for_host_rx  = 0;
+#else
+	cppi_info->use_grndis_for_host_rx  = 1;
+#endif
 	//cppi_info->bd_intr_ctrl = 0; /* am35x dont support bd interrupt */
 
 	blknum = cppi_info->dma_block;

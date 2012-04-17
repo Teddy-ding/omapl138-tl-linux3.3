@@ -179,6 +179,16 @@ config USB_TI_CPPI41_DMA
 	bool
 	default n
 
+config USB_TI_CPPI41_IN_TRANSPARENT
+	depends on USB_TI_CPPI41_DMA
+	bool "Use CPPI4.1 DMA transparent mode for all host Rx transfers"
+	default n
+	help
+	 Enable transparent mode dma for all host rx transfers. Select this
+	 if you see Rx request lock up (no IN token on the bus) when your
+	 device uses or use case involves, control transfer while
+	 CPPI4.1 DMA is doing data transfer.
+
 config USB_TUSB_OMAP_DMA
 	bool
 	default n
