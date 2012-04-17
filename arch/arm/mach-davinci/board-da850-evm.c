@@ -13,6 +13,7 @@
  */
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/clk.h>
 #include <linux/console.h>
 #include <linux/i2c.h>
 #include <linux/i2c/at24.h>
@@ -1414,6 +1415,17 @@ static struct platform_device da850_gpio_i2c = {
 	},
 };
 
+static __init int da850_set_emif_clk_rate(void)
+{
+	struct clk *emif_clk;
+
+	emif_clk = clk_get(NULL, "pll0_sysclk3");
+	if (WARN(IS_ERR(emif_clk), "Unable to get emif clock\n"))
+		return PTR_ERR(emif_clk);
+
+	return clk_set_rate(emif_clk, CONFIG_DA850_FIX_PLL0_SYSCLK3RATE);
+}
+
 #define DA850EVM_SATA_REFCLKPN_RATE	(100 * 1000 * 1000)
 
 static __init void da850_evm_init(void)
@@ -1427,6 +1439,16 @@ static __init void da850_evm_init(void)
 	ret = pmic_tps65070_init();
 	if (ret)
 		pr_warning("da850_evm_init: TPS65070 PMIC init failed: %d\n",
+				ret);
+
+	/*
+	 * Though bootloader takes care to set emif clock at allowed
+	 * possible rate. Kernel needs to reconfigure this rate to
+	 * support platforms requiring fixed emif clock rate.
+	 */
+	ret = da850_set_emif_clk_rate();
+	if (ret)
+		pr_warning("da850_evm_init: Failed to set rate of pll0_sysclk3/emif clock: %d\n",
 				ret);
 
 	ret = da850_register_edma(da850_edma_rsv);

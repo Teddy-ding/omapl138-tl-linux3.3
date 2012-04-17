@@ -51,6 +51,7 @@
 static int da850_set_armrate(struct clk *clk, unsigned long rate);
 static int da850_round_armrate(struct clk *clk, unsigned long rate);
 static int da850_set_pll0rate(struct clk *clk, unsigned long armrate);
+static int da850_set_pll0sysclk3_rate(struct clk *clk, unsigned long rate);
 
 static struct pll_data pll0_data = {
 	.num		= 1,
@@ -90,8 +91,8 @@ static struct clk pll0_sysclk3 = {
 	.parent		= &pll0_clk,
 	.flags		= CLK_PLL,
 	.div_reg	= PLLDIV3,
-	.set_rate	= davinci_set_sysclk_rate,
-	.maxrate	= 100000000,
+	.set_rate	= da850_set_pll0sysclk3_rate,
+	.maxrate	= 148000000,
 };
 
 static struct clk pll0_sysclk4 = {
@@ -847,6 +848,36 @@ static void da850_set_async3_src(int pllnum)
 	__raw_writel(v, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
 }
 
+static int da850_set_pll0sysclk3_rate(struct clk *clk, unsigned long rate)
+{
+	struct clk *arm_clk;
+	unsigned long sys_clk3_rate = 148000000;
+	int ret;
+
+	arm_clk = clk_get(NULL, "arm");
+	if (WARN(IS_ERR(arm_clk), "Unable to get ARM clock\n"))
+		return PTR_ERR(arm_clk);
+
+	/* Set EMIF clock based on OPPs */
+	switch (clk_get_rate(arm_clk)) {
+	case 200000000:
+		sys_clk3_rate = 75000000;
+		break;
+	case 96000000:
+		sys_clk3_rate = 50000000;
+		break;
+	}
+
+	if (rate)
+		sys_clk3_rate = min(sys_clk3_rate, rate);
+
+	ret = davinci_set_sysclk_rate(clk, sys_clk3_rate);
+	if (WARN_ON(ret))
+		return ret;
+
+	return 0;
+}
+
 #ifdef CONFIG_CPU_FREQ
 /*
  * Notes:
@@ -948,6 +979,7 @@ static struct davinci_cpufreq_config cpufreq_info = {
 	.init = da850_regulator_init,
 	.set_voltage = da850_set_voltage,
 #endif
+	.emif_rate = CONFIG_DA850_FIX_PLL0_SYSCLK3RATE,
 };
 
 #ifdef CONFIG_REGULATOR

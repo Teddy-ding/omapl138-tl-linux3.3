@@ -201,6 +201,15 @@ config DA850_UI_CLCD
 
 endchoice
 
+config DA850_FIX_PLL0_SYSCLK3RATE
+	int "PLL0_SYSCLK3 rate"
+	depends on ARCH_DAVINCI_DA850
+	range 0 148000000
+	default 0
+	help
+	  Set this value with desired EMIF clock rate, Otherwise EMIF clock
+          rate is decided based on OPP value.
+
 config DA850_WL12XX
 	bool "AM18x wl1271 daughter board"
 	depends on MACH_DAVINCI_DA850_EVM
