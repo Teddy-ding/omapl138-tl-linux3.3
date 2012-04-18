@@ -47,6 +47,7 @@
 #define CFGCHIP3_ASYNC3_CLKSRC	BIT(4)
 #define CFGCHIP3_PLL1_MASTER_LOCK	BIT(5)
 #define CFGCHIP0_PLL_MASTER_LOCK	BIT(4)
+#define PLLC0_PLL1_SYSCLK3_EXTCLKSRC	BIT(9)
 
 static int da850_set_armrate(struct clk *clk, unsigned long rate);
 static int da850_round_armrate(struct clk *clk, unsigned long rate);
@@ -1009,6 +1010,21 @@ static int da850_regulator_init(void)
 }
 #endif
 
+static void da850_set_pll0_bypass_src(bool pll1_sysclk3)
+{
+	struct clk *clk = &pll0_clk;
+	struct pll_data *pll;
+	unsigned int v;
+
+	pll = clk->pll_data;
+	v = __raw_readl(pll->base + PLLCTL);
+	if (pll1_sysclk3)
+		v |= PLLC0_PLL1_SYSCLK3_EXTCLKSRC;
+	else
+		v &= ~PLLC0_PLL1_SYSCLK3_EXTCLKSRC;
+	__raw_writel(v, pll->base + PLLCTL);
+}
+
 static struct platform_device da850_cpufreq_device = {
 	.name			= "cpufreq-davinci",
 	.dev = {
@@ -1027,6 +1043,10 @@ int __init da850_register_cpufreq(char *async_clk)
 	if (async_clk)
 		clk_add_alias("async", da850_cpufreq_device.name,
 							async_clk, NULL);
+
+	/* Use PLL1_SYSCLK3 for the PLL0 bypass clock */
+	da850_set_pll0_bypass_src(true);
+
 	for (i = 0; i < ARRAY_SIZE(da850_freq_table); i++) {
 		if (da850_freq_table[i].frequency <= da850_max_speed) {
 			cpufreq_info.freq_table = &da850_freq_table[i];
