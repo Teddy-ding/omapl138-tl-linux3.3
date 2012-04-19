@@ -437,6 +437,8 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850, UART0_RXD,	3,	16,	15,	2,	false)
 	MUX_CFG(DA850, UART0_TXD,	3,	20,	15,	2,	false)
 	/* UART1 function */
+	MUX_CFG(DA850, NUART1_CTS,	0,	20,	15,	4,	false)
+	MUX_CFG(DA850, NUART1_RTS,	0,	16,	15,	4,	false)
 	MUX_CFG(DA850, UART1_RXD,	4,	24,	15,	2,	false)
 	MUX_CFG(DA850, UART1_TXD,	4,	28,	15,	2,	false)
 	/* UART2 function */
@@ -642,6 +644,14 @@ const short da850_ehrpwm0_pins[] __initdata = {
 
 const short da850_ehrpwm1_pins[] __initdata = {
 	DA850_EHRPWM1_A, DA850_EHRPWM1_TZ,
+	-1
+};
+
+const short da850_uart1_pins[] __initdata = {
+	DA850_UART1_RXD, DA850_UART1_TXD,
+#ifdef CONFIG_DAVINCI_UART1_AFE
+	DA850_NUART1_CTS, DA850_NUART1_RTS,
+#endif
 	-1
 };
 
