@@ -41,6 +41,8 @@
 #include <linux/cpufreq.h>
 #include <linux/clk.h>
 
+#include <mach/cputype.h>
+
 #include <asm/io.h>
 #include <asm/irq.h>
 
@@ -2619,6 +2621,9 @@ static void serial8250_config_port(struct uart_port *port, int flags)
 		container_of(port, struct uart_8250_port, port);
 	int probeflags = PROBE_ANY;
 	int ret;
+
+	if (cpu_is_davinci_da850())
+		up->bugs |= UART_BUG_NOMSR;
 
 	/*
 	 * Find the region that we can probe for.  This in turn
