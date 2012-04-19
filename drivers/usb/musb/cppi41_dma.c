@@ -132,7 +132,6 @@ struct cppi41 {
 	u32 teardown_reg_offs;		/* USB_TEARDOWN_REG offset */
 	u32 bd_size;
 	u8  inf_mode;
-	u8  txfifo_intr_enable;		/* txfifo empty interrupt logic */
 };
 struct usb_cppi41_info usb_cppi41_info[2];
 EXPORT_SYMBOL(usb_cppi41_info);
@@ -1357,7 +1356,6 @@ cppi41_dma_controller_create(struct musb  *musb, void __iomem *mregs)
 	cppi->cppi_info = (struct usb_cppi41_info *)&usb_cppi41_info[0];;
 	cppi->en_bd_intr = cppi->cppi_info->bd_intr_ctrl;
 	INIT_WORK(&cppi->txdma_work, txdma_completion_work);
-	cppi->inf_mode = 1;
 
 	return &cppi->controller;
 }

@@ -1044,8 +1044,6 @@ static void musb_shutdown(struct platform_device *pdev)
 
 	pm_runtime_get_sync(musb->controller);
 
-	musb_gadget_cleanup(musb);
-
 	spin_lock_irqsave(&musb->lock, flags);
 	musb_platform_disable(musb);
 	musb_generic_disable(musb);

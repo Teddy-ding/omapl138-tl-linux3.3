@@ -77,15 +77,6 @@ extern void (*musb_writeb)(void __iomem *addr, unsigned offset, u8 data);
 #define	is_host_enabled(musb)		((musb)->board_mode != MUSB_PERIPHERAL)
 #define	is_otg_enabled(musb)		((musb)->board_mode == MUSB_OTG)
 
-#if defined(CONFIG_USB_MUSB_OTG) || defined(CONFIG_USB_MUSB_PERIPHERAL)
-/* for some reason, the "select USB_GADGET_MUSB_HDRC" doesn't always
- * override that choice selection (often USB_GADGET_DUMMY_HCD).
- */
-#ifndef CONFIG_USB_GADGET_MUSB_HDRC
-#error bogus Kconfig output ... select CONFIG_USB_GADGET_MUSB_HDRC
-#endif
-#endif	/* need MUSB gadget selection */
-
 /* NOTE:  otg and peripheral-only state machines start at B_IDLE.
  * OTG or host-only go to A_IDLE when ID is sensed.
  */
