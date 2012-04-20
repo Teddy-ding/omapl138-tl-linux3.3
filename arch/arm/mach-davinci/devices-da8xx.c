@@ -280,14 +280,16 @@ static struct platform_device da850_edma_device = {
 
 int __init da830_register_edma(struct edma_rsv_info *rsv)
 {
-	da830_edma_cc0_info.rsv = rsv;
+	/* Reserve channels and slots for DSP */
+	if (!cpu_is_davinci_da8xx_arm_only())	
+		da830_edma_cc0_info.rsv = rsv;
 
 	return platform_device_register(&da830_edma_device);
 }
 
 int __init da850_register_edma(struct edma_rsv_info *rsv[2])
 {
-	if (rsv) {
+	if (rsv && !cpu_is_davinci_da8xx_arm_only()) {
 		da850_edma_cc_info[0].rsv = rsv[0];
 		da850_edma_cc_info[1].rsv = rsv[1];
 	}
