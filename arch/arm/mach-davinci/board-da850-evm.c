@@ -1775,6 +1775,10 @@ static __init int da850_set_emif_clk_rate(void)
 	return clk_set_rate(emif_clk, CONFIG_DA850_FIX_PLL0_SYSCLK3RATE);
 }
 
+struct uio_pruss_pdata da8xx_pruss_uio_pdata = {
+	.pintc_base	= 0x4000,
+};
+
 #define DA850EVM_SATA_REFCLKPN_RATE	(100 * 1000 * 1000)
 
 static __init void da850_evm_init(void)
@@ -1880,6 +1884,11 @@ static __init void da850_evm_init(void)
 
 		da8xx_register_mcasp(0, &da850_evm_snd_data);
 	}
+
+	ret = da8xx_register_pruss_uio(&da8xx_pruss_uio_pdata);
+	if (ret)
+		pr_warning("%s: pruss_uio initialization failed: %d\n",
+				__func__, ret);	
 
 	ret = davinci_cfg_reg_list(da850_lcdcntl_pins);
 	if (ret)
