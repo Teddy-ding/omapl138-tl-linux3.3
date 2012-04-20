@@ -454,6 +454,31 @@ static inline void da850_evm_setup_nor_nand(void)
 
 		da850_evm_init_nor();
 		platform_device_register(&davinci_emif_device);
+	} else {
+		/*
+		 * On Logic PD Rev.3 EVMs GP0[11] pin needs to be configured
+		 * for MMC and NOR to work. When GP0[11] is low, the SD0
+		 * interface will not work, but NOR flash will. When GP0[11]
+		 * is high, SD0 will work but NOR flash will not. By default
+		 * we are assuming that GP0[11] pin is driven high, when UI
+		 * card is not connected. Hence we are not configuring the
+		 * GP0[11] pin when MMC/SD is enabled and UI card is not
+		 * connected. Not configuring the GPIO pin will enable the
+		 * bluetooth to work on AM18x as it requires the GP0[11]
+		 * pin for UART flow control.
+		 */
+		ret = davinci_cfg_reg(DA850_GPIO0_11);
+		if (ret)
+			pr_warning("da850_evm_init:GPIO(0,11) mux setup "
+					"failed\n");
+
+		ret = gpio_request(DA850_SD_ENABLE_PIN, "mmc_sd_en");
+		if (ret)
+			pr_warning("Cannot open GPIO %d\n",
+					DA850_SD_ENABLE_PIN);
+
+		/* Driver GP0[11] high for SD to work */
+		gpio_direction_output(DA850_SD_ENABLE_PIN, 1);
 	}
 }
 
@@ -1799,19 +1824,6 @@ static __init void da850_evm_init(void)
 						" %d\n", ret);
 
 	if (HAS_MMC) {
-		ret = davinci_cfg_reg(DA850_GPIO0_11);
-		if (ret)
-			pr_warning("da850_evm_init:GPIO(0,11) mux setup "
-					"failed\n");
-
-		ret = gpio_request(DA850_SD_ENABLE_PIN, "mmc_sd_en");
-		if (ret)
-		pr_warning("Cannot open GPIO %d\n",
-				DA850_SD_ENABLE_PIN);
-
-		/* Driver GP0[11] high for SD to work */
-		gpio_direction_output(DA850_SD_ENABLE_PIN, 1);
-
 		ret = davinci_cfg_reg_list(da850_evm_mmcsd0_pins);
 		if (ret)
 			pr_warning("da850_evm_init: mmcsd0 mux setup failed:"
