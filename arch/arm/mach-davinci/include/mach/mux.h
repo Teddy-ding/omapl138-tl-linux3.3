@@ -807,7 +807,6 @@ enum davinci_da850_index {
 	DA850_ACLKX,
 	DA850_AFSR,
 	DA850_AFSX,
-	DA850_AHCLKR,
 	DA850_AHCLKX,
 	DA850_AMUTE,
 	DA850_AXR_15,
@@ -930,6 +929,7 @@ enum davinci_da850_index {
 	DA850_GPIO6_13,
 	DA850_GPIO1_4,
 	DA850_GPIO1_5,
+	DA850_GPIO0_11,
 	DA850_RTC_ALARM,
 
 	/* eHRPWM0 function */

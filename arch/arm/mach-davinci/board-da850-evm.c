@@ -64,6 +64,8 @@
 
 #define DA850_MII_MDIO_CLKEN_PIN	GPIO_TO_PIN(2, 6)
 
+#define DA850_SD_ENABLE_PIN		GPIO_TO_PIN(0, 11)
+
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
 #define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
@@ -431,6 +433,19 @@ static inline void da850_evm_setup_nor_nand(void)
 		if (ret)
 			pr_warning("da850_evm_init: nand mux setup failed: "
 					"%d\n", ret);
+
+		ret = davinci_cfg_reg(DA850_GPIO0_11);
+		if (ret)
+			pr_warning("da850_evm_init:GPIO(0,11) mux setup "
+					"failed\n");
+
+		ret = gpio_request(DA850_SD_ENABLE_PIN, "mmc_sd_en");
+		if (ret)
+			pr_warning("Cannot open GPIO %d\n",
+					DA850_SD_ENABLE_PIN);
+
+		/* Driver GP0[11] low for NOR to work */
+		gpio_direction_output(DA850_SD_ENABLE_PIN, 0);
 
 		ret = davinci_cfg_reg_list(da850_evm_nor_pins);
 		if (ret)
@@ -958,7 +973,7 @@ static struct snd_platform_data da850_evm_snd_data = {
 
 static const short da850_evm_mcasp_pins[] __initconst = {
 	DA850_AHCLKX, DA850_ACLKX, DA850_AFSX,
-	DA850_AHCLKR, DA850_ACLKR, DA850_AFSR, DA850_AMUTE,
+	DA850_ACLKR, DA850_AFSR, DA850_AMUTE,
 	DA850_AXR_11, DA850_AXR_12,
 	-1
 };
@@ -1784,6 +1799,19 @@ static __init void da850_evm_init(void)
 						" %d\n", ret);
 
 	if (HAS_MMC) {
+		ret = davinci_cfg_reg(DA850_GPIO0_11);
+		if (ret)
+			pr_warning("da850_evm_init:GPIO(0,11) mux setup "
+					"failed\n");
+
+		ret = gpio_request(DA850_SD_ENABLE_PIN, "mmc_sd_en");
+		if (ret)
+		pr_warning("Cannot open GPIO %d\n",
+				DA850_SD_ENABLE_PIN);
+
+		/* Driver GP0[11] high for SD to work */
+		gpio_direction_output(DA850_SD_ENABLE_PIN, 1);
+
 		ret = davinci_cfg_reg_list(da850_evm_mmcsd0_pins);
 		if (ret)
 			pr_warning("da850_evm_init: mmcsd0 mux setup failed:"
