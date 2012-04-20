@@ -27,6 +27,7 @@
 #include <mach/usb.h>
 #include <mach/pm.h>
 #include <mach/spi.h>
+#include <mach/cputype.h>
 #include <linux/i2c.h>
 #include <linux/videodev2.h>
 #include <media/davinci/vpif_types.h>
@@ -55,6 +56,7 @@ extern unsigned int da850_max_speed;
 #define DA8XX_SYSCFG0_BASE	(IO_PHYS + 0x14000)
 #define DA8XX_SYSCFG0_VIRT(x)	(da8xx_syscfg0_base + (x))
 #define DA8XX_JTAG_ID_REG	0x18
+#define DA8XX_CHIPREV_ID_REG	0x24
 #define DA8XX_CFGCHIP0_REG	0x17c
 #define DA8XX_CFGCHIP1_REG      0x180
 #define DA8XX_CFGCHIP2_REG	0x184
@@ -77,6 +79,16 @@ extern unsigned int da850_max_speed;
 #define DA8XX_ARM_RAM_BASE	0xffff0000
 #define DA8XX_VPIF_BASE		0x01e17000
 #define DA8XX_SHARED_RAM_BASE	0x80000000
+
+static inline int cpu_is_davinci_da8xx_arm_only(void)
+{
+	if (!cpu_is_davinci_da8xx())
+		return 0;
+
+	/* BIT(5) is 0 for ARM only or DSP only devices. */
+	return !(__raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CHIPREV_ID_REG))
+			& BIT(5));
+}
 
 void __init da830_init(void);
 void __init da850_init(void);
