@@ -29,6 +29,7 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_bitbang.h>
 #include <linux/slab.h>
+#include <linux/cpufreq.h>
 
 #include <mach/spi.h>
 #include <mach/edma.h>
@@ -145,6 +146,13 @@ struct davinci_spi {
 	u32			(*get_tx)(struct davinci_spi *);
 
 	u8			bytes_per_word[SPI_MAX_CHIPSELECT];
+	u32			speed;
+	u32			cs_num;
+	bool			in_use;
+
+#ifdef CONFIG_CPU_FREQ
+	struct notifier_block   freq_transition;
+#endif
 };
 
 static struct davinci_spi_config davinci_spi_default_cfg;
@@ -314,6 +322,9 @@ static int davinci_spi_setup_transfer(struct spi_device *spi,
 
 	if (!hz)
 		hz = spi->max_speed_hz;
+
+	dspi->speed = hz;
+	dspi->cs_num = spi->chip_select;
 
 	/* Set up SPIFMTn register, unique to this chipselect. */
 
@@ -510,8 +521,10 @@ static void davinci_spi_dma_callback(unsigned lch, u16 status, void *data)
 			dspi->wcount = 0;
 	}
 
-	if ((!dspi->wcount && !dspi->rcount) || (status != DMA_COMPLETE))
+	if ((!dspi->wcount && !dspi->rcount) || (status != DMA_COMPLETE)) {
+		dspi->in_use = false;
 		complete(&dspi->done);
+	}
 }
 
 /**
@@ -555,6 +568,7 @@ static int davinci_spi_bufs(struct spi_device *spi, struct spi_transfer *t)
 	set_io_bits(dspi->base + SPIGCR1, SPIGCR1_SPIENA_MASK);
 
 	INIT_COMPLETION(dspi->done);
+	dspi->in_use = true;
 
 	if (spicfg->io_type == SPI_IO_TYPE_INTR)
 		set_io_bits(dspi->base + SPIINT, SPIINT_MASKINT);
@@ -743,8 +757,10 @@ static irqreturn_t davinci_spi_irq(s32 irq, void *data)
 	if (unlikely(status != 0))
 		clear_io_bits(dspi->base + SPIINT, SPIINT_MASKINT);
 
-	if ((!dspi->rcount && !dspi->wcount) || status)
+	if ((!dspi->rcount && !dspi->wcount) || status) {
+		dspi->in_use = false;
 		complete(&dspi->done);
+	}
 
 	return IRQ_HANDLED;
 }
@@ -787,6 +803,52 @@ tx_dma_failed:
 rx_dma_failed:
 	return r;
 }
+
+#ifdef CONFIG_CPU_FREQ
+static int davinci_spi_cpufreq_transition(struct notifier_block *nb,
+				     unsigned long val, void *data)
+{
+	struct davinci_spi_platform_data *pdata;
+	struct davinci_spi *dspi;
+	u32 prescale = 0;
+
+	dspi = container_of(nb, struct davinci_spi, freq_transition);
+	pdata = dspi->pdata;
+
+	if (val == CPUFREQ_PRECHANGE) {
+		if (dspi->in_use)
+			wait_for_completion(&dspi->done);
+	} else if (val == CPUFREQ_POSTCHANGE) {
+		prescale = davinci_spi_get_prescale(dspi, dspi->speed);
+		clear_io_bits(dspi->base + SPIFMT0, 0x0000ff00);
+		set_io_bits(dspi->base + SPIFMT0, prescale << 8);
+	}
+	return 0;
+}
+
+static inline int davinci_spi_cpufreq_register(struct davinci_spi *dspi)
+{
+	dspi->freq_transition.notifier_call = davinci_spi_cpufreq_transition;
+
+	return cpufreq_register_notifier(&dspi->freq_transition,
+					 CPUFREQ_TRANSITION_NOTIFIER);
+}
+
+static inline void davinci_spi_cpufreq_deregister(struct davinci_spi *dspi)
+{
+	cpufreq_unregister_notifier(&dspi->freq_transition,
+				    CPUFREQ_TRANSITION_NOTIFIER);
+}
+#else
+static inline int davinci_spi_cpufreq_register(struct davinci_spi *dspi)
+{
+	return 0;
+}
+
+static inline void davinci_spi_cpufreq_deregister(struct davinci_spi *dspi)
+{
+}
+#endif
 
 /**
  * davinci_spi_probe - probe function for SPI Master Controller
@@ -916,6 +978,12 @@ static int __devinit davinci_spi_probe(struct platform_device *pdev)
 	dspi->get_tx = davinci_spi_tx_buf_u8;
 
 	init_completion(&dspi->done);
+	ret = davinci_spi_cpufreq_register(dspi);
+	if (ret) {
+		pr_info("davinci SPI contorller driver failed to register "
+							"cpufreq\n");
+		goto free_dma;
+	}
 
 	/* Reset In/OUT SPI module */
 	iowrite32(0, dspi->base + SPIGCR0);
