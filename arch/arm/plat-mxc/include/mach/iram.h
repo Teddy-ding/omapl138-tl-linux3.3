@@ -17,25 +17,41 @@
  * MA 02110-1301, USA.
  */
 #include <linux/errno.h>
+#include <linux/genalloc.h>
 
 #ifdef CONFIG_IRAM_ALLOC
 
-int __init iram_init(unsigned long base, unsigned long size);
-void __iomem *iram_alloc(unsigned int size, unsigned long *dma_addr);
-void iram_free(unsigned long dma_addr, unsigned int size);
+int __init iram_init(phys_addr_t base, size_t size);
+
+extern struct gen_pool *mxc_iram_pool;
+
+static inline void *iram_alloc(size_t size, phys_addr_t *phys)
+{
+	unsigned long addr = gen_pool_alloc(iram_pool, size);
+
+	*phys = gen_pool_virt_to_phys(iram_pool, addr);
+
+	return (void *)addr;
+}
+
+static inline void iram_free(void *addr, size_t size)
+{
+	gen_pool_free(iram_pool, (unsigned long)addr, size);
+}
 
 #else
 
-static inline int __init iram_init(unsigned long base, unsigned long size)
+static inline int __init iram_init(phys_addr_t base, size_t size)
 {
 	return -ENOMEM;
 }
 
-static inline void __iomem *iram_alloc(unsigned int size, unsigned long *dma_addr)
+static inline void *iram_alloc(size_t size, phys_addr_t *phys)
 {
+	*phys = (phys_addr_t)-1ULL;
 	return NULL;
 }
 
-static inline void iram_free(unsigned long base, unsigned long size) {}
+static inline void iram_free(void *addr, size_t size) {}
 
 #endif
