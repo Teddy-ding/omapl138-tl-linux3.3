@@ -1074,6 +1074,58 @@ static int __devexit davinci_spi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
+#define DAVINCI_SPI_MAX_TRANSFER_TIME	5000
+static int davinci_spi_suspend(struct platform_device *pdev, pm_message_t pmsg)
+{
+	struct davinci_spi *dspi;
+	struct spi_master *master;
+	struct davinci_spi_platform_data *pdata = NULL;
+	int ret;
+
+	pdata = pdev->dev.platform_data;
+	master = dev_get_drvdata(&(pdev)->dev);
+	dspi = spi_master_get_devdata(master);
+
+	if (dspi->in_use) {
+		ret = wait_for_completion_timeout(&dspi->done,
+			msecs_to_jiffies(DAVINCI_SPI_MAX_TRANSFER_TIME));
+		if (ret < 0)
+			return ret;
+		if (ret == 0) {
+			dev_err(&pdev->dev, "controller timed out\n");
+			return -ETIMEDOUT;
+		}
+	}
+
+	/* disable SPI */
+	clear_io_bits(dspi->base + SPIGCR1, SPIGCR1_POWERDOWN_MASK);
+	clk_disable(dspi->clk);
+
+	return 0;
+}
+
+static int davinci_spi_resume(struct platform_device *pdev)
+{
+	struct davinci_spi *dspi;
+	struct spi_master *master;
+	struct davinci_spi_platform_data *pdata = NULL;
+
+	pdata = pdev->dev.platform_data;
+	master = dev_get_drvdata(&(pdev)->dev);
+	dspi = spi_master_get_devdata(master);
+
+	clk_enable(dspi->clk);
+	/* enable SPI */
+	set_io_bits(dspi->base + SPIGCR1, SPIGCR1_SPIENA_MASK);
+
+	return 0;
+}
+#else
+#define davinci_spi_suspend NULL
+#define davinci_spi_resume NULL
+#endif
+
 static struct platform_driver davinci_spi_driver = {
 	.driver = {
 		.name = "spi_davinci",
@@ -1081,6 +1133,8 @@ static struct platform_driver davinci_spi_driver = {
 	},
 	.probe = davinci_spi_probe,
 	.remove = __devexit_p(davinci_spi_remove),
+	.suspend = davinci_spi_suspend,
+	.resume = davinci_spi_resume,
 };
 module_platform_driver(davinci_spi_driver);
 
