@@ -306,7 +306,7 @@ static struct resource da850_evm_nandflash_resource[] = {
 	},
 };
 
-static struct platform_device da850_evm_devices[] __initdata = {
+static struct platform_device da850_evm_devices[] = {
 	{
 		.name		= "davinci_nand",
 		.id		= 1,

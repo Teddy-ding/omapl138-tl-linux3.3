@@ -558,7 +558,7 @@ static int da8xx_musb_set_mode(struct musb *musb, u8 musb_mode)
 	return 0;
 }
 
-static int da8xx_musb_init(struct musb *musb)
+static int __devinit da8xx_musb_init(struct musb *musb)
 {
 	void __iomem *reg_base = musb->ctrl_base;
 	u32 rev;
