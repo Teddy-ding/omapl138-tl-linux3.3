@@ -760,6 +760,13 @@ static irqreturn_t lcdc_irq_handler_rev01(int irq, void *arg)
 
 		/* Setup and start data loading mode */
 		lcd_blit(LOAD_DATA, par);
+		if (par->panel_power_ctrl) {
+			/* Switch off panel power and backlight */
+			par->panel_power_ctrl(0);
+
+			/* Switch on panel power and backlight */
+			par->panel_power_ctrl(1);
+		}
 	} else {
 		lcdc_write(stat, LCD_STAT_REG);
 
