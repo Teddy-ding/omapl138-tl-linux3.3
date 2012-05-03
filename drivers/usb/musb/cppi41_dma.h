@@ -26,6 +26,10 @@
 #include <plat/usb.h>
 #endif
 
+/* USBSS RTL versions */
+#define USBSS_RTL_VERSION_MASK	0xF
+#define USBSS_RTL_VERSION_D	0xD
+
 /**
  * struct usb_cppi41_info - CPPI 4.1 USB implementation details
  * @dma_block:	DMA block number
@@ -45,7 +49,8 @@ struct usb_cppi41_info {
 	u16 *tx_comp_q;
 	u16 *rx_comp_q;
 	u8 bd_intr_ctrl;
-	u8 use_grndis_for_host_rx;
+	u8 grndis_for_host_rx;
+	u32 version;
 };
 
 extern struct usb_cppi41_info usb_cppi41_info[];

@@ -784,8 +784,8 @@ static unsigned cppi41_next_rx_segment(struct cppi41_channel *rx_ch)
 		 * probably fit this transfer in one PD and one IRQ
 		 * (or two with a short packet).
 		 */
-		if (cppi->cppi_info->use_grndis_for_host_rx &&
-						(pkt_size & 0x3f) == 0) {
+		if (cppi->cppi_info->grndis_for_host_rx &&
+					(pkt_size & 0x3f) == 0) {
 			cppi41_mode_update(rx_ch, USB_GENERIC_RNDIS_MODE);
 			cppi41_autoreq_update(rx_ch, USB_AUTOREQ_ALL_BUT_EOP);
 
@@ -1357,6 +1357,20 @@ cppi41_dma_controller_create(struct musb  *musb, void __iomem *mregs)
 	cppi->en_bd_intr = cppi->cppi_info->bd_intr_ctrl;
 	INIT_WORK(&cppi->txdma_work, txdma_completion_work);
 
+	/*
+	 * Extra IN token has been seen when a file is transferred from one MSC
+	 * device to other due to xDMA IP bug when multiple masters access
+	 * mentor controller register space.
+	 * As a software workaround use transparent mode and correct data toggle
+	 * when they go wrong.
+	 * This issue is expected to be fixed in RTL version post 0xD.
+	 */
+	if ((cppi->cppi_info->version & USBSS_RTL_VERSION_MASK) >
+			USBSS_RTL_VERSION_D)
+		cppi->cppi_info->grndis_for_host_rx = 1;
+	else
+		cppi->cppi_info->grndis_for_host_rx = 0;
+
 	return &cppi->controller;
 }
 EXPORT_SYMBOL(cppi41_dma_controller_create);
@@ -1504,8 +1518,9 @@ static void usb_process_rx_queue(struct cppi41 *cppi, unsigned index)
 		if (en_bd_intr)
 			orig_buf_len &= ~CPPI41_PKT_INTR_FLAG;
 
-		dev_dbg(musb->controller, "curr_pd=%p, len=%d, origlen=%d, rxch(alen/len)=%d/%d\n",
-			curr_pd, length, orig_buf_len,
+		dev_dbg(musb->controller,
+			"curr_pd=%p, len=%d, origlen=%d,rxch(alen/len)=%d/%d\n",
+				curr_pd, length, orig_buf_len,
 				rx_ch->channel.actual_len, rx_ch->length);
 
 		if (unlikely(rx_ch->channel.actual_len >= rx_ch->length ||
@@ -1549,7 +1564,9 @@ static void usb_process_rx_queue(struct cppi41 *cppi, unsigned index)
 				musb_dma_completion(cppi->musb, ep_num, 0);
 			}
 		} else {
-			if ((rx_ch->length - rx_ch->curr_offset) > 0)
+			if ((is_peripheral_active(cppi->musb) ||
+				!cppi->cppi_info->grndis_for_host_rx) &&
+				(rx_ch->length - rx_ch->curr_offset) > 0)
 				cppi41_next_rx_segment(rx_ch);
 		}
 	}
