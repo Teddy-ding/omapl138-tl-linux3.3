@@ -754,7 +754,6 @@ static irqreturn_t lcdc_irq_handler_rev01(int irq, void *arg)
 
 	if ((stat & LCD_SYNC_LOST) && (stat & LCD_FIFO_UNDERFLOW)) {
 		printk(KERN_ERR "LCDC sync lost or underflow error occured\n");
-		printk(KERN_ERR "LCDC sync lost or underflow error occured\n");
 		lcd_disable_raster();
 		clk_disable(par->lcdc_clk);
 		lcdc_write(stat, LCD_STAT_REG);
@@ -955,14 +954,6 @@ static int fb_wait_for_vsync(struct fb_info *info)
 		return ret;
 	if (ret == 0)
 		return -ETIMEDOUT;
-
-	if (par->panel_power_ctrl) {
-		/* Switch off panel power and backlight */
-		par->panel_power_ctrl(0);
-
-		/* Switch on panel power and backlight */
-		par->panel_power_ctrl(1);
-	}
 
 	return 0;
 }
