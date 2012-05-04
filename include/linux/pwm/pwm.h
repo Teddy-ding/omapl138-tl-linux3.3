@@ -102,6 +102,7 @@ struct pwm_device {
 	unsigned long period_ns;
 	unsigned long duty_ns;
 	struct notifier_block freq_transition;
+	spinlock_t pwm_lock;
 };
 
 struct pwm_device *pwm_request_byname(const char *name, const char *label);

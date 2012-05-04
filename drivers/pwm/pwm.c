@@ -249,7 +249,10 @@ err:
 
 	if (ret)
 		return ret;
-	return p->ops->config(p, c);
+	spin_lock(&p->pwm_lock);
+	ret = p->ops->config(p, c);
+	spin_unlock(&p->pwm_lock);
+	return ret;
 }
 EXPORT_SYMBOL(pwm_config);
 
@@ -260,7 +263,9 @@ int pwm_set_period_ns(struct pwm_device *p, unsigned long period_ns)
 		.period_ticks = pwm_ns_to_ticks(p, period_ns),
 	};
 
+	spin_lock(&p->pwm_lock);
 	p->period_ns = period_ns;
+	spin_unlock(&p->pwm_lock);
 	return pwm_config(p, &c);
 }
 EXPORT_SYMBOL(pwm_set_period_ns);
@@ -281,7 +286,9 @@ int pwm_set_frequency(struct pwm_device *p, unsigned long freq)
 	if (!freq)
 		return -EINVAL;
 
+	spin_lock(&p->pwm_lock);
 	p->period_ns = NSEC_PER_SEC / freq;
+	spin_unlock(&p->pwm_lock);
 	return pwm_config(p, &c);
 }
 EXPORT_SYMBOL(pwm_set_frequency);
@@ -307,7 +314,9 @@ int pwm_set_period_ticks(struct pwm_device *p,
 		.period_ticks = ticks,
 	};
 
+	spin_lock(&p->pwm_lock);
 	p->period_ns = pwm_ticks_to_ns(p, ticks);
+	spin_unlock(&p->pwm_lock);
 	return pwm_config(p, &c);
 }
 EXPORT_SYMBOL(pwm_set_period_ticks);
@@ -318,7 +327,10 @@ int pwm_set_duty_ns(struct pwm_device *p, unsigned long duty_ns)
 		.config_mask = BIT(PWM_CONFIG_DUTY_TICKS),
 		.duty_ticks = pwm_ns_to_ticks(p, duty_ns),
 	};
+
+	spin_lock(&p->pwm_lock);
 	p->duty_ns = duty_ns;
+	spin_unlock(&p->pwm_lock);
 	return pwm_config(p, &c);
 }
 EXPORT_SYMBOL(pwm_set_duty_ns);
@@ -336,8 +348,10 @@ int pwm_set_duty_percent(struct pwm_device *p, int percent)
 		.duty_percent = percent,
 	};
 
+	spin_lock(&p->pwm_lock);
 	p->duty_ns = p->period_ns * percent;
 	p->duty_ns /= 100;
+	spin_unlock(&p->pwm_lock);
 	return pwm_config(p, &c);
 }
 EXPORT_SYMBOL(pwm_set_duty_percent);
@@ -361,7 +375,9 @@ int pwm_set_duty_ticks(struct pwm_device *p,
 		.duty_ticks = ticks,
 	};
 
+	spin_lock(&p->pwm_lock);
 	p->duty_ns = pwm_ticks_to_ns(p, ticks);
+	spin_unlock(&p->pwm_lock);
 	return pwm_config(p, &c);
 }
 EXPORT_SYMBOL(pwm_set_duty_ticks);
@@ -693,6 +709,7 @@ int pwm_register_byname(struct pwm_device *p, struct device *parent,
 	if (ret < 0)
 		printk(KERN_ERR "Failed to add cpufreq notifier\n");
 
+	spin_lock_init(&p->pwm_lock);
 	goto done;
 
 err_create_group:
