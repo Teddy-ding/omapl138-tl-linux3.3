@@ -363,7 +363,7 @@ static struct clk vpif_clk = {
 	.name		= "vpif",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA850_LPSC1_VPIF,
-	.gpsc		= ALWAYS_ENABLED,
+	.gpsc		= 1,
 };
 
 static struct clk sata_clk = {
