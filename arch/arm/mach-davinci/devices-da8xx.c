@@ -16,6 +16,7 @@
 #include <linux/serial_8250.h>
 #include <linux/ahci_platform.h>
 #include <linux/clk.h>
+#include <linux/export.h>
 
 #include <mach/cputype.h>
 #include <mach/common.h>
@@ -62,6 +63,7 @@
 #define DA850_DMA_MMCSD1_TX	EDMA_CTLR_CHAN(1, 29)
 
 void __iomem *da8xx_syscfg0_base;
+EXPORT_SYMBOL(da8xx_syscfg0_base);
 void __iomem *da8xx_syscfg1_base;
 
 static struct plat_serial8250_port da8xx_serial_pdata[] = {
