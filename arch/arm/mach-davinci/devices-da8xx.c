@@ -767,6 +767,9 @@ static struct platform_device da8xx_rtc_device = {
 	.id             = -1,
 	.num_resources	= ARRAY_SIZE(da8xx_rtc_resources),
 	.resource	= da8xx_rtc_resources,
+	.dev = {
+		.platform_data = (void *)true,
+	},
 };
 
 int da8xx_register_rtc(void)
@@ -785,10 +788,6 @@ int da8xx_register_rtc(void)
 	iounmap(base);
 
 	ret = platform_device_register(&da8xx_rtc_device);
-	if (!ret)
-		/* Atleast on DA850, RTC is a wakeup source */
-		device_init_wakeup(&da8xx_rtc_device.dev, true);
-
 	return ret;
 }
 

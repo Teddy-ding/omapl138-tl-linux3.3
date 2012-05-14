@@ -412,6 +412,9 @@ static int __init omap_rtc_probe(struct platform_device *pdev)
 	if (reg != new_ctrl)
 		rtc_write(new_ctrl, OMAP_RTC_CTRL_REG);
 
+	if ((unsigned int)pdev->dev.platform_data == true)
+		device_init_wakeup(&pdev->dev, 1);
+
 	return 0;
 
 fail2:
@@ -430,7 +433,8 @@ static int __exit omap_rtc_remove(struct platform_device *pdev)
 	struct rtc_device	*rtc = platform_get_drvdata(pdev);
 	struct resource		*mem = dev_get_drvdata(&rtc->dev);
 
-	device_init_wakeup(&pdev->dev, 0);
+	if ((unsigned int)pdev->dev.platform_data == true)
+		device_init_wakeup(&pdev->dev, 0);
 
 	/* leave rtc running, but disable irqs */
 	rtc_write(0, OMAP_RTC_INTERRUPTS_REG);
@@ -443,6 +447,7 @@ static int __exit omap_rtc_remove(struct platform_device *pdev)
 	rtc_device_unregister(rtc);
 	iounmap(rtc_base);
 	release_mem_region(mem->start, resource_size(mem));
+	platform_set_drvdata(pdev, NULL);
 	return 0;
 }
 
