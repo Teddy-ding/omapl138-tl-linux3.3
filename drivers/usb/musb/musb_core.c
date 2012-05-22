@@ -714,7 +714,7 @@ static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
 
 		if (is_otg_enabled(musb)) {
 			/* flush endpoints when transitioning from DeviceMode */
-			if (is_peripheral_enabled(musb)) {
+			if (is_peripheral_active(musb)) {
 				/* REVISIT HNP; just force disconnect */
 			}
 			musb_writew(musb->mregs, MUSB_INTRTXE, musb->epmask);
@@ -2427,20 +2427,16 @@ static int musb_suspend(struct device *dev)
 {
 	struct musb	*musb = dev_to_musb(dev);
 	unsigned long	flags;
-	u8 devctl = musb_readb(musb->mregs, MUSB_DEVCTL);
 	int ret = 0;
 
 	spin_lock_irqsave(&musb->lock, flags);
 
-	if (is_peripheral_enabled(musb)) {
+	if (is_peripheral_active(musb)) {
 		/*
 		 * Don't allow system suspend while peripheral mode
 		 * is actve and cable is connected to host.
 		 */
-		if ((devctl & MUSB_DEVCTL_VBUS) == MUSB_DEVCTL_VBUS
-				&& (devctl & MUSB_DEVCTL_BDEVICE))
-			ret = -EBUSY;
-	} else if (is_host_enabled(musb)) {
+	} else if (is_host_active(musb)) {
 		/* we know all the children are suspended; sometimes
 		 * they will even be wakeup-enabled.
 		 */
