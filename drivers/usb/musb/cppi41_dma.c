@@ -634,6 +634,9 @@ static unsigned cppi41_next_tx_segment(struct cppi41_channel *tx_ch)
 		dev_dbg(musb->controller, "TX PD %p: buf %08x, len %08x, pkt info %08x\n", curr_pd,
 		    hw_desc->buf_ptr, hw_desc->buf_len, hw_desc->pkt_info);
 
+		/* make sure descriptor details are updated to memory*/
+		dsb();
+
 		cppi41_queue_push(&tx_ch->queue_obj, curr_pd->dma_addr,
 				  USB_CPPI41_DESC_ALIGN, pkt_size);
 	}
@@ -842,6 +845,10 @@ static unsigned cppi41_next_rx_segment(struct cppi41_channel *rx_ch)
 
 		if (en_bd_intr)
 			hw_desc->orig_buf_len |= CPPI41_PKT_INTR_FLAG;
+
+		/* make sure descriptor details are updated to memory*/
+		dsb();
+
 		/*
 		 * Push the free Rx packet descriptor
 		 * to the free descriptor/buffer queue.
