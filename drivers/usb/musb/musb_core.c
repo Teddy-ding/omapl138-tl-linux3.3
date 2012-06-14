@@ -1279,7 +1279,7 @@ static struct musb_fifo_cfg ep0_cfg = {
 	.style = FIFO_RXTX, .maxpacket = 64,
 };
 
-int ep_config_from_table(struct musb *musb)
+int __devinit ep_config_from_table(struct musb *musb)
 {
 	const struct musb_fifo_cfg	*cfg;
 	unsigned		i, n;
