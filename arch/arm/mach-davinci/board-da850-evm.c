@@ -316,6 +316,8 @@ static struct platform_device da850_evm_devices[] = {
 		.num_resources	= ARRAY_SIZE(da850_evm_nandflash_resource),
 		.resource	= da850_evm_nandflash_resource,
 	},
+#if !defined(CONFIG_MMC_DAVINCI) || \
+    !defined(CONFIG_MMC_DAVINCI_MODULE)
 	{
 		.name		= "physmap-flash",
 		.id		= 0,
@@ -326,7 +328,7 @@ static struct platform_device da850_evm_devices[] = {
 		.resource	= da850_evm_norflash_resource,
 
 	},
-
+#endif
 };
 static struct davinci_aemif_devices da850_emif_devices = {
 	.devices	= da850_evm_devices,
@@ -428,12 +430,12 @@ static inline void da850_evm_setup_nor_nand(void)
 {
 	int ret = 0;
 
-	if (!HAS_MMC) {
-		ret = davinci_cfg_reg_list(da850_evm_nand_pins);
-		if (ret)
-			pr_warning("da850_evm_init: nand mux setup failed: "
-					"%d\n", ret);
+	ret = davinci_cfg_reg_list(da850_evm_nand_pins);
+	if (ret)
+		pr_warning("da850_evm_init: nand mux setup failed: "
+				"%d\n", ret);
 
+	if (!HAS_MMC) {
 		ret = davinci_cfg_reg(DA850_GPIO0_11);
 		if (ret)
 			pr_warning("da850_evm_init:GPIO(0,11) mux setup "
@@ -453,7 +455,6 @@ static inline void da850_evm_setup_nor_nand(void)
 				ret);
 
 		da850_evm_init_nor();
-		platform_device_register(&davinci_emif_device);
 	} else {
 		/*
 		 * On Logic PD Rev.3 EVMs GP0[11] pin needs to be configured
@@ -480,6 +481,8 @@ static inline void da850_evm_setup_nor_nand(void)
 		/* Driver GP0[11] high for SD to work */
 		gpio_direction_output(DA850_SD_ENABLE_PIN, 1);
 	}
+
+	platform_device_register(&davinci_emif_device);
 }
 
 #ifdef CONFIG_DA850_UI_RMII
