@@ -410,6 +410,25 @@ static const short da850_evm_nor_pins[] = {
 #define HAS_MCASP 0
 #endif
 
+#if defined(CONFIG_DAVINCI_EHRPWM) || defined(CONFIG_DAVINCI_EHRPWM_MODULE)
+#define HAS_EHRPWM 1
+#else
+#define HAS_EHRPWM 0
+#endif
+
+#if defined(CONFIG_ECAP_PWM) || \
+	defined(CONFIG_ECAP_PWM_MODULE)
+#define HAS_ECAP_PWM 1
+#else
+#define HAS_ECAP_PWM 0
+#endif
+
+#if defined(CONFIG_BACKLIGHT_PWM) || defined(CONFIG_BACKLIGHT_PWM_MODULE)
+#define HAS_BACKLIGHT 1
+#else
+#define HAS_BACKLIGHT 0
+#endif
+
 #if defined(CONFIG_ECAP_CAP) || defined(CONFIG_ECAP_CAP_MODULE)
 #define HAS_ECAP_CAP 1
 #else
@@ -1976,58 +1995,72 @@ static __init void da850_evm_init(void)
 
 	da850_evm_usb_init();
 
-	if (rmii_en) {
-		ret = davinci_cfg_reg_list(da850_ehrpwm0_pins);
-		if (ret)
-			pr_warning("da850_evm_init: ehrpwm0 mux setup failed:"
-			       "%d\n",	ret);
-		else
-			mask = BIT(0) | BIT(1);
-	} else {
-		pr_warning("da850_evm_init: eHRPWM module 0 cannot be used"
+	if (HAS_EHRPWM) {
+		if (rmii_en) {
+			ret = davinci_cfg_reg_list(da850_ehrpwm0_pins);
+			if (ret)
+				pr_warning("da850_evm_init:"
+				" ehrpwm0 mux setup failed: %d\n", ret);
+			else
+				mask = BIT(0) | BIT(1);
+		} else {
+			pr_warning("da850_evm_init:"
+			" eHRPWM module 0 cannot be used"
 			" since it is being used by MII interface\n");
-		mask = 0;
-	}
+			mask = 0;
+		}
 
-	if (!HAS_LCD) {
-		ret = davinci_cfg_reg_list(da850_ehrpwm1_pins);
-		if (ret)
-			pr_warning("da850_evm_init: eHRPWM module1 output A mux"
-			" setup failed %d\n", ret);
-		else
-			mask = mask | BIT(2);
-	} else {
-		pr_warning("da850_evm_init: eHRPWM module1 outputA cannot be"
-			" used since it is being used by LCD\n");
-	}
-
-	if (!HAS_SPI) {
-		ret = davinci_cfg_reg(DA850_EHRPWM1_B);
-		if (ret)
-			pr_warning("da850_evm_init: eHRPWM module1 outputB mux"
+		if (!HAS_LCD) {
+			ret = davinci_cfg_reg_list(da850_ehrpwm1_pins);
+			if (ret)
+				pr_warning("da850_evm_init:"
+				" eHRPWM module1 output A mux"
 				" setup failed %d\n", ret);
+			else
+				mask = mask | BIT(2);
+		} else {
+			pr_warning("da850_evm_init:"
+				" eHRPWM module1 outputA cannot be"
+				" used since it is being used by LCD\n");
+		}
+
+		if (!HAS_SPI) {
+			ret = davinci_cfg_reg(DA850_EHRPWM1_B);
+			if (ret)
+				pr_warning("da850_evm_init:"
+					" eHRPWM module1 outputB mux"
+					" setup failed %d\n", ret);
 		else
 			mask =  mask  | BIT(3);
-	} else {
-		pr_warning("da850_evm_init: eHRPWM module1 outputB cannot be"
-			" used since it is being used by spi1\n");
+		} else {
+			pr_warning("da850_evm_init:"
+				" eHRPWM module1 outputB cannot be"
+				" used since it is being used by spi1\n");
+		}
+
+		da850_register_ehrpwm(mask);
 	}
 
-	da850_register_ehrpwm(mask);
-	da850_register_backlight(&da850evm_backlight,
+	if (HAS_ECAP_PWM) {
+		ret = davinci_cfg_reg(DA850_ECAP2_APWM2);
+		if (ret)
+			pr_warning("da850_evm_init:ecap mux failed:"
+					" %d\n", ret);
+		ret = da850_register_ecap(2);
+		if (ret)
+			pr_warning("da850_evm_init:"
+				" eCAP registration failed: %d\n", ret);
+	}
+
+	if (HAS_BACKLIGHT) {
+		ret = da850_register_backlight(&da850evm_backlight,
 				&da850evm_backlight_data);
-	if (ret)
-		pr_warning("da850_evm_init: backlight device registration"
+		if (ret)
+			pr_warning("da850_evm_init:"
+				" backlight device registration"
 				" failed: %d\n", ret);
+	}
 
-	ret = davinci_cfg_reg(DA850_ECAP2_APWM2);
-	if (ret)
-		pr_warning("da850_evm_init:ecap mux failed: %d\n", ret);
-
-	ret = da850_register_ecap(2);
-	if (ret)
-		pr_warning("da850_evm_init: eCAP registration failed: %d\n",
-			       ret);
 	if (HAS_ECAP_CAP) {
 		if (HAS_MCASP)
 			pr_warning("da850_evm_init:"
