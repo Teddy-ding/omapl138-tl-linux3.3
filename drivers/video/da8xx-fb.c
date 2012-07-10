@@ -789,6 +789,7 @@ static irqreturn_t lcdc_irq_handler_rev01(int irq, void *arg)
 		lcdc_write(stat, LCD_STAT_REG);
 
 		if (stat & LCD_END_OF_FRAME0) {
+			par->which_dma_channel_done = 0;
 			lcdc_write(par->dma_start,
 				   LCD_DMA_FRM_BUF_BASE_ADDR_0_REG);
 			lcdc_write(par->dma_end,
@@ -798,6 +799,7 @@ static irqreturn_t lcdc_irq_handler_rev01(int irq, void *arg)
 		}
 
 		if (stat & LCD_END_OF_FRAME1) {
+			par->which_dma_channel_done = 1;
 			lcdc_write(par->dma_start,
 				   LCD_DMA_FRM_BUF_BASE_ADDR_1_REG);
 			lcdc_write(par->dma_end,
