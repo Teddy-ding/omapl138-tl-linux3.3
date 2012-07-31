@@ -188,7 +188,7 @@ static struct mtd_partition da850_evm_norflash_partition[] = {
 	{
 		.name           = "kernel",
 		.offset         = MTDPART_OFS_APPEND,
-		.size           = SZ_2M,
+		.size           = SZ_4M,
 		.mask_flags     = 0,
 	},
 	{
