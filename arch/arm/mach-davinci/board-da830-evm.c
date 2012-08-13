@@ -423,7 +423,7 @@ static inline void da830_evm_init_lcdc(int mux_mode)
 		pr_warning("da830_evm_init: lcd hw init failed: %d\n", ret);
 
 #if !defined(CONFIG_FB_DA8XX) && !defined(CONFIG_FB_DA8XX_MODULE)
-	ret = da8xx_pinmux_setup(da830_evm_lcdc_pins);
+	ret = davinci_cfg_reg_list(da830_evm_lcdc_pins);
 	if (ret)
 		pr_warning("da830_evm_init:evm lcd mux setup failed: %d\n",
 				ret);
