@@ -145,6 +145,23 @@ config MACH_DAVINCI_DA830_EVM
 	help
 	  Say Y here to select the TI DA830/OMAP-L137/AM17x Evaluation Module.
 
+ choice
+	prompt "Select DA830 or DA830-WIFI-EVM"
+	depends on MACH_DAVINCI_DA830_EVM
+	help
+	  Choose version of the da830 board (default is DA830-WIFI-EVM)
+
+config DA830_WL18XX
+	bool "DA830 WIFI EVM"
+	help
+	  Select this option if you want to build for da830 wifi evm (default)
+
+config DA830
+	bool "DA830 EVM"
+	help
+	  Select this option if you want to build for da830 evm
+endchoice
+
 choice
 	prompt "Select DA830/OMAP-L137/AM17x UI board peripheral"
 	depends on MACH_DAVINCI_DA830_EVM
