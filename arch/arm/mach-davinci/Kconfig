@@ -152,9 +152,15 @@ config MACH_DAVINCI_DA830_EVM
 	  Choose version of the da830 board (default is DA830-WIFI-EVM)
 
 config DA830_WL18XX
-	bool "DA830 WIFI EVM"
+	bool "DM830 wl18xx daughter board"
+	depends on MACH_DAVINCI_DA830_EVM
 	help
-	  Select this option if you want to build for da830 wifi evm (default)
+	  The wl18xx daughter card for da830-wifi EVMs is a combo wireless
+	  connectivity add-on card, based on the Jorjin module with
+	  Texas Instruments' wl18xx solution.
+	  Say Y if you want to use a wl18xx expansion card connected to the
+	  da830-wifi EVM.
+
 
 config DA830
 	bool "DA830 EVM"
