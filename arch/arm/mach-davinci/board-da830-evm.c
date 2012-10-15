@@ -39,9 +39,9 @@
 
 #define DA830_EVM_PHY_ID		""
 
-#ifdef CONFIG_DA830_WIFI_EVM
+#ifdef CONFIG_DA830_WL18XX
 #define DA830_WIFI_NAND			GPIO_TO_PIN(1, 15)
-#define DA830_WIFI_SPI_UART		GPIO_TO_PIN(3, 10)
+#define DA830_SPI_UART    		GPIO_TO_PIN(3, 10)
 #define DA830_WLAN_EN			GPIO_TO_PIN(5, 7)
 #define DA830_WLAN_IRQ			GPIO_TO_PIN(2, 12)
 #else
@@ -252,7 +252,13 @@ static const short da830_evm_emif25_pins[] = {
 #define HAS_MMC	0
 #endif
 
-#if defined (CONFIG_DA830_UI_NAND) || defined (CONFIG_DA830_WIFI_EVM)
+#if defined(CONFIG_SPI_DAVINCI) || defined(CONFIG_SPI_DAVINCI_MODULE)
+#define HAS_SPI 1
+#else
+#define HAS_SPI 0
+#endif
+
+#if defined (CONFIG_DA830_UI_NAND) || defined (CONFIG_DA830_WL18XX)
 static struct mtd_partition da830_evm_nand_partitions[] = {
 	/* bootloader (U-Boot, etc) in first sector */
 	[0] = {
@@ -368,9 +374,7 @@ static struct platform_device davinci_emif_device = {
 		.platform_data	= &da830_emif_devices,
 	},
 };
-#endif
 
-#ifdef CONFIG_DA830_UI_NAND
 static inline void da830_evm_init_nand(int mux_mode)
 {
 	int ret;
@@ -391,37 +395,11 @@ static inline void da830_evm_init_nand(int mux_mode)
 	if (ret)
 		pr_warning("da830_evm_init: NAND device not registered.\n");
 
-	gpio_direction_output(mux_mode, 1);
+	if (mux_mode > 0)
+		gpio_direction_output(mux_mode, 1);
 }
-static inline void da830_wifi_evm_init_nand(void){ }
 #else
-static inline void da830_evm_init_nand(int mux_mode) { }
-#ifdef CONFIG_DA830_WIFI_EVM
-static inline void da830_wifi_evm_init_nand(void)
-{
-	int ret;
-	if (HAS_MMC) {
-		pr_warning("WARNING: both MMC/SD and NAND are "
-				"enabled, but they share AEMIF pins.\n"
-				"\tDisable MMC/SD for NAND support.\n");
-		return;
-	}
-
-	ret = davinci_cfg_reg_list(da830_evm_emif25_pins);
-	if (ret)
-		pr_warning("emif25 mux setup failed: %d\n", ret);
-	ret = davinci_cfg_reg(DA830_GPIO1_15);
-	if (ret)
-		pr_warning("gpio1_15 mux setup failed: %d\n", ret);
-	gpio_request(DA830_WIFI_NAND, "nand");
-	gpio_direction_output(DA830_WIFI_NAND, 0);
-	ret = platform_device_register(&davinci_emif_device);
-	if (ret)
-		pr_warning("NAND device not registered\n");
-
-}
-#endif
-
+static inline void da830_evm_init_nand(int mux_mode) {}
 #endif
 
 #ifdef CONFIG_DA830_UI_LCD
@@ -674,7 +652,6 @@ static struct spi_board_info da830evm_spi_info[] = {
 };
 
 #ifdef CONFIG_DA830_WL18XX
-
 static void wl18xx_set_power(int index, bool power_on)
 {
 	static bool power_state;
@@ -769,17 +746,6 @@ exit:
 	return ret;
 }
 
-#else /* CONFIG_DA830_WL18XX */
-
-static __init int da830_wl18xx_init(void)
-{
-	return 0;
-}
-
-#endif /* CONFIG_DA830_WL18XX */
-
-
-#ifdef CONFIG_DA830_WIFI_EVM
 static __init void da830_init_i2c(void)
 {
 	int ret;
@@ -807,26 +773,54 @@ static __init void da830_init_i2c(void)
 static __init void da830_init_func(void)
 {
 	int ret;
+
 	da830_init_i2c();
 
-	gpio_request(DA830_WIFI_SPI_UART, "SPI_UART");
-#ifdef CONFIG_DA830_WL18XX
-	ret = da830_wl18xx_init();
-#else
+	ret = davinci_cfg_reg(DA830_GPIO1_15);
+	if (ret)
+		pr_warning("gpio1_15 mux setup failed: %d\n", ret);
+
+	ret = gpio_request(DA830_WIFI_NAND, "WIFI_NAND");
+	if (ret)
+		pr_warning("gpio1_15 gpio request failed: %d\n", ret);
+
 	if (HAS_MMC) {
-		davinci_cfg_reg_list(da830_uart0_pins);
-		gpio_direction_output(DA830_WIFI_SPI_UART, 1);
-		da830_evm_init_mmc();
+		if(!ret) {
+			gpio_direction_output(DA830_WIFI_NAND, 1);
+			da830_wl18xx_init();
+		} else
+			pr_warning("da830_evm_init: SDIO setup failed\n");
 	} else {
-		da830_wifi_evm_init_nand();
-		gpio_direction_output(DA830_WIFI_SPI_UART, 0);
-		ret = da8xx_register_spi(0, da830evm_spi_info,
+		if (!ret) {
+			gpio_direction_output(DA830_WIFI_NAND, 0);
+#if !defined(CONFIG_DA830_UI_NAND)
+			da830_evm_init_nand(0);
+#endif
+		} else
+			pr_warning("da830_evm_init: nand setup failed\n");
+	}
+	ret = davinci_cfg_reg(DA830_GPIO3_10);
+	if (ret)
+		pr_warning("gpio3_10 mux setup failed: %d\n", ret);
+	ret = gpio_request(DA830_SPI_UART, "SPI_UART");
+	if (ret)
+		pr_warning("gpio3_10 gpio request failed: %d\n", ret);
+
+	if (!HAS_SPI) {
+		if(!ret) {
+			davinci_cfg_reg_list(da830_uart0_pins);
+			gpio_direction_output(DA830_SPI_UART, 1);
+		}
+	} else {
+		if (!ret) {
+			gpio_direction_output(DA830_SPI_UART, 0);
+			ret = da8xx_register_spi(0, da830evm_spi_info,
 				 ARRAY_SIZE(da830evm_spi_info));
-		if (ret)
+		}
+		if (!ret)
 			pr_warning("da830_evm_init:"
 			"spi 0 registration failed: %d\n", ret);
 	}
-#endif
 }
 #else
 static __init void da830_init_i2c(void)
@@ -878,11 +872,6 @@ static __init void da830_evm_init(void)
 	ret = da830_register_edma(da830_edma_rsv);
 	if (ret)
 		pr_warning("da830_evm_init: edma registration failed: %d\n",
-				ret);
-
-	ret = davinci_cfg_reg_list(da830_i2c0_pins);
-	if (ret)
-		pr_warning("da830_evm_init: i2c0 mux setup failed: %d\n",
 				ret);
 
 
