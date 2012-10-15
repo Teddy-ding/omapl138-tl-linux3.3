@@ -23,6 +23,8 @@
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/delay.h>
+#include <linux/wl12xx.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -38,8 +40,10 @@
 #define DA830_EVM_PHY_ID		""
 
 #ifdef CONFIG_DA830_WIFI_EVM
-#define DA830_WIFI_NAND		GPIO_TO_PIN(1, 15)
-#define DA830_WIFI_SPI_UART	GPIO_TO_PIN(3, 10)
+#define DA830_WIFI_NAND			GPIO_TO_PIN(1, 15)
+#define DA830_WIFI_SPI_UART		GPIO_TO_PIN(3, 10)
+#define DA830_WLAN_EN			GPIO_TO_PIN(5, 7)
+#define DA830_WLAN_IRQ			GPIO_TO_PIN(2, 12)
 #else
 /*
  * USB1 VBUS is controlled by GPIO1[15], over-current is reported on GPIO2[4].
@@ -669,6 +673,112 @@ static struct spi_board_info da830evm_spi_info[] = {
 	},
 };
 
+#ifdef CONFIG_DA830_WL18XX
+
+static void wl18xx_set_power(int index, bool power_on)
+{
+	static bool power_state;
+
+	pr_debug("Powering %s wl18xx", power_on ? "on" : "off");
+
+	if (power_on == power_state)
+		return;
+	power_state = power_on;
+
+	if (power_on) {
+		/* Power up sequence required for wl127x devices */
+		gpio_set_value_cansleep(DA830_WLAN_EN, 1);
+		usleep_range(15000, 15000);
+		gpio_set_value_cansleep(DA830_WLAN_EN, 0);
+		usleep_range(1000, 1000);
+		gpio_set_value_cansleep(DA830_WLAN_EN, 1);
+		msleep(70);
+	} else {
+		gpio_set_value_cansleep(DA830_WLAN_EN, 0);
+	}
+}
+
+static struct davinci_mmc_config da830_wl18xx_mmc_config = {
+	.set_power	= wl18xx_set_power,
+	.wires		= 4,
+	.max_freq	= 25000000,
+	.caps		= MMC_CAP_4_BIT_DATA | MMC_CAP_NONREMOVABLE |
+			  MMC_CAP_POWER_OFF_CARD | MMC_CAP_MMC_HIGHSPEED |
+			  MMC_CAP_SD_HIGHSPEED,
+	.version	= MMC_CTLR_VERSION_2,
+};
+
+static const short da830_wl18xx_pins[] __initconst = {
+	DA830_MMCSD_DAT_0, DA830_MMCSD_DAT_1, DA830_MMCSD_DAT_2,
+	DA830_MMCSD_DAT_3, DA830_MMCSD_CLK, DA830_MMCSD_CMD,
+	DA830_GPIO5_7, DA830_GPIO2_12,
+	-1
+};
+
+static struct wl12xx_platform_data da830_wl18xx_wlan_data __initdata = {
+	.irq			= -1,
+	.board_ref_clock	= WL12XX_REFCLOCK_26,
+	.platform_quirks	= WL12XX_PLATFORM_QUIRK_EDGE_IRQ,
+};
+
+static __init int da830_wl18xx_init(void)
+{
+	int ret;
+
+	ret = davinci_cfg_reg_list(da830_wl18xx_pins);
+	if (ret) {
+		pr_err("wl12xx/mmc mux setup failed: %d\n", ret);
+		goto exit;
+	}
+
+	ret = da8xx_register_mmcsd0(&da830_wl18xx_mmc_config);
+	if (ret) {
+		pr_err("wl12xx/mmc registration failed: %d\n", ret);
+		goto exit;
+	}
+
+	ret = gpio_request_one(DA830_WLAN_EN, GPIOF_OUT_INIT_LOW, "wlan_en");
+	if (ret) {
+		pr_err("Could not request wl12xx enable gpio: %d\n", ret);
+		goto exit;
+	}
+
+	ret = gpio_request_one(DA830_WLAN_IRQ, GPIOF_IN, "wlan_irq");
+	if (ret) {
+		pr_err("Could not request wl12xx irq gpio: %d\n", ret);
+		goto free_wlan_en;
+	}
+
+	da830_wl18xx_wlan_data.irq = gpio_to_irq(DA830_WLAN_IRQ);
+
+	ret = wl12xx_set_platform_data(&da830_wl18xx_wlan_data);
+	if (ret) {
+		pr_err("Could not set wl12xx data: %d\n", ret);
+		goto free_wlan_irq;
+	}
+
+	return 0;
+
+free_wlan_irq:
+	gpio_free(DA830_WLAN_IRQ);
+
+free_wlan_en:
+	gpio_free(DA830_WLAN_EN);
+
+exit:
+	return ret;
+}
+
+#else /* CONFIG_DA830_WL18XX */
+
+static __init int da830_wl18xx_init(void)
+{
+	return 0;
+}
+
+#endif /* CONFIG_DA830_WL18XX */
+
+
 #ifdef CONFIG_DA830_WIFI_EVM
 static __init void da830_init_i2c(void)
 {
@@ -700,6 +810,9 @@ static __init void da830_init_func(void)
 	da830_init_i2c();
 
 	gpio_request(DA830_WIFI_SPI_UART, "SPI_UART");
+#ifdef CONFIG_DA830_WL18XX
+	ret = da830_wl18xx_init();
+#else
 	if (HAS_MMC) {
 		davinci_cfg_reg_list(da830_uart0_pins);
 		gpio_direction_output(DA830_WIFI_SPI_UART, 1);
@@ -713,7 +826,7 @@ static __init void da830_init_func(void)
 			pr_warning("da830_evm_init:"
 			"spi 0 registration failed: %d\n", ret);
 	}
-
+#endif
 }
 #else
 static __init void da830_init_i2c(void)
