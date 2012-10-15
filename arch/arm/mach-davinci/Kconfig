@@ -262,16 +262,6 @@ config DA850_WL12XX
 	  Say Y if you want to use a wl1271 expansion card connected to the
 	  AM18x EVM.
 
-config DA830_WL18XX
-	bool "DM830 wl18xx daughter board"
-	depends on MACH_DAVINCI_DA830_EVM
-	help
-	  The wl18xx daughter card for da830-wifi EVMs is a combo wireless
-	  connectivity add-on card, based on the Jorjin module with
-	  Texas Instruments' wl18xx solution.
-	  Say Y if you want to use a wl18xx expansion card connected to the
-	  da830-wifi EVM.
-
 config GPIO_PCA953X
 	default MACH_DAVINCI_DA850_EVM
 
