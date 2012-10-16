@@ -680,8 +680,7 @@ static struct davinci_mmc_config da830_wl18xx_mmc_config = {
 	.wires		= 4,
 	.max_freq	= 25000000,
 	.caps		= MMC_CAP_4_BIT_DATA | MMC_CAP_NONREMOVABLE |
-			  MMC_CAP_POWER_OFF_CARD | MMC_CAP_MMC_HIGHSPEED |
-			  MMC_CAP_SD_HIGHSPEED,
+			  MMC_CAP_POWER_OFF_CARD,
 	.version	= MMC_CTLR_VERSION_2,
 };
 
