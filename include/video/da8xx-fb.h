@@ -13,7 +13,8 @@
 #define DA8XX_FB_H
 
 enum panel_type {
-	QVGA = 0
+	QVGA = 0,
+	VGA,
 };
 
 enum panel_shade {

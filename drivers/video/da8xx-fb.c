@@ -124,10 +124,17 @@
 
 #define WSI_TIMEOUT	50
 #define PALETTE_SIZE	256
+#ifdef CONFIG_GLCD_DVI_VGA
+#define LEFT_MARGIN	142
+#define RIGHT_MARGIN	2
+#define UPPER_MARGIN	44
+#define LOWER_MARGIN	2
+#else
 #define LEFT_MARGIN	64
 #define RIGHT_MARGIN	64
 #define UPPER_MARGIN	32
 #define LOWER_MARGIN	32
+#endif
 
 static resource_size_t da8xx_fb_reg_base;
 static struct resource *lcdc_regs;
@@ -246,6 +253,20 @@ static struct da8xx_panel known_lcd_panels[] = {
 		.vsw = 10,
 		.pxl_clk = 7833600,
 		.invert_pxl_clk = 0,
+	},
+	/* DVI VGA ADAPTER */
+	[2] = {
+		.name = "DVI_VGA_ADAPTER",
+		.width = 640,
+		.height = 480,
+		.hfp = 142,
+		.hbp = 2,
+		.hsw = 9,
+		.vfp = 44,
+		.vbp = 2,
+		.vsw = 0,
+		.pxl_clk = 25000000,
+		.invert_pxl_clk = 1,
 	},
 };
 
@@ -666,7 +687,8 @@ static int lcd_init(struct da8xx_fb_par *par, const struct lcd_ctrl_config *cfg,
 	if (ret < 0)
 		return ret;
 
-	if (QVGA != cfg->p_disp_panel->panel_type)
+	if ((QVGA != cfg->p_disp_panel->panel_type) &&
+			(VGA != cfg->p_disp_panel->panel_type))
 		return -EINVAL;
 
 	if (cfg->bpp <= cfg->p_disp_panel->max_bpp &&
@@ -756,10 +778,8 @@ static irqreturn_t lcdc_irq_handler_rev01(int irq, void *arg)
 	if ((stat & LCD_SYNC_LOST) && (stat & LCD_FIFO_UNDERFLOW)) {
 		printk(KERN_ERR "LCDC sync lost or underflow error occured\n");
 		lcd_disable_raster();
-		clk_disable(par->lcdc_clk);
 		lcdc_write(stat, LCD_STAT_REG);
 		lcd_enable_raster();
-		clk_enable(par->lcdc_clk);
 	} else if (stat & LCD_PL_LOAD_DONE) {
 		/*
 		 * Must disable raster before changing state of any control bit.
