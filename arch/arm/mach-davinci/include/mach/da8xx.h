@@ -81,6 +81,9 @@ extern unsigned int da850_max_speed;
 #define DA8XX_VPIF_BASE		0x01e17000
 #define DA8XX_SHARED_RAM_BASE	0x80000000
 
+#define DA8XX_EMIF30_CONTROL_BASE	0xB0000000
+#define DA8XX_EMIF30_BPRIO_OFFSET	0x20
+
 static inline int cpu_is_davinci_da8xx_arm_only(void)
 {
 	if (!cpu_is_davinci_da8xx())
@@ -131,6 +134,7 @@ extern struct platform_device da8xx_serial_device;
 extern struct emac_platform_data da8xx_emac_pdata;
 extern struct da8xx_lcdc_platform_data sharp_lcd035q3dg01_pdata;
 extern struct da8xx_lcdc_platform_data sharp_lk043t1dg01_pdata;
+extern struct da8xx_lcdc_platform_data dvi_vga_adapter_pdata;
 extern struct davinci_spi_platform_data da8xx_spi_pdata[];
 
 extern struct platform_device da8xx_wdt_device;

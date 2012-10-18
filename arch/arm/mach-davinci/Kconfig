@@ -188,6 +188,12 @@ config DA830_UI_NAND
 	help
 	  Say Y here to use the NAND flash. Do not forget to setup
 	  the switch correctly.
+
+config GLCD_DVI_VGA
+	bool "DVI-VGA Display (Adapter)"
+	help
+	  Say Y here to use the VGA display . Do not forget to setup
+	  the switch correctly.
 endchoice
 
 config MACH_DAVINCI_DA850_EVM

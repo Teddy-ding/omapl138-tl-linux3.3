@@ -402,22 +402,45 @@ static inline void da830_evm_init_nand(int mux_mode)
 static inline void da830_evm_init_nand(int mux_mode) {}
 #endif
 
-#ifdef CONFIG_DA830_UI_LCD
+#if defined(CONFIG_DA830_UI_LCD) || defined(CONFIG_GLCD_DVI_VGA)
 static int da830_lcd_hw_init(void)
 {
 	void __iomem *cfg_mstpri2_base;
-	u32 val;
-
+#ifdef CONFIG_GLCD_DVI_VGA
+	u32 emifb_revid = 0;
+	u32 emifb_bprio = 0;
+	u32 *emifb_mem = 0;
+#endif
+	u32 val = 0;
 	/*
 	 * Reconfigure the LCDC priority to the highest to ensure that
 	 * the throughput/latency requirements for the LCDC are met.
 	 */
 	cfg_mstpri2_base = DA8XX_SYSCFG0_VIRT(DA8XX_MSTPRI2_REG);
-
 	val = __raw_readl(cfg_mstpri2_base);
 	val &= 0x0fffffff;
 	__raw_writel(val, cfg_mstpri2_base);
 
+#ifdef CONFIG_GLCD_DVI_VGA
+	/*
+	 *The PBBPR set to a moderately low value to provide an acceptable
+	 *balance of SDRAM efficiency and latency for high priority master.
+	 */
+	emifb_mem = ioremap_nocache((DA8XX_EMIF30_CONTROL_BASE), 256);
+	if(emifb_mem == NULL)
+	{
+		pr_warning("da830_evm_init: EMIFB mem allocate failed\n");
+		return 0;
+	}
+
+	/* Rev ID reg */
+	emifb_revid = *(u32 *)emifb_mem;
+
+	/* set BPRIO */
+	*(emifb_mem + DA8XX_EMIF30_BPRIO_OFFSET/4) = 0x20;
+	emifb_bprio = *(emifb_mem + DA8XX_EMIF30_BPRIO_OFFSET/4);
+	iounmap(emifb_mem);
+#endif
 	return 0;
 }
 
@@ -445,11 +468,17 @@ static inline void da830_evm_init_lcdc(int mux_mode)
 				ret);
 #endif
 
+#ifndef CONFIG_GLCD_DVI_VGA
 	ret = da8xx_register_lcdc(&sharp_lcd035q3dg01_pdata);
 	if (ret)
 		pr_warning("da830_evm_init: lcd setup failed: %d\n", ret);
 
 	gpio_direction_output(mux_mode, 0);
+#else
+	ret = da8xx_register_lcdc(&dvi_vga_adapter_pdata);
+	if (ret)
+		pr_warning("da830_evm_init: lcd setup failed: %d\n", ret);
+#endif
 }
 #else
 static inline void da830_evm_init_lcdc(int mux_mode) { }
@@ -471,8 +500,9 @@ static int __init da830_evm_ui_expander_setup(struct i2c_client *client,
 	/* Drive mux mode low to match the default without UI card */
 	gpio_direction_output(gpio + 6, 0);
 
+#ifndef CONFIG_GLCD_DVI_VGA
 	da830_evm_init_lcdc(gpio + 6);
-
+#endif
 	da830_evm_init_nand(gpio + 6);
 
 	return 0;
@@ -908,6 +938,10 @@ static __init void da830_evm_init(void)
 		pr_warning("da830_evm_init: rtc setup failed: %d\n", ret);
 
 	da830_init_func();
+
+#ifdef CONFIG_GLCD_DVI_VGA
+	da830_evm_init_lcdc(0);
+#endif
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
