@@ -41,6 +41,7 @@
 
 #ifdef CONFIG_DA830_WL18XX
 #define DA830_WIFI_NAND			GPIO_TO_PIN(1, 15)
+#define DA830_BT_EN			GPIO_TO_PIN(2, 2)
 #define DA830_SPI_UART    		GPIO_TO_PIN(3, 10)
 #define DA830_WLAN_EN			GPIO_TO_PIN(5, 7)
 #define DA830_WLAN_IRQ			GPIO_TO_PIN(2, 12)
@@ -837,6 +838,13 @@ static __init void da830_init_func(void)
 
 	if (!HAS_SPI) {
 		if(!ret) {
+			ret = davinci_cfg_reg(DA830_GPIO2_2);
+			if (ret)
+				pr_warning("gpio2_2 pinmux failed\n");
+			ret = gpio_request(DA830_BT_EN, "BT_EN");
+			if (ret)
+				pr_warning("gpio2_2 gpio request failed\n");
+			gpio_direction_output(DA830_BT_EN, 1);
 			davinci_cfg_reg_list(da830_uart0_pins);
 			gpio_direction_output(DA830_SPI_UART, 1);
 		}
