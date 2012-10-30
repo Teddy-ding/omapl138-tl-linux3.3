@@ -306,6 +306,13 @@ config MACH_OMAPL138_HAWKBOARD
 	  Information of this board may be found at
 	  http://www.hawkboard.org/
 
+config MACH_DAVINCI_DA850_SDI
+	bool "SDI DA850 Development Board"
+	default ARCH_DAVINCI_DA850
+	depends on ARCH_DAVINCI_DA850
+	help
+	  Say Y here to select the Spectrum Digital DA850 development board.
+
 config DAVINCI_MUX
 	bool "DAVINCI multiplexing support"
 	depends on ARCH_DAVINCI
