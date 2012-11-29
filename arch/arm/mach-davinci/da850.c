@@ -1020,6 +1020,15 @@ static const struct da850_opp da850_opp_456 = {
 	.cvdd_max	= 1350000,
 };
 
+static const struct da850_opp da850_opp_432 = {
+	.freq		= 432000,
+	.prediv		= 1,
+	.mult		= 18,
+	.postdiv	= 1,
+	.cvdd_min	= 1300000,
+	.cvdd_max	= 1380000,
+};
+
 static const struct da850_opp da850_opp_408 = {
 	.freq		= 408000,
 	.prediv		= 1,
@@ -1073,6 +1082,7 @@ static const struct da850_opp da850_opp_96 = {
 
 static struct cpufreq_frequency_table da850_freq_table[] = {
 	OPP(456),
+	OPP(432),
 	OPP(408),
 	OPP(372),
 	OPP(300),
