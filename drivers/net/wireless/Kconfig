@@ -32,6 +32,17 @@ config PCMCIA_RAYCS
 	  To compile this driver as a module, choose M here: the module will be
 	  called ray_cs.  If unsure, say N.
 
+config WL1271_WLAN
+	tristate "WL1271 TI's SDIO based wireless card"
+	select WIRELESS_EXT
+	select CRYPTO
+	select WEXT_SPY
+	select WEXT_PRIV
+	---help---
+	This driver support both the standard Linux Wireless Extensions
+	and TI's proprietary API, so both the Linux Wireless Tools and this
+	module support 2.4 GHz 802.11 b/g/n standard
+
 config LIBERTAS_THINFIRM
 	tristate "Marvell 8xxx Libertas WLAN driver support with thin firmware"
 	depends on MAC80211
