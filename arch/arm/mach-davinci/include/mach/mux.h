@@ -760,6 +760,7 @@ enum davinci_da850_index {
 	DA850_NUART1_RTS,
 	DA850_UART1_RXD,
 	DA850_UART1_TXD,
+	DA850_GPIO0_15,
 
 	/* UART2 function */
 	DA850_NUART2_CTS,

@@ -785,13 +785,26 @@ static int da850_evm_mmc_get_cd(int index)
 	return !gpio_get_value(DA850_MMCSD_CD_PIN);
 }
 
-static struct davinci_mmc_config da850_mmc_config = {
-	.get_ro		= da850_evm_mmc_get_ro,
-	.get_cd		= da850_evm_mmc_get_cd,
-	.wires		= 4,
-	.max_freq	= 50000000,
-	.caps		= MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
-	.version	= MMC_CTLR_VERSION_2,
+static struct davinci_mmc_config da850_mmc_config[] = {
+	{
+		.get_ro		= da850_evm_mmc_get_ro,
+		.get_cd		= da850_evm_mmc_get_cd,
+		.wires		= 4,
+		.max_freq	= 50000000,
+		.caps		= MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
+		.version	= MMC_CTLR_VERSION_2,
+	},
+#ifdef CONFIG_DA850_USE_MMC1
+	{
+		.get_ro         = da850_evm_mmc_get_ro,
+		.get_cd         = -1,
+		.wires          = 4,
+		.max_freq       = 50000000,
+		.caps           = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
+		.version        = MMC_CTLR_VERSION_2,
+	},
+#endif
+	{}
 };
 
 #ifdef CONFIG_DA850_SDI_LCDC
@@ -1337,10 +1350,17 @@ static __init void da850_evm_init(void)
 					DA850_MMCSD_WP_PIN);
 		gpio_direction_input(DA850_MMCSD_WP_PIN);
 
-		ret = da8xx_register_mmcsd0(&da850_mmc_config);
+#ifdef CONFIG_DA850_USE_MMC1
+		ret = da8xx_pinmux_setup(da850_mmcsd1_pins);
 		if (ret)
-			pr_warning("da850_evm_init: mmcsd0 registration failed:"
-					" %d\n", ret);
+			pr_warning("da850_evm_init: mmcsd1 mux setup failed:"
+					"%d\n", ret);
+#endif
+
+		ret = da850_register_mmcsd1(da850_mmc_config);
+		if (ret)
+			pr_warning("da850_evm_init: mmcsd"
+				" registration failed: %d",  ret);
 	}
 
 	davinci_serial_init(&da850_evm_uart_config);

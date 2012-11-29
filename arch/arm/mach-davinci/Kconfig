@@ -168,6 +168,17 @@ config DA830
 	  Select this option if you want to build for da830 evm
 endchoice
 
+choice DA850_MMC_CONTROLLER
+	prompt "Select MMC host controller to be used on board"
+	depends on MMC_DAVINCI
+
+config DA850_USE_MMC0
+	bool "USE MMC0 host controller"
+
+config DA850_USE_MMC1
+	bool "Use MMC0 & MMC1 host controller"
+endchoice
+
 choice
 	prompt "Select DA830/OMAP-L137/AM17x UI board peripheral"
 	depends on MACH_DAVINCI_DA830_EVM

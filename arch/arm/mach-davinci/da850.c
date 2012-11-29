@@ -320,7 +320,7 @@ static struct clk mmcsd0_clk = {
 static struct clk mmcsd1_clk = {
 	.name		= "mmcsd1",
 	.parent		= &pll0_sysclk2,
-	.lpsc		= DA850_LPSC1_MMC_SD1,
+	.lpsc		= DA850_LPSC1_MMC_SD,
 	.gpsc		= 1,
 };
 
@@ -328,6 +328,13 @@ static struct clk mcbsp1_clk = {
 	.name		= "mcbsp1",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA850_LPSC1_MCBSP1,
+	.gpsc		= 1,
+};
+
+static struct clk mmcsd_clk1 = {
+	.name		= "mmcsd1",
+	.parent		= &pll0_sysclk2,
+	.lpsc		= DA850_LPSC1_MMC_SD,
 	.gpsc		= 1,
 };
 
@@ -680,6 +687,7 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850, VPIF_DOUT15,	17,	8,	15,	1,	false)
 	MUX_CFG(DA850, VPIF_CLKO2,	19,	12,	15,	1,	false)
 	MUX_CFG(DA850, VPIF_CLKO3,	19,	20,	15,	1,	false)
+
 	/* McBSP1 function */
 	MUX_CFG(DA850,	MCBSP1_CLKR,	1,	4,	15,	2,	false)
 	MUX_CFG(DA850,	MCBSP1_CLKX,	1,	8,	15,	2,	false)
@@ -690,6 +698,15 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850,	MCBSP1_CLKS,	1,	28,	15,	2,	false)
 #endif
 };
+
+#ifdef CONFIG_DA850_USE_MMC1
+const short da850_mmcsd1_pins[] __initdata = {
+	DA850_GPIO6_9, DA850_GPIO6_10, DA850_MMCSD1_DAT_0,
+	DA850_MMCSD1_DAT_1, DA850_MMCSD1_DAT_2, DA850_MMCSD1_DAT_3,
+	DA850_MMCSD1_CLK, DA850_MMCSD1_CMD,
+	-1
+};
+#endif
 
 
 const short da850_i2c0_pins[] __initdata = {
