@@ -473,6 +473,7 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850, NUART1_RTS,	0,	16,	15,	4,	false)
 	MUX_CFG(DA850, UART1_RXD,	4,	24,	15,	2,	false)
 	MUX_CFG(DA850, UART1_TXD,	4,	28,	15,	2,	false)
+	MUX_CFG(DA850, GPIO0_15,	0,	0,	15,	8,	false)
 	/* UART2 function */
 	MUX_CFG(DA850, UART2_RXD,	4,	16,	15,	2,	false)
 	MUX_CFG(DA850, UART2_TXD,	4,	20,	15,	2,	false)
@@ -747,6 +748,7 @@ const short da850_uart1_pins[] __initdata = {
 	-1
 };
 
+#ifndef CONFIG_WIFI_CONTROL_FUNC
 const short da850_vpif_capture_pins[] __initdata = {
 	DA850_VPIF_DIN0, DA850_VPIF_DIN1, DA850_VPIF_DIN2, DA850_VPIF_DIN3,
 	DA850_VPIF_DIN4, DA850_VPIF_DIN5, DA850_VPIF_DIN6, DA850_VPIF_DIN7,
@@ -756,6 +758,7 @@ const short da850_vpif_capture_pins[] __initdata = {
 	DA850_VPIF_CLKIN3,
 	-1
 };
+#endif
 
 const short da850_vpif_display_pins[] __initdata = {
 	DA850_VPIF_DOUT0, DA850_VPIF_DOUT1, DA850_VPIF_DOUT2, DA850_VPIF_DOUT3,

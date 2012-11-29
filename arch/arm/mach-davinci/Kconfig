@@ -168,6 +168,10 @@ config DA830
 	  Select this option if you want to build for da830 evm
 endchoice
 
+config WIFI_CONTROL_FUNC
+	bool "Wireless Card Support"
+	depends on MACH_DAVINCI_DA850_EVM
+
 choice DA850_MMC_CONTROLLER
 	prompt "Select MMC host controller to be used on board"
 	depends on MMC_DAVINCI

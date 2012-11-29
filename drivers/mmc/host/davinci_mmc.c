@@ -1216,6 +1216,21 @@ static void __init init_mmcsd_host(struct mmc_davinci_host *host)
 	mmc_davinci_reset_ctrl(host, 0);
 }
 
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+static void davinci_mmcsd_virtual_detect(void *dev_id, int carddetect)
+{
+	struct mmc_davinci_host *host = dev_id;
+
+	printk(KERN_DEBUG "%s: card detect %d\n", mmc_hostname(host->mmc),
+					carddetect);
+
+	if (carddetect)
+		mmc_detect_change(host->mmc, (HZ * 200) / 1000);
+	else
+		mmc_detect_change(host->mmc, (HZ * 50) / 1000);
+}
+#endif
+
 static int __init davinci_mmcsd_probe(struct platform_device *pdev)
 {
 	struct davinci_mmc_config *pdata = pdev->dev.platform_data;
@@ -1287,7 +1302,10 @@ static int __init davinci_mmcsd_probe(struct platform_device *pdev)
 		host->use_dma = 0;
 
 	/* REVISIT:  someday, support IRQ-driven card detection.  */
+
+#ifndef CONFIG_WIFI_CONTROL_FUNC
 	mmc->caps |= MMC_CAP_NEEDS_POLL;
+#endif
 	mmc->caps |= MMC_CAP_WAIT_WHILE_BUSY;
 
 	if (pdata && (pdata->wires == 4 || pdata->wires == 0))
@@ -1295,6 +1313,12 @@ static int __init davinci_mmcsd_probe(struct platform_device *pdev)
 
 	if (pdata && (pdata->wires == 8))
 		mmc->caps |= (MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA);
+
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+	if (pdata->register_status_notify)
+		pdata->register_status_notify(davinci_mmcsd_virtual_detect,
+								host);
+#endif
 
 	host->version = pdata->version;
 

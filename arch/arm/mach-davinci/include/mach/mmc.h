@@ -28,6 +28,13 @@ struct davinci_mmc_config {
 
 	/* Number of sg segments */
 	u8	nr_sg;
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+	int     (*status)(int module);
+	int     (*register_status_notify)
+		(void (*callback)(void *dev_id, int card_present),
+						void *dev_id);
+#endif
+
 };
 void davinci_setup_mmc(int module, struct davinci_mmc_config *config);
 

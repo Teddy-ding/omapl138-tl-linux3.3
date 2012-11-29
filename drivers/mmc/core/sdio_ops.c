@@ -117,6 +117,9 @@ int mmc_io_rw_direct(struct mmc_card *card, int write, unsigned fn,
 	BUG_ON(!card);
 	return mmc_io_rw_direct_host(card->host, write, fn, addr, in, out);
 }
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+EXPORT_SYMBOL(mmc_io_rw_direct);
+#endif
 
 int mmc_io_rw_extended(struct mmc_card *card, int write, unsigned fn,
 	unsigned addr, int incr_addr, u8 *buf, unsigned blocks, unsigned blksz)

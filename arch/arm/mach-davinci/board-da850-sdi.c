@@ -34,6 +34,10 @@
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+#include <linux/wifi_tiwlan.h>
+#endif
+
 #include <mach/cp_intc.h>
 #include <mach/da8xx.h>
 #include <mach/nand.h>
@@ -52,6 +56,12 @@
 #define DA850_MMCSD_WP_PIN		GPIO_TO_PIN(4, 1)
 
 #define DA850_MII_MDIO_CLKEN_PIN	GPIO_TO_PIN(2, 6)
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+/*WLAN GPIO PIN*/
+#define DA850_WLAN_EN			GPIO_TO_PIN(6, 9)
+#define DA850_WLAN_IRQ			GPIO_TO_PIN(6, 10)
+#define DA850_BT_EN			GPIO_TO_PIN(0, 15)
+#endif
 
 #define TVP5147_CH0		"tvp514x-0"
 #define TVP5147_CH1		"tvp514x-1"
@@ -276,6 +286,89 @@ static struct spi_board_info da850evm_spi_info[] = {
 		.chip_select		= 0,
 	},
 };
+
+/* ---- WIFI ---- */
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+static void (*wifi_status_cb)(void *dev_id, int card_present);
+static void *wifi_status_cb_devid;
+/* WIFI virtual 'card detect' status */
+static int am1808_wifi_cd;
+static int am1808_wifi_status_register(
+	void (*callback)(void *dev_id, int card_present), void *dev_id)
+{
+	if (wifi_status_cb)
+		return -EAGAIN;
+	wifi_status_cb = callback;
+	wifi_status_cb_devid = dev_id;
+	return 0;
+}
+
+static int am1808_wifi_status(int index)
+{
+	return am1808_wifi_cd;
+}
+
+static int am1808_wifi_set_carddetect(int val)
+{
+	am1808_wifi_cd = val;
+	if (wifi_status_cb)
+		wifi_status_cb(wifi_status_cb_devid, val);
+	else
+		printk(KERN_WARNING "%s: Nobody to notify\n", __func__);
+
+	return 0;
+}
+
+static int am1808_wifi_power(int on)
+{
+	gpio_set_value(DA850_WLAN_EN, on);
+	return 0;
+}
+
+struct wifi_platform_data am1808_wifi_control = {
+	.set_power		= am1808_wifi_power,
+	.set_carddetect		= am1808_wifi_set_carddetect,
+};
+
+static struct resource am1808_wifi_resources[] = {
+	[0] = {
+		.name		= "device_wifi_irq",
+		.start		= -1,
+		.end		= -1,
+		.flags		= IORESOURCE_IRQ | IORESOURCE_IRQ_LOWEDGE,
+	},
+};
+
+static struct platform_device am1808_wifi = {
+	.name		= "device_wifi",
+	.id		= 1,
+	.num_resources	= 1,
+	.resource	= am1808_wifi_resources,
+	.dev		= {
+		.platform_data = &am1808_wifi_control,
+	},
+};
+
+static void __init wifi_power_init(void)
+{
+	if (gpio_request(DA850_WLAN_EN, "wlan_en")) {
+		printk(KERN_ERR "Failed to request gpio DA850_WLAN_EN\n");
+		return;
+	}
+
+	gpio_direction_output(DA850_WLAN_EN, 1);
+	if (gpio_request(DA850_WLAN_IRQ, "wlan_irq")) {
+		printk(KERN_ERR "Failed to request gpio DA850_WLAN_IRQ_GPIO\n");
+		gpio_free(DA850_WLAN_EN);
+		return;
+	}
+	am1808_wifi_resources[0].start = am1808_wifi_resources[0].end =
+					gpio_to_irq(DA850_WLAN_IRQ);
+	/* In order to ensure order of PM functions */
+	am1808_wifi.dev.parent = NULL;
+	platform_device_register(&am1808_wifi);
+}
+#endif
 
 #if defined(CONFIG_MMC_DAVINCI) || \
     defined(CONFIG_MMC_DAVINCI_MODULE)
@@ -797,11 +890,23 @@ static struct davinci_mmc_config da850_mmc_config[] = {
 #ifdef CONFIG_DA850_USE_MMC1
 	{
 		.get_ro         = da850_evm_mmc_get_ro,
-		.get_cd         = -1,
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+		/* using the virtual carddetect function -
+		* so ifconfig up/down will reset the board
+		*/
+		.get_cd         = am1808_wifi_status,
+#else
+ 		.get_cd         = -1,
+#endif
 		.wires          = 4,
 		.max_freq       = 50000000,
 		.caps           = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
 		.version        = MMC_CTLR_VERSION_2,
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+		.status         = am1808_wifi_status,
+		.register_status_notify = am1808_wifi_status_register,
+#endif
+
 	},
 #endif
 	{}
@@ -1362,6 +1467,17 @@ static __init void da850_evm_init(void)
 			pr_warning("da850_evm_init: mmcsd"
 				" registration failed: %d",  ret);
 	}
+
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+	ret = gpio_request(DA850_BT_EN, "WL1271_BT_EN");
+	if (ret)
+		pr_warning("da850_evm_init: can not open BT GPIO %d\n",
+					DA850_BT_EN);
+	gpio_direction_output(DA850_BT_EN, 1);
+	udelay(1000);
+	gpio_direction_output(DA850_BT_EN, 0);
+	wifi_power_init();
+#endif
 
 	davinci_serial_init(&da850_evm_uart_config);
 

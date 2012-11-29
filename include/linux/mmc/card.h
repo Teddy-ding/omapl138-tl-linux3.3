@@ -462,6 +462,9 @@ static inline int mmc_card_long_read_time(const struct mmc_card *c)
 	return c->quirks & MMC_QUIRK_LONG_READ_TIME;
 }
 
+#ifdef CONFIG_WIFI_CONTROL_FUNC
+#define mmc_card_set_lenient_fn0(c) ((c)->quirks |= MMC_QUIRK_LENIENT_FN0)
+#endif
 #define mmc_card_name(c)	((c)->cid.prod_name)
 #define mmc_card_id(c)		(dev_name(&(c)->dev))
 
