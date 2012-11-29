@@ -588,6 +588,9 @@ static struct tps6507x_board tps_board = {
 
 static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	{
+		I2C_BOARD_INFO("da850sdi_keys", 0x25),
+	},
+	{
 		I2C_BOARD_INFO("tps6507x", 0x48),
 		.platform_data = &tps_board,
 	},

@@ -475,6 +475,15 @@ config INPUT_DM365EVM
 	  To compile this driver as a module, choose M here: the
 	  module will be called dm365evm_keys.
 
+config INPUT_DA850SDI
+	tristate "DA850 SDI Board IR Remote"
+	depends on MACH_DAVINCI_DA850_SDI
+	help
+	  Supports the IR remote used with the DA850 SDI board.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called da850sdi_keys.
+
 config INPUT_BFIN_ROTARY
 	tristate "Blackfin Rotary support"
 	depends on BF54x || BF52x
