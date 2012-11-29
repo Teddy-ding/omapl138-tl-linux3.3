@@ -1,3 +1,4 @@
+
 # DAVINCI Platform Support
 snd-soc-davinci-objs := davinci-pcm.o
 snd-soc-davinci-i2s-objs := davinci-i2s.o
@@ -17,4 +18,5 @@ obj-$(CONFIG_SND_DAVINCI_SOC_EVM) += snd-soc-evm.o
 obj-$(CONFIG_SND_DM6467_SOC_EVM) += snd-soc-evm.o
 obj-$(CONFIG_SND_DA830_SOC_EVM) += snd-soc-evm.o
 obj-$(CONFIG_SND_DA850_SOC_EVM) += snd-soc-evm.o
+obj-$(CONFIG_SND_DA850_SOC_SDI) += snd-soc-evm.o
 obj-$(CONFIG_SND_DAVINCI_SOC_SFFSDR) += snd-soc-sffsdr.o

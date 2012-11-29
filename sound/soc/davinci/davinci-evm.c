@@ -52,11 +52,10 @@ static int evm_hw_params(struct snd_pcm_substream *substream,
 	 */
 	else if (machine_is_davinci_evm())
 		sysclk = 12288000;
-
 	else if (machine_is_davinci_da830_evm() ||
-				machine_is_davinci_da850_evm())
-		sysclk = 24576000;
-
+			machine_is_davinci_da850_evm() ||
+			machine_is_davinci_da850_sdi())
+	    sysclk = 24576000;
 	else
 		return -EINVAL;
 
@@ -289,6 +288,13 @@ static struct snd_soc_card da850_snd_soc_card = {
 	.num_links = 1,
 };
 
+static struct snd_soc_card da850_sdi_snd_soc_card = {
+	.name = "DA850 SDI EVM",
+	.owner = THIS_MODULE,
+	.dai_link = &da850_evm_dai,
+	.num_links = 1,
+};
+
 static struct platform_device *evm_snd_device;
 
 static int __init evm_init(void)
@@ -314,6 +320,9 @@ static int __init evm_init(void)
 		index = 1;
 	} else if (machine_is_davinci_da850_evm()) {
 		evm_snd_dev_data = &da850_snd_soc_card;
+		index = 0;
+	} else if (machine_is_davinci_da850_sdi()) {
+		evm_snd_dev_data = &da850_sdi_snd_soc_card;
 		index = 0;
 	} else
 		return -EINVAL;

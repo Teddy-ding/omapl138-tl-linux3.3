@@ -29,6 +29,7 @@
 #include <linux/spi/flash.h>
 #include <linux/usb/musb.h>
 #include <linux/i2c-gpio.h>
+#include <linux/module.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -331,6 +332,12 @@ static __init void da850_evm_setup_nor_nand(void)
 	}
 }
 #endif
+static const short da850_mcbsp1_pins[] = {
+	DA850_MCBSP1_CLKR, DA850_MCBSP1_CLKX, DA850_MCBSP1_FSR,
+	DA850_MCBSP1_FSX, DA850_MCBSP1_DR, DA850_MCBSP1_DX, DA850_MCBSP1_CLKS,
+	-1
+};
+
 
 #ifdef CONFIG_DA850_UI_RMII
 static inline void da850_evm_setup_emac_rmii(int rmii_sel)
@@ -595,7 +602,7 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	},
 #endif
 	{
-		I2C_BOARD_INFO("cdce913", 0x65),
+		I2C_BOARD_INFO("cdce913", 0x64),
 	},
 };
 
@@ -603,12 +610,54 @@ static struct davinci_uart_config da850_evm_uart_config __initdata = {
 	.enabled_uarts = 0x7,
 };
 
-/* davinci da850 evm audio machine driver */
-static u8 da850_iis_serializer_direction[] = {
-	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,
-	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,
-	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,	TX_MODE,
-	RX_MODE,	INACTIVE_MODE,	INACTIVE_MODE,	INACTIVE_MODE,
+typedef struct cdce_reg {
+	u8	addr;
+	u8	val;
+} cdce_reg;
+
+static int cdce_probe(struct i2c_client *client,
+			const struct i2c_device_id *id)
+{
+	int ret = 0;
+	int i;
+	struct cdce_reg regData[] = {
+	    { 0x03, 0x09 },
+	    { 0x14, 0x6d },
+	    { 0x18, 0xc0 },
+	    { 0x19, 0x04 },
+	    { 0x1A, 0x82 },
+	    { 0x1B, 0x07 },
+	};
+
+	for (i=0; i < sizeof(regData) / (sizeof(cdce_reg)); i++) {
+	    ret = i2c_smbus_write_byte_data(client,
+	    				    regData[i].addr | 0x80, regData[i].val);
+	    if (ret) { 
+	    	printk (KERN_WARNING "Failed to write to CDCE13 register 0x%02x.", regData[i].addr);
+		return ret;
+	    }
+	}
+
+	return ret;
+}
+
+static int __devexit cdce_remove(struct i2c_client *client)
+{
+	return 0;
+}
+
+static const struct i2c_device_id cdce_id[] = {
+	{ "cdce913", 0 },
+	{ }
+};
+
+static struct i2c_driver cdce_driver = {
+	.driver = {
+		.name	= "cdce913",
+	},
+	.probe		= cdce_probe,
+	.remove		= cdce_remove,
+	.id_table	= cdce_id,
 };
 
 static const short da850_evm_mcasp_pins[] __initconst = {
@@ -618,19 +667,42 @@ static const short da850_evm_mcasp_pins[] __initconst = {
 	-1
 };
 
-static struct snd_platform_data da850_evm_snd_data = {
-	.tx_dma_offset	= 0x2000,
-	.rx_dma_offset	= 0x2000,
-	.op_mode	= DAVINCI_MCASP_IIS_MODE,
-	.num_serializer	= ARRAY_SIZE(da850_iis_serializer_direction),
-	.tdm_slots	= 2,
-	.serial_dir	= da850_iis_serializer_direction,
-	.asp_chan_q	= EVENTQ_0,
-	.version	= MCASP_VERSION_2,
-	.txnumevt	= 1,
-	.rxnumevt	= 1,
-
+//HACK:a see hardcoded values for McBSP1 in devices-da8xx.c
+static struct resource da850_asp_resources[] = {
+    // Memory region containing control registers 
+    {
+	.start	= 0x01D11000,
+	.end	= 0x01D11FFF,
+	.flags	= IORESOURCE_MEM,
+    },
+    // Memory region for FIFO data
+    // {
+    // 	.start	= 0x01F11000,
+    // 	.end	= 0x01F11FFF,
+    // 	.flags	= IORESOURCE_MEM,
+    // },
+    // McBSP1 Tx EDMA event
+    {
+	.start	= 5,
+	.end	= 5,
+	.flags	= IORESOURCE_DMA,
+    },
+    // McBSP1 Rx EDMA event
+    {
+	.start	= 4,
+	.end	= 4,
+	.flags	= IORESOURCE_DMA,
+    },
 };
+
+static struct platform_device da850_asp_device = {
+	.name		= "davinci-asp",
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(da850_asp_resources),
+	.resource	= da850_asp_resources,
+};
+
+static struct snd_platform_data da850_sdi_snd_data;
 
 static const short da850_evm_mmcsd0_pins[] __initconst = {
 	DA850_MMCSD0_DAT_0, DA850_MMCSD0_DAT_1, DA850_MMCSD0_DAT_2,
@@ -969,13 +1041,6 @@ static struct vpif_display_config da850_vpif_display_config = {
 #define HAS_EMAC 0
 #endif
 
-#if defined(CONFIG_SND_DA850_SOC_EVM) || \
-	defined(CONFIG_SND_DA850_SOC_EVM_MODULE)
-#define HAS_MCASP 1
-#else
-#define HAS_MCASP 0
-#endif
-
 #if defined(CONFIG_DA850_UI_RMII) && (HAS_EMAC)
 #define HAS_RMII 1
 #else
@@ -1214,6 +1279,8 @@ static __init void da850_evm_init(void)
 
 	davinci_serial_init(&da850_evm_uart_config);
 
+	i2c_add_driver(&cdce_driver);
+
 	i2c_register_board_info(1, da850_evm_i2c_devices,
 			ARRAY_SIZE(da850_evm_i2c_devices));
 
@@ -1225,19 +1292,14 @@ static __init void da850_evm_init(void)
 	__raw_writel(0, IO_ADDRESS(DA8XX_UART1_BASE) + 0x30);
 	__raw_writel(0, IO_ADDRESS(DA8XX_UART0_BASE) + 0x30);
 
-	if (HAS_MCASP) {
-		if ((HAS_MCBSP0 || HAS_MCBSP1))
-			pr_warning("WARNING: both McASP and McBSP are enabled, "
-					"but they share pins.\n"
-					"\tDisable one of them.\n");
-
-		ret = davinci_cfg_reg_list(da850_evm_mcasp_pins);
-		if (ret)
-			pr_warning("da850_evm_init: mcasp mux setup failed:"
-					"%d\n", ret);
-
-		da8xx_register_mcasp(0, &da850_evm_snd_data);
-	}
+	// HACK
+	ret = davinci_cfg_reg_list(da850_mcbsp1_pins);
+	if (ret)
+	    pr_warning("da850_evm_init: mcbsp1 mux setup failed:"
+		       " %d\n", ret);
+	
+	da850_asp_device.dev.platform_data = &da850_sdi_snd_data;
+	platform_device_register(&da850_asp_device);
 
 	ret = davinci_cfg_reg_list(da850_lcdcntl_pins);
 	if (ret)
