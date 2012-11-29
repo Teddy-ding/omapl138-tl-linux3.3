@@ -621,7 +621,6 @@ static struct lcd_ctrl_config lcd_cfg = {
 	.raster_order		= 0,
 	.fifo_th		= 6,
 };
-
 #else
 static const struct display_panel disp_panel = {
 	QVGA,
@@ -647,6 +646,26 @@ static struct lcd_ctrl_config lcd_cfg = {
 	.raster_order		= 0,
 	.fifo_th		= 6,
 };
+
+static struct lcd_ctrl_config lcd_dvi_cfg = {
+	&disp_panel,
+	.ac_bias		= 255,
+	.ac_bias_intrpt		= 0,
+	.dma_burst_sz		= 16,
+	.bpp			= 16,
+	.fdd			= 0,
+	.tft_alt_mode		= 0,
+	.stn_565_mode		= 0,
+	.mono_8bit_mode		= 0,
+	.invert_line_clock	= 0,
+	.invert_frm_clock	= 0,
+	.sync_edge		= 0,
+	.sync_ctrl		= 1,
+	.raster_order		= 0,
+	.fifo_th		= 6,
+};
+
+
 #endif
 
 struct da8xx_lcdc_platform_data sharp_lcd035q3dg01_pdata = {
@@ -665,6 +684,24 @@ struct da8xx_lcdc_platform_data dvi_vga_adapter_pdata = {
 	.manu_name		= "dvi",
 	.controller_data	= &lcd_cfg,
 	.type			= "DVI_VGA_ADAPTER",
+};
+
+struct da8xx_lcdc_platform_data ti_dvi_vga_pdata = {
+	.manu_name		= "ti",
+	.controller_data	= &lcd_dvi_cfg,
+	.type			= "DVI_Adapter",
+};
+
+struct da8xx_lcdc_platform_data ti_dvi_480p_pdata = {
+	.manu_name		= "ti",
+	.controller_data	= &lcd_dvi_cfg,
+	.type			= "DVI_480P",
+};
+
+struct da8xx_lcdc_platform_data ti_dvi_wvga_pdata = {
+	.manu_name		= "ti",
+	.controller_data	= &lcd_dvi_cfg,
+	.type			= "DVI_WVGA",
 };
 
 #if !defined(CONFIG_FB_DA8XX) && !defined(CONFIG_FB_DA8XX_MODULE)

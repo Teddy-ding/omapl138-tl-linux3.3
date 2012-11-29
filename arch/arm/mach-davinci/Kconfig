@@ -321,7 +321,13 @@ config DA850_SDI_LCDC
        bool "LCD Display board"
 
 config DA850_SDI_DVI_VGA
-       bool "DVI output at VGA resolution"
+       bool "DVI output at VGA (640x480) resolution"
+
+config DA850_SDI_DVI_480P
+       bool "DVI output at 480p (720x480) resolution"
+
+config DA850_SDI_DVI_WVGA
+       bool "DVI output at WVGA (800x480) resolution"
 
 endchoice
 

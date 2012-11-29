@@ -623,8 +623,7 @@ static int tfp_probe(struct i2c_client *client,
 	    { 0x02, 0xff },
 	    { 0x06, 0xff },
 	};
-#endif
-#ifdef CONFIG_DA850_SDI_DVI_VGA
+#else
 	struct tfp_reg regData[] = {
 	    { 0x02, 0xfb },
 	    { 0x06, 0xfb },
@@ -1377,15 +1376,27 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init: lcd initialization failed: %d\n",
 				ret);
 
-#ifdef CONFIG_DA850_SDI_DVI_VGA
-	ret = da8xx_register_lcdc(&ti_dvi_pdata);
+#ifdef CONFIG_DA850_SDI_LCDC
+	sharp_lk043t1dg01_pdata.panel_power_ctrl = da850_panel_power_ctrl,
+	ret = da8xx_register_lcdc(&sharp_lk043t1dg01_pdata);
 	if (ret)
 		pr_warning("da850_evm_init: lcdc registration failed: %d\n",
 				ret);
 #endif
-#ifdef CONFIG_DA850_SDI_LCDC
-	sharp_lk043t1dg01_pdata.panel_power_ctrl = da850_panel_power_ctrl,
-	ret = da8xx_register_lcdc(&sharp_lk043t1dg01_pdata);
+#ifdef CONFIG_DA850_SDI_DVI_VGA
+	ret = da8xx_register_lcdc(&ti_dvi_vga_pdata);
+	if (ret)
+		pr_warning("da850_evm_init: lcdc registration failed: %d\n",
+				ret);
+#endif
+#ifdef CONFIG_DA850_SDI_DVI_480P
+	ret = da8xx_register_lcdc(&ti_dvi_480p_pdata);
+	if (ret)
+		pr_warning("da850_evm_init: lcdc registration failed: %d\n",
+				ret);
+#endif
+#ifdef CONFIG_DA850_SDI_DVI_WVGA
+	ret = da8xx_register_lcdc(&ti_dvi_wvga_pdata);
 	if (ret)
 		pr_warning("da850_evm_init: lcdc registration failed: %d\n",
 				ret);
