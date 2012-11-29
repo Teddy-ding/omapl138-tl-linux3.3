@@ -64,7 +64,6 @@
 //HACK
 #define CONFIG_DA850_UI_RMII
 #define CONFIG_DA850_UI_EXPANDER
-//#define CONFIG_MACH_DAVINCI_DA850_EVM
 
 static struct davinci_pm_config da850_pm_pdata = {
 	.sleepcount = 128,
@@ -604,6 +603,63 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	{
 		I2C_BOARD_INFO("cdce913", 0x64),
 	},
+	{
+		I2C_BOARD_INFO("tfp410", 0x21),
+	},
+};
+
+typedef struct tfp_reg {
+	u8	addr;
+	u8	val;
+} tfp_reg;
+
+static int tfp_probe(struct i2c_client *client,
+			const struct i2c_device_id *id)
+{
+	int ret = 0;
+	int i;
+#ifdef CONFIG_DA850_SDI_LCDC
+	struct tfp_reg regData[] = {
+	    { 0x02, 0xff },
+	    { 0x06, 0xff },
+	};
+#endif
+#ifdef CONFIG_DA850_SDI_DVI_VGA
+	struct tfp_reg regData[] = {
+	    { 0x02, 0xfb },
+	    { 0x06, 0xfb },
+	};
+#endif
+
+	for (i=0; i < sizeof(regData) / (sizeof(tfp_reg)); i++) {
+	    ret = i2c_smbus_write_byte_data(client,
+	    				    regData[i].addr, regData[i].val);
+	    if (ret) { 
+	    	printk (KERN_WARNING "Failed to write to TFP410 register 0x%02x.", regData[i].addr);
+		return ret;
+	    }
+	}
+
+	return ret;
+}
+
+static int __devexit tfp_remove(struct i2c_client *client)
+{
+	return 0;
+}
+
+static const struct i2c_device_id tfp_id[] = {
+	{ "tfp410", 0 },
+	{ }
+};
+
+static struct i2c_driver tfp_driver = {
+	.driver = {
+		.name	= "tfp410",
+	},
+	.probe		= tfp_probe,
+	.remove		= tfp_remove,
+	.id_table	= tfp_id,
 };
 
 static struct davinci_uart_config da850_evm_uart_config __initdata = {
@@ -730,6 +786,7 @@ static struct davinci_mmc_config da850_mmc_config = {
 	.version	= MMC_CTLR_VERSION_2,
 };
 
+#ifdef CONFIG_DA850_SDI_LCDC
 static void da850_panel_power_ctrl(int val)
 {
 	/* lcd power */
@@ -740,6 +797,7 @@ static void da850_panel_power_ctrl(int val)
 	/* lcd backlight */
 	gpio_set_value(DA850_LCD_BL_PIN, val);
 }
+#endif
 
 static int da850_lcd_hw_init(void)
 {
@@ -747,7 +805,7 @@ static int da850_lcd_hw_init(void)
 	void __iomem *cfg_mstpri2_base;
 	void __iomem *emifb;
 	void __iomem *myptr;
-#ifndef CONFIG_DA850_DVI
+#ifdef CONFIG_DA850_SDI_LCDC
 	int status;
 #endif
 	u32 val;
@@ -783,7 +841,7 @@ static int da850_lcd_hw_init(void)
 	myptr = DA8XX_EMIFB_VIRT(0x20);
 	__raw_writel(0x20, myptr);
 
-#ifndef CONFIG_DA850_DVI
+#ifdef CONFIG_DA850_SDI_LCDC
 	status = gpio_request(DA850_LCD_BL_PIN, "lcd bl\n");
 	if (status < 0)
 		return status;
@@ -1281,6 +1339,8 @@ static __init void da850_evm_init(void)
 
 	i2c_add_driver(&cdce_driver);
 
+	i2c_add_driver(&tfp_driver);
+
 	i2c_register_board_info(1, da850_evm_i2c_devices,
 			ARRAY_SIZE(da850_evm_i2c_devices));
 
@@ -1317,12 +1377,13 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init: lcd initialization failed: %d\n",
 				ret);
 
-#ifdef CONFIG_DA850_DVI
+#ifdef CONFIG_DA850_SDI_DVI_VGA
 	ret = da8xx_register_lcdc(&ti_dvi_pdata);
 	if (ret)
 		pr_warning("da850_evm_init: lcdc registration failed: %d\n",
 				ret);
-#else
+#endif
+#ifdef CONFIG_DA850_SDI_LCDC
 	sharp_lk043t1dg01_pdata.panel_power_ctrl = da850_panel_power_ctrl,
 	ret = da8xx_register_lcdc(&sharp_lk043t1dg01_pdata);
 	if (ret)

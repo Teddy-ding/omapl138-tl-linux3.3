@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.33-rc4
-# Fri Aug 27 08:51:10 2010
+# Sat Sep  4 09:49:41 2010
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -251,6 +251,8 @@ CONFIG_ARCH_DAVINCI_DA8XX=y
 #
 # CONFIG_MACH_DAVINCI_DA850_EVM is not set
 CONFIG_MACH_DAVINCI_DA850_SDI=y
+CONFIG_DA850_SDI_LCDC=y
+# CONFIG_DA850_SDI_DVI_VGA is not set
 CONFIG_DAVINCI_MUX=y
 # CONFIG_DAVINCI_MUX_DEBUG is not set
 # CONFIG_DAVINCI_MUX_WARNINGS is not set
