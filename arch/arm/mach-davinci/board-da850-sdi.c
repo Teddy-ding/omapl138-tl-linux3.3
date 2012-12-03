@@ -853,8 +853,8 @@ static struct resource da850_asp_resources[] = {
 };
 
 static struct platform_device da850_asp_device = {
-	.name		= "davinci-asp",
-	.id		= 0,
+	.name		= "davinci-mcbsp",
+	.id		= 1,
 	.num_resources	= ARRAY_SIZE(da850_asp_resources),
 	.resource	= da850_asp_resources,
 };
@@ -1332,7 +1332,7 @@ static __init void da850_evm_usb_init(void)
 static struct i2c_gpio_platform_data da850_gpio_i2c_pdata = {
 	.sda_pin	= GPIO_TO_PIN(1, 4),
 	.scl_pin	= GPIO_TO_PIN(1, 5),
-	.udelay		= 9,			/* 250 KHz */
+	.udelay		= 2,			/* 250 KHz */
 };
 
 static struct platform_device da850_gpio_i2c = {
@@ -1412,6 +1412,11 @@ static struct edma_rsv_info da850_edma_cc1_rsv = {
 static struct edma_rsv_info *da850_edma_rsv[2] = {
 	&da850_edma_cc0_rsv,
 	&da850_edma_cc1_rsv,
+};
+
+static struct platform_device davinci_pcm_device = {
+	        .name   = "davinci-pcm-audio",
+		        .id     = -1,
 };
 
 #define DA850EVM_SATA_REFCLKPN_RATE	(100 * 1000 * 1000)
@@ -1502,7 +1507,10 @@ static __init void da850_evm_init(void)
 	    pr_warning("da850_evm_init: mcbsp1 mux setup failed:"
 		       " %d\n", ret);
 	
+	platform_device_register(&davinci_pcm_device);
+
 	da850_asp_device.dev.platform_data = &da850_sdi_snd_data;
+
 	platform_device_register(&da850_asp_device);
 
 	ret = davinci_cfg_reg_list(da850_lcdcntl_pins);
