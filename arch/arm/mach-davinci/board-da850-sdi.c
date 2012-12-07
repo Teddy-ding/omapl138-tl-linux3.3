@@ -710,7 +710,15 @@ typedef struct tfp_reg {
 } tfp_reg;
 
 static struct i2c_client *muteClient = NULL;
-
+/*
+ * The CODEC_MUTE signal enables/disables the HW mute circuit.
+ *     high = muted
+ *     low = unmuted
+ * It is pulled high by a resistor so is muted at power on.
+ * The signal is controlled by P11 of the TCA6116 I2C GPIO expander.
+ * 8bit Register 3 of the TCA controls P10-P17.
+ * Therefore CODEC_MUTE is controlled by bit 1 of register 3
+ */
 #define CODEC_MUTE (1 << 1)
 int da850_sdi_mute(int state)
 {
@@ -730,9 +738,9 @@ int da850_sdi_mute(int state)
 
     val = ret;
     if (state)
-	val |= (1 << 2);
+	val |= CODEC_MUTE;
     else
-	val &= 0xfd;
+	val &= ~CODEC_MUTE;
 
     ret = i2c_smbus_write_byte_data(muteClient, addr, val);
     if (ret) {
