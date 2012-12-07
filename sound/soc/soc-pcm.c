@@ -542,6 +542,7 @@ static int soc_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_platform *platform = rtd->platform;
+	struct snd_soc_dai_link *machine = rtd->dai_link;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	int ret;
@@ -563,6 +564,15 @@ static int soc_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 		if (ret < 0)
 			return ret;
 	}
+	if (machine->ops && machine->ops->trigger) {
+		if (machine->ops->trigger) {
+			ret = machine->ops->trigger(substream, cmd);
+			if (ret < 0)
+				return ret;
+		}
+	}
+
+
 	return 0;
 }
 

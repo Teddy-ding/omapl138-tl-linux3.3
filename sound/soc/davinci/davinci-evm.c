@@ -87,6 +87,28 @@ static int evm_spdif_hw_params(struct snd_pcm_substream *substream,
 	return snd_soc_dai_set_fmt(cpu_dai, AUDIO_FORMAT);
 }
 
+extern int da850_sdi_mute(int state);
+
+static int da850_sdi_shutdown(struct snd_pcm_substream *stream)
+{
+    da850_sdi_mute (1);
+
+    return 0;
+}
+
+static int da850_sdi_trigger(struct snd_pcm_substream *stream, int i)
+{
+    da850_sdi_mute (0);
+
+    return 0;
+}
+
+static struct snd_soc_ops da850_sdi_ops = {
+	.hw_params = evm_hw_params,
+	.shutdown = da850_sdi_shutdown,
+	.trigger = da850_sdi_trigger
+};
+
 static struct snd_soc_ops evm_ops = {
 	.hw_params = evm_hw_params,
 };
@@ -250,7 +272,7 @@ static struct snd_soc_dai_link da850_sdi_dai = {
 	.codec_name = "tlv320aic3x-codec.1-0018",
 	.platform_name = "davinci-pcm-audio",
 	.init = evm_aic3x_init,
-	.ops = &evm_ops,
+	.ops = &da850_sdi_ops,
 };
 
 /* davinci dm6446 evm audio machine driver */

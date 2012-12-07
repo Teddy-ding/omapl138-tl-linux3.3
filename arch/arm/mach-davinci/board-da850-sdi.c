@@ -709,6 +709,40 @@ typedef struct tfp_reg {
 	u8	val;
 } tfp_reg;
 
+static struct i2c_client *muteClient = NULL;
+
+#define CODEC_MUTE (1 << 1)
+int da850_sdi_mute(int state)
+{
+    u8 addr = 0x03;
+    u8 val;
+    int ret;
+
+    if (muteClient == NULL)
+	return 0;
+
+    /* read modify write */
+    ret = i2c_smbus_read_byte_data(muteClient, addr);
+    if (ret < 0) {
+	printk (KERN_WARNING "Failed to read TCA6416 (0x21) register 0x%02x.", addr);
+	return ret;
+    }
+
+    val = ret;
+    if (state)
+	val |= (1 << 2);
+    else
+	val &= 0xfd;
+
+    ret = i2c_smbus_write_byte_data(muteClient, addr, val);
+    if (ret) {
+	printk (KERN_WARNING "Failed to write to TCA6416 (0x21) register 0x%02x.", addr);
+	return ret;
+    }
+
+    return 0;
+}
+
 static int tfp_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
@@ -718,7 +752,7 @@ static int tfp_probe(struct i2c_client *client,
 	struct tfp_reg regData[] = {
 	    { 0x02, 0xff },
 	    { 0x06, 0xff },
-	    { 0x07, 0xfe },
+	    { 0x07, 0xfc },
 	    { 0x03, 0xfe },
 	    { 0x03, 0xff },
 	};
@@ -726,7 +760,7 @@ static int tfp_probe(struct i2c_client *client,
 	struct tfp_reg regData[] = {
 	    { 0x02, 0xfb },
 	    { 0x06, 0xfb },
-	    { 0x07, 0xfe },
+	    { 0x07, 0xfc },
 	    { 0x03, 0xfe },
 	    { 0x03, 0xff },
 	};
@@ -741,6 +775,8 @@ static int tfp_probe(struct i2c_client *client,
 	    }
 	}
 
+	muteClient = client;
+	da850_sdi_mute (1);
 	return ret;
 }
 
@@ -826,25 +862,19 @@ static const short da850_evm_mcasp_pins[] __initconst = {
 
 //HACK:a see hardcoded values for McBSP1 in devices-da8xx.c
 static struct resource da850_asp_resources[] = {
-    // Memory region containing control registers 
+    /* Memory region containing control registers */
     {
 	.start	= 0x01D11000,
 	.end	= 0x01D11FFF,
 	.flags	= IORESOURCE_MEM,
     },
-    // Memory region for FIFO data
-    // {
-    // 	.start	= 0x01F11000,
-    // 	.end	= 0x01F11FFF,
-    // 	.flags	= IORESOURCE_MEM,
-    // },
-    // McBSP1 Tx EDMA event
+    /* McBSP1 Tx EDMA event */
     {
 	.start	= 5,
 	.end	= 5,
 	.flags	= IORESOURCE_DMA,
     },
-    // McBSP1 Rx EDMA event
+    /* McBSP1 Rx EDMA event */
     {
 	.start	= 4,
 	.end	= 4,
