@@ -942,7 +942,7 @@ static struct davinci_mmc_config da850_mmc_config[] = {
 		*/
 		.get_cd         = am1808_wifi_status,
 #else
- 		.get_cd         = -1,
+		.get_cd         = NULL,
 #endif
 		.wires          = 4,
 		.max_freq       = 50000000,
@@ -1507,15 +1507,18 @@ static __init void da850_evm_init(void)
 		gpio_direction_input(DA850_MMCSD_WP_PIN);
 
 #ifdef CONFIG_DA850_USE_MMC1
-		ret = da8xx_pinmux_setup(da850_mmcsd1_pins);
+		ret = davinci_cfg_reg_list(da850_mmcsd1_pins);
 		if (ret)
 			pr_warning("da850_evm_init: mmcsd1 mux setup failed:"
 					"%d\n", ret);
-#endif
-
 		ret = da850_register_mmcsd1(da850_mmc_config);
 		if (ret)
-			pr_warning("da850_evm_init: mmcsd"
+			pr_warning("da850_evm_init: mmcsd1"
+				" registration failed: %d",  ret);
+#endif
+		ret = da8xx_register_mmcsd0(da850_mmc_config);
+		if (ret)
+			pr_warning("da850_evm_init: mmcsd0"
 				" registration failed: %d",  ret);
 	}
 

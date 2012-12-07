@@ -331,13 +331,6 @@ static struct clk mcbsp1_clk = {
 	.gpsc		= 1,
 };
 
-static struct clk mmcsd_clk1 = {
-	.name		= "mmcsd1",
-	.parent		= &pll0_sysclk2,
-	.lpsc		= DA850_LPSC1_MMC_SD,
-	.gpsc		= 1,
-};
-
 static struct clk aemif_clk = {
 	.name		= "aemif",
 	.parent		= &pll0_sysclk3,
