@@ -737,10 +737,18 @@ int da850_sdi_mute(int state)
     }
 
     val = ret;
-    if (state)
+    if (state) {
+#ifdef CONFIG_SND_DEBUG
+	printk(KERN_WARNING "da850-sdi: Mute\n");
+#endif
 	val |= CODEC_MUTE;
-    else
+    }
+    else {
+#ifdef CONFIG_SND_DEBUG
+	printk(KERN_WARNING "da850-sdi: Umute\n");
+#endif
 	val &= ~CODEC_MUTE;
+    }
 
     ret = i2c_smbus_write_byte_data(muteClient, addr, val);
     if (ret) {

@@ -15,6 +15,7 @@
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
 #include <linux/i2c.h>
+#include <linux/workqueue.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/soc.h>
@@ -87,25 +88,48 @@ static int evm_spdif_hw_params(struct snd_pcm_substream *substream,
 	return snd_soc_dai_set_fmt(cpu_dai, AUDIO_FORMAT);
 }
 
+/*
+ * Since da850_sdi_shutdown() and da850_sdi_trigger() are invoked in interrupt 
+ * context, they can't directly invoke da850_sdi_mute(), since da850_sdi_mute()
+ * involves i2c communications (which is slow and can wait).  So, use the workqueue
+ * mechanism to 'finish' processing.
+ */
+
 extern int da850_sdi_mute(int state);
-
-static int da850_sdi_shutdown(struct snd_pcm_substream *stream)
+static void muteTheOutputs( struct work_struct * work )
 {
-    da850_sdi_mute (1);
-
-    return 0;
+	da850_sdi_mute( 1 );
 }
+DECLARE_WORK( muteWorkElement, muteTheOutputs );
 
-static int da850_sdi_trigger(struct snd_pcm_substream *stream, int i)
+static void unmuteTheOutputs( struct work_struct * work )
 {
-    da850_sdi_mute (0);
+	da850_sdi_mute( 0 );
+}
+DECLARE_WORK( unmuteWorkElement, unmuteTheOutputs );
+ 
+
+static int da850_sdi_trigger(struct snd_pcm_substream *stream, int cmd)
+{
+    switch (cmd) {
+	case SNDRV_PCM_TRIGGER_START:
+	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
+	case SNDRV_PCM_TRIGGER_RESUME:
+	    schedule_work( &unmuteWorkElement );
+	    break;
+
+	case SNDRV_PCM_TRIGGER_STOP:
+	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
+	case SNDRV_PCM_TRIGGER_SUSPEND:
+	    schedule_work( &muteWorkElement );
+	    break;
+    }
 
     return 0;
 }
 
 static struct snd_soc_ops da850_sdi_ops = {
 	.hw_params = evm_hw_params,
-	.shutdown = da850_sdi_shutdown,
 	.trigger = da850_sdi_trigger
 };
 
