@@ -136,7 +136,6 @@ extern struct platform_device da8xx_serial_device;
 extern struct emac_platform_data da8xx_emac_pdata;
 extern struct da8xx_lcdc_platform_data sharp_lcd035q3dg01_pdata;
 extern struct da8xx_lcdc_platform_data sharp_lk043t1dg01_pdata;
-extern struct da8xx_lcdc_platform_data dvi_vga_adapter_pdata;
 extern struct davinci_spi_platform_data da8xx_spi_pdata[];
 extern struct da8xx_lcdc_platform_data ti_dvi_vga_pdata;
 extern struct da8xx_lcdc_platform_data ti_dvi_480p_pdata;

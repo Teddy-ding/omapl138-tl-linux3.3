@@ -476,7 +476,7 @@ static inline void da830_evm_init_lcdc(int mux_mode)
 
 	gpio_direction_output(mux_mode, 0);
 #else
-	ret = da8xx_register_lcdc(&dvi_vga_adapter_pdata);
+	ret = da8xx_register_lcdc(&ti_dvi_vga_pdata);
 	if (ret)
 		pr_warning("da830_evm_init: lcd setup failed: %d\n", ret);
 #endif
