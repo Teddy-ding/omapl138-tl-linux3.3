@@ -94,7 +94,7 @@ static int evm_spdif_hw_params(struct snd_pcm_substream *substream,
  * involves i2c communications (which is slow and can wait).  So, use the workqueue
  * mechanism to 'finish' processing.
  */
-
+#ifdef CONFIG_MACH_DAVINCI_DA850_SDI
 extern int da850_sdi_mute(int state);
 static void muteTheOutputs( struct work_struct * work )
 {
@@ -132,7 +132,7 @@ static struct snd_soc_ops da850_sdi_ops = {
 	.hw_params = evm_hw_params,
 	.trigger = da850_sdi_trigger
 };
-
+#endif
 static struct snd_soc_ops evm_ops = {
 	.hw_params = evm_hw_params,
 };
@@ -288,6 +288,7 @@ static struct snd_soc_dai_link da850_evm_dai = {
 	.ops = &evm_ops,
 };
 
+#ifdef CONFIG_MACH_DAVINCI_DA850_SDI
 static struct snd_soc_dai_link da850_sdi_dai = {
 	.name = "TLV320AIC3X",
 	.stream_name = "AIC3X",
@@ -298,7 +299,7 @@ static struct snd_soc_dai_link da850_sdi_dai = {
 	.init = evm_aic3x_init,
 	.ops = &da850_sdi_ops,
 };
-
+#endif
 /* davinci dm6446 evm audio machine driver */
 static struct snd_soc_card dm6446_snd_soc_card_evm = {
 	.name = "DaVinci DM6446 EVM",
@@ -344,14 +345,14 @@ static struct snd_soc_card da850_snd_soc_card = {
 	.dai_link = &da850_evm_dai,
 	.num_links = 1,
 };
-
+#ifdef CONFIG_MACH_DAVINCI_DA850_SDI
 static struct snd_soc_card da850_sdi_snd_soc_card = {
 	.name = "DA850 SDI EVM",
 	.owner = THIS_MODULE,
 	.dai_link = &da850_sdi_dai,
 	.num_links = 1,
 };
-
+#endif
 static struct platform_device *evm_snd_device;
 
 static int __init evm_init(void)
@@ -379,8 +380,10 @@ static int __init evm_init(void)
 		evm_snd_dev_data = &da850_snd_soc_card;
 		index = 0;
 	} else if (machine_is_davinci_da850_sdi()) {
+#ifdef CONFIG_MACH_DAVINCI_DA850_SDI
 		evm_snd_dev_data = &da850_sdi_snd_soc_card;
 		index = 0;
+#endif
 	} else
 		return -EINVAL;
 
