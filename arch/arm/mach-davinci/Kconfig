@@ -174,7 +174,7 @@ config WIFI_CONTROL_FUNC
 
 choice DA850_MMC_CONTROLLER
 	prompt "Select MMC host controller to be used on board"
-	depends on MMC_DAVINCI
+	depends on MACH_DAVINCI_DA850_SDI
 
 config DA850_USE_MMC0
 	bool "USE MMC0 host controller"
