@@ -596,16 +596,13 @@ int __init da8xx_register_pruss_uio(struct uio_pruss_pdata *config)
 	da8xx_pruss_uio_dev.dev.platform_data = config;
 	return platform_device_register(&da8xx_pruss_uio_dev);
 }
+
+static const struct display_panel disp_panel = {
 #ifdef CONFIG_GLCD_DVI_VGA
-static const struct display_panel disp_panel = {
 	VGA,
-	16,
-	16,
-	COLOR_ACTIVE,
-};
 #else
-static const struct display_panel disp_panel = {
 	QVGA,
+#endif
 	16,
 	16,
 	COLOR_ACTIVE,
@@ -628,7 +625,6 @@ static struct lcd_ctrl_config lcd_cfg = {
 	.raster_order		= 0,
 	.fifo_th		= 6,
 };
-#endif
 
 static struct lcd_ctrl_config lcd_dvi_cfg = {
 	&disp_panel,
