@@ -1344,10 +1344,6 @@ static int __init da850_evm_config_emac(void)
 
 	val = __raw_readl(cfg_chip3_base);
 
-	// HACK
-	soc_info->emac_pdata->rmii_en = 1;
-	rmii_en = 1;
-
 	if (rmii_en) {
 		val |= BIT(8);
 		ret = davinci_cfg_reg_list(da850_evm_rmii_pins);

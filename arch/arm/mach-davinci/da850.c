@@ -895,16 +895,7 @@ static u32 da850_psc_bases[] = { DA8XX_PSC0_BASE, DA8XX_PSC1_BASE };
 /* Contents of JTAG ID register used to identify exact cpu type */
 static struct davinci_id da850_ids[] = {
 	{
-// HACK: how to handle multiple ids?
-#if 0
-#ifdef CONFIG_MACH_DAVINCI_DA850_SDI
-		.variant	= 0x1,
-#else
 		.variant	= 0x0,
-#endif
-#else
-		.variant	= 0x1,
-#endif
 		.part_no	= 0xb7d1,
 		.manufacturer	= 0x017,	/* 0x02f >> 1 */
 		.cpu_id		= DAVINCI_CPU_ID_DA850,
