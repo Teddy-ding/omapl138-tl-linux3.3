@@ -63,6 +63,7 @@ struct musb_ep;
 extern u8 (*musb_readb)(const void __iomem *addr, unsigned offset);
 extern void (*musb_writeb)(void __iomem *addr, unsigned offset, u8 data);
 
+
 #include "musb_debug.h"
 #include "musb_dma.h"
 
@@ -228,6 +229,8 @@ struct musb_platform_ops {
 		void __iomem *);
 	void (*dma_controller_destroy)(struct dma_controller *);
 	int (*simulate_babble_intr)(struct musb *musb);
+	void (*en_sof)(struct musb *musb);
+	void (*dis_sof)(struct musb *musb);
 };
 
 /*
@@ -347,10 +350,15 @@ struct musb {
 	 * endpoint.
 	 */
 	struct musb_hw_ep	*bulk_ep;
+	struct musb_hw_ep       *intr_ep;
+	u8			hold;
+	u8			hold_count;
 
 	struct list_head	control;	/* of musb_qh */
 	struct list_head	in_bulk;	/* of musb_qh */
 	struct list_head	out_bulk;	/* of musb_qh */
+	struct list_head	in_intr;	/* of musb_qh */
+	struct list_head	out_intr;	/* of musb_qh */
 
 	struct workqueue_struct *gb_queue;
 	struct work_struct      gb_work;
@@ -633,6 +641,18 @@ static inline int musb_simulate_babble_intr(struct musb *musb)
 	return musb->ops->simulate_babble_intr(musb);
 }
 
+static inline void musb_enable_sof(struct musb *musb)
+{
+	if (musb->ops->en_sof)
+		musb->ops->en_sof(musb);
+}
+
+static inline void musb_disable_sof(struct musb *musb)
+{
+	if (musb->ops->dis_sof)
+		musb->ops->dis_sof(musb);
+}
+
 static inline const char *get_dma_name(struct musb *musb)
 {
 #ifdef CONFIG_MUSB_PIO_ONLY
@@ -653,6 +673,8 @@ static inline const char *get_dma_name(struct musb *musb)
 extern int ep_config_from_table(struct musb *musb);
 
 extern void musb_gb_work(struct work_struct *data);
+extern int is_intr_sched(void);
+extern void musb_host_intr_schedule(struct musb *musb);
 /*-------------------------- ProcFS definitions ---------------------*/
 
 struct proc_dir_entry;

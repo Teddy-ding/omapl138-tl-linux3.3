@@ -155,6 +155,14 @@ config USB_TUSB_OMAP_DMA_HW
 
 endchoice
 
+config  MUSB_SCHEDULE_INTR_EP
+        boolean "Enable Scheduling of Interrupt Endpoint (EXPERIMENTAL)"
+        depends on USB && USB_MUSB_HDRC && EXPERIMENTAL
+        bool
+        help
+          Schedule Interrupt Endpoint resources for supporting multiple
+          Interrupt URB's on a single INTR EP.  Use SOF for scheduling the EP.
+
 config MUSB_PIO_ONLY
 	bool 'Disable DMA (always use PIO)'
 	default USB_MUSB_TUSB6010 || USB_MUSB_DA8XX

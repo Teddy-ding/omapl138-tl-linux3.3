@@ -769,6 +769,13 @@ static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
 				otg_state_string(musb->xceiv->state), devctl);
 	}
 
+	if (int_usb & MUSB_INTR_SOF) {
+		dev_dbg(musb->controller, "START_OF_FRAME\n");
+		handled = IRQ_HANDLED;
+		if (is_intr_sched())
+			musb_host_intr_schedule(musb);
+	}
+
 	if ((int_usb & MUSB_INTR_DISCONNECT) && !musb->ignore_disconnect) {
 		dev_dbg(musb->controller, "DISCONNECT (%s) as %s, devctl %02x\n",
 				otg_state_string(musb->xceiv->state),
@@ -1065,7 +1072,12 @@ static void musb_shutdown(struct platform_device *pdev)
  * tables defining fifo_mode values.  define more if you like.
  * for host side, make sure both halves of ep1 are set up.
  */
-
+/*
+ * reserve the endpoint with optimum fifo size for
+ * for software interrupt endpoint schedular
+ * The interrupt endpoint schedular uses single endpoint
+ * resource to schedule all the usb request
+ */
 /* mode 0 - fits in 2KB */
 static struct musb_fifo_cfg mode_0_cfg[] = {
 { .hw_ep_num = 1, .style = FIFO_TX,   .maxpacket = 512, },
@@ -1235,9 +1247,13 @@ fifo_setup(struct musb *musb, struct musb_hw_ep  *hw_ep,
 
 	/* EP0 reserved endpoint for control, bidirectional;
 	 * EP1 reserved for bulk, two unidirection halves.
+	 * EPx reserve one endpoint for interrupt endpoint
 	 */
 	if (is_host_enabled(musb) && hw_ep->epnum == 1)
 		musb->bulk_ep = hw_ep;
+	else if (is_intr_sched() && is_host_enabled(musb))
+		musb->intr_ep = hw_ep;
+
 	/* REVISIT error check:  be sure ep0 can both rx and tx ... */
 	switch (cfg->style) {
 	case FIFO_TX:
@@ -1865,6 +1881,8 @@ allocate_instance(struct device *dev,
 		INIT_LIST_HEAD(&musb->control);
 		INIT_LIST_HEAD(&musb->in_bulk);
 		INIT_LIST_HEAD(&musb->out_bulk);
+		INIT_LIST_HEAD(&musb->in_intr);
+		INIT_LIST_HEAD(&musb->out_intr);
 		INIT_LIST_HEAD(&musb->gb_list);
 
 		hcd->uses_new_polling = 1;

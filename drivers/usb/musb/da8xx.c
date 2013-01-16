@@ -211,6 +211,27 @@ int __devinit cppi41_init(struct musb *musb)
 EXPORT_SYMBOL(cppi41_init);
 #endif /* CONFIG_USB_TI_CPPI41_DMA */
 
+void da8xx_musb_enable_sof(struct musb *musb)
+{
+	void __iomem *reg_base = musb->ctrl_base;
+
+	musb_writeb(musb->mregs, MUSB_INTRUSBE, MUSB_INTR_SOF |
+	musb_readb(musb->mregs, MUSB_INTRUSBE));
+	musb_writel(reg_base, DA8XX_USB_INTR_SRC_SET_REG, MUSB_INTR_SOF |
+		musb_readl(reg_base, DA8XX_USB_INTR_SRC_SET_REG));
+}
+
+void da8xx_musb_disable_sof(struct musb *musb)
+{
+	void __iomem *reg_base = musb->ctrl_base;
+	u8 intrusb;
+
+	intrusb = musb_readb(musb->mregs, MUSB_INTRUSBE);
+	intrusb &= ~MUSB_INTR_SOF;
+	musb_writeb(musb->mregs, MUSB_INTRUSBE, intrusb);
+	musb_writel(reg_base, DA8XX_USB_INTR_MASK_CLEAR_REG, MUSB_INTR_SOF);
+}
+
 /*
  * REVISIT (PM): we should be able to keep the PHY in low power mode most
  * of the time (24 MHz oscillator and PLL off, etc.) by setting POWER.D0
@@ -655,6 +676,8 @@ static const struct musb_platform_ops da8xx_ops = {
 
 	.dma_controller_create = cppi41_dma_controller_create,
 	.dma_controller_destroy = cppi41_dma_controller_destroy,
+	.en_sof = da8xx_musb_enable_sof,
+	.dis_sof = da8xx_musb_disable_sof,
 };
 
 static u64 da8xx_dmamask = DMA_BIT_MASK(32);
