@@ -134,11 +134,6 @@ static struct resource da850_evm_norflash_resource[] = {
 		.end	= DA8XX_AEMIF_CS2_BASE + SZ_32M - 1,
 		.flags	= IORESOURCE_MEM,
 	},
-	{
-		.start	= DA8XX_AEMIF_CTL_BASE,
-		.end	= DA8XX_AEMIF_CTL_BASE + SZ_32K - 1,
-		.flags	= IORESOURCE_MEM,
-	},
 };
 
 static struct platform_device da850_evm_norflash_device = {
@@ -388,6 +383,23 @@ static const short da850_evm_nand_pins[] = {
 	-1
 };
 
+#define DA8XX_AEMIF_CE2CFG_OFFSET	0x10
+#define DA8XX_AEMIF_ASIZE_16BIT		0x1
+
+static void __init da850_evm_init_nor(void)
+{
+	void __iomem *aemif_addr;
+
+	aemif_addr = ioremap(DA8XX_AEMIF_CTL_BASE, SZ_32K);
+
+	/* Configure data bus width of CS2 to 16 bit */
+	writel(readl(aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET) |
+		DA8XX_AEMIF_ASIZE_16BIT,
+		aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET);
+
+	iounmap(aemif_addr);
+}
+
 static const short da850_evm_nor_pins[] = {
 	DA850_EMA_BA_1, DA850_EMA_CLK, DA850_EMA_WAIT_1, DA850_NEMA_CS_2,
 	DA850_NEMA_WE, DA850_NEMA_OE, DA850_EMA_D_0, DA850_EMA_D_1,
@@ -420,6 +432,7 @@ static __init void da850_evm_setup_nor_nand(void)
 		if (ret)
 			pr_warning("da850_evm_init: nor mux setup failed: %d\n",
 				ret);
+		da850_evm_init_nor();
 
 		platform_add_devices(da850_evm_devices,
 					ARRAY_SIZE(da850_evm_devices));
