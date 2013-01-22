@@ -26,6 +26,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/regulator/machine.h>
 #include <linux/regulator/tps6507x.h>
+#include <linux/input/tps6507x-ts.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/usb/musb.h>
@@ -680,8 +681,18 @@ struct regulator_init_data tps65070_regulator_data[] = {
 	},
 };
 
+static struct touchscreen_init_data tps6507x_touchscreen_data = {
+	.poll_period =  30,	/* ms between touch samples */
+	.min_pressure = 0x30,	/* minimum pressure to trigger touch */
+	.vref = 0,		/* turn off vref when not using A/D */
+	.vendor = 0,		/* /sys/class/input/input?/id/vendor */
+	.product = 65070,	/* /sys/class/input/input?/id/product */
+	.version = 0x100,	/* /sys/class/input/input?/id/version */
+};
+
 static struct tps6507x_board tps_board = {
 	.tps6507x_pmic_init_data = &tps65070_regulator_data[0],
+	.tps6507x_ts_init_data = &tps6507x_touchscreen_data,
 };
 
 static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
