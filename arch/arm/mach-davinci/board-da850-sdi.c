@@ -451,7 +451,7 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel)
 	struct davinci_soc_info *soc_info = &davinci_soc_info;
 
 	soc_info->emac_pdata->rmii_en = 1;
-	gpio_set_value(rmii_sel, 0);
+	gpio_set_value_cansleep(rmii_sel, 0);
 }
 #else
 static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
