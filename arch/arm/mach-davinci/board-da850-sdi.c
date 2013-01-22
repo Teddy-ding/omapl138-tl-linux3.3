@@ -74,7 +74,6 @@
 #define DA850_USB1_OC_PIN		GPIO_TO_PIN(6, 13)
 
 //HACK
-#define CONFIG_DA850_UI_RMII
 #define CONFIG_DA850_UI_EXPANDER
 
 static struct davinci_pm_config da850_pm_pdata = {
