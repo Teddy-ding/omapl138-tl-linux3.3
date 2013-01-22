@@ -25,6 +25,7 @@
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
 #include <linux/regulator/machine.h>
+#include <linux/regulator/tps6507x.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/usb/musb.h>
@@ -606,6 +607,10 @@ struct regulator_consumer_supply tps65070_ldo2_consumers[] = {
 	},
 };
 
+static struct tps6507x_reg_platform_data tps6507x_platform_data = {
+	.defdcdc_default = true,
+};
+
 struct regulator_init_data tps65070_regulator_data[] = {
 	/* dcdc1 */
 	{
@@ -631,21 +636,21 @@ struct regulator_init_data tps65070_regulator_data[] = {
 		},
 		.num_consumer_supplies = ARRAY_SIZE(tps65070_dcdc2_consumers),
 		.consumer_supplies = tps65070_dcdc2_consumers,
-		.driver_data = (void *) 1,
+		.driver_data = &tps6507x_platform_data,
 	},
 
 	/* dcdc3 */
 	{
 		.constraints = {
 			.min_uV = 950000,
-			.max_uV = 1380000,
+			.max_uV = 1350000,
 			.valid_ops_mask = (REGULATOR_CHANGE_VOLTAGE |
 				REGULATOR_CHANGE_STATUS),
 			.boot_on = 1,
 		},
 		.num_consumer_supplies = ARRAY_SIZE(tps65070_dcdc3_consumers),
 		.consumer_supplies = tps65070_dcdc3_consumers,
-		.driver_data = (void *) 1,
+		.driver_data = &tps6507x_platform_data,
 	},
 
 	/* ldo1 */
