@@ -76,6 +76,21 @@
 //HACK
 #define CONFIG_DA850_UI_EXPANDER
 
+#define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
+#define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
+#define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
+
+static struct platform_pwm_backlight_data da850evm_backlight_data = {
+	.max_brightness	= DAVINCI_BACKLIGHT_MAX_BRIGHTNESS,
+	.dft_brightness	= DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS,
+	.pwm_period_ns	= DAVINCI_PWM_PERIOD_NANO_SECONDS,
+};
+
+static struct platform_device da850evm_backlight = {
+	.name		= "pwm-backlight",
+	.id		= -1,
+};
+
 static struct davinci_pm_config da850_pm_pdata = {
 	.sleepcount = 128,
 };
@@ -414,6 +429,57 @@ static const short da850_evm_nor_pins[] = {
 	DA850_EMA_A_22, DA850_EMA_A_23,
 	-1
 };
+
+#if defined(CONFIG_MMC_DAVINCI) || \
+	defined(CONFIG_MMC_DAVINCI_MODULE)
+#define HAS_MMC 1
+#else
+#define HAS_MMC 0
+#endif
+
+#if defined(CONFIG_SPI_DAVINCI)
+#define HAS_SPI 1
+#else
+#define HAS_SPI 0
+#endif
+
+#if defined(CONFIG_FB_DA8XX)
+#define HAS_LCD	1
+#else
+#define HAS_LCD	0
+#endif
+
+#if defined(CONFIG_SND_DA850_SOC_EVM) || \
+	defined(CONFIG_SND_DA850_SOC_EVM_MODULE)
+#define HAS_MCASP 1
+#else
+#define HAS_MCASP 0
+#endif
+
+#if defined(CONFIG_DAVINCI_EHRPWM) || defined(CONFIG_DAVINCI_EHRPWM_MODULE)
+#define HAS_EHRPWM 1
+#else
+#define HAS_EHRPWM 0
+#endif
+
+#if defined(CONFIG_ECAP_PWM) || \
+	defined(CONFIG_ECAP_PWM_MODULE)
+#define HAS_ECAP_PWM 1
+#else
+#define HAS_ECAP_PWM 0
+#endif
+
+#if defined(CONFIG_BACKLIGHT_PWM) || defined(CONFIG_BACKLIGHT_PWM_MODULE)
+#define HAS_BACKLIGHT 1
+#else
+#define HAS_BACKLIGHT 0
+#endif
+
+#if defined(CONFIG_ECAP_CAP) || defined(CONFIG_ECAP_CAP_MODULE)
+#define HAS_ECAP_CAP 1
+#else
+#define HAS_ECAP_CAP 0
+#endif
 
 static u32 ui_card_detected;
 
@@ -1498,7 +1564,10 @@ static struct platform_device davinci_pcm_device = {
 static __init void da850_evm_init(void)
 {
 	int ret;
+	char mask = 0;
+	struct davinci_soc_info *soc_info = &davinci_soc_info;
 
+	u8 rmii_en = soc_info->emac_pdata->rmii_en;
 	ret = da850_register_edma(da850_edma_rsv);
 	if (ret)
 		pr_warning("da850_evm_init: edma registration failed: %d\n",
@@ -1695,6 +1764,91 @@ static __init void da850_evm_init(void)
 			pr_warning("da850_evm_init: VPIF registration failed: "
 					"%d\n",	ret);
 
+	}
+
+	if (HAS_EHRPWM) {
+		if (rmii_en) {
+			ret = davinci_cfg_reg_list(da850_ehrpwm0_pins);
+			if (ret)
+				pr_warning("da850_evm_init:"
+				" ehrpwm0 mux setup failed: %d\n", ret);
+			else
+				mask = BIT(0) | BIT(1);
+		} else {
+			pr_warning("da850_evm_init:"
+			" eHRPWM module 0 cannot be used"
+			" since it is being used by MII interface\n");
+			mask = 0;
+		}
+
+		if (!HAS_LCD) {
+			ret = davinci_cfg_reg_list(da850_ehrpwm1_pins);
+			if (ret)
+				pr_warning("da850_evm_init:"
+				" eHRPWM module1 output A mux"
+				" setup failed %d\n", ret);
+			else
+				mask = mask | BIT(2);
+		} else {
+			pr_warning("da850_evm_init:"
+				" eHRPWM module1 outputA cannot be"
+				" used since it is being used by LCD\n");
+		}
+
+		if (!HAS_SPI) {
+			ret = davinci_cfg_reg(DA850_EHRPWM1_B);
+			if (ret)
+				pr_warning("da850_evm_init:"
+					" eHRPWM module1 outputB mux"
+					" setup failed %d\n", ret);
+		else
+			mask =  mask  | BIT(3);
+		} else {
+			pr_warning("da850_evm_init:"
+				" eHRPWM module1 outputB cannot be"
+				" used since it is being used by spi1\n");
+		}
+
+		da850_register_ehrpwm(mask);
+	}
+
+	if (HAS_ECAP_PWM) {
+		ret = davinci_cfg_reg(DA850_ECAP2_APWM2);
+		if (ret)
+			pr_warning("da850_evm_init:ecap mux failed:"
+					" %d\n", ret);
+		ret = da850_register_ecap(2);
+		if (ret)
+			pr_warning("da850_evm_init:"
+				" eCAP registration failed: %d\n", ret);
+	}
+
+	if (HAS_BACKLIGHT) {
+		ret = da850_register_backlight(&da850evm_backlight,
+				&da850evm_backlight_data);
+		if (ret)
+			pr_warning("da850_evm_init:"
+				" backlight device registration"
+				" failed: %d\n", ret);
+	}
+
+	if (HAS_ECAP_CAP) {
+		if (HAS_MCASP)
+			pr_warning("da850_evm_init:"
+				"ecap module 1 cannot be used "
+				"since it shares pins with McASP\n");
+		else {
+			ret = davinci_cfg_reg(DA850_ECAP1_APWM1);
+			if (ret)
+				pr_warning("da850_evm_init:ecap mux failed:%d\n"
+						, ret);
+			else {
+				ret = da850_register_ecap_cap(1);
+				if (ret)
+					pr_warning("da850_evm_init"
+					"eCAP registration failed: %d\n", ret);
+			}
+		}
 	}
 }
 
