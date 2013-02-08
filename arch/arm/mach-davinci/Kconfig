@@ -344,6 +344,13 @@ config DA850_SDI_DVI_480P
 config DA850_SDI_DVI_WVGA
        bool "DVI output at WVGA (800x480) resolution"
 
+config DA850_SDI_MII
+	bool "MII Ethernet PHY"
+	depends on MACH_DAVINCI_DA850_SDI
+	help
+	  Say Y if you want to use the MII PHY on the DA850 SDI EVM.
+	  NOTE: Please take care while choosing this option, MII PHY will
+	  not be functional if RMII mode is selected.
 endchoice
 
 config DAVINCI_MUX

@@ -618,7 +618,44 @@ static struct pca953x_platform_data da850_evm_ui_expander_info = {
 	.teardown	= da850_evm_ui_expander_teardown,
 };
 #endif
+#ifdef CONFIG_DA850_SDI_MII
+static int da850_evm_expander_setup(struct i2c_client *client, unsigned gpio,
+						unsigned ngpio, void *c)
+{
+	int sel_a, ret;
 
+	sel_a = gpio + 4;
+	ret = gpio_request(sel_a, "sel_a");
+
+	if (ret) {
+		pr_warning("Cannot open base evm expander pin %d\n", sel_a);
+		return ret;
+	}
+	gpio_direction_output(sel_a, 0);
+
+	return 0;
+}
+
+static int da850_evm_expander_teardown(struct i2c_client *client,
+					unsigned gpio, unsigned ngpio, void *c)
+{
+	/* deselect functionalities */
+	gpio_set_value_cansleep(gpio + 4, 0);
+	gpio_free(gpio + 4);
+
+	return 0;
+}
+
+/* assign the baseboard expander's GPIOs after the UI board's */
+#define DA850_UI_EXPANDER_N_GPIOS 16
+#define DA850_BB_EXPANDER_GPIO_BASE (DAVINCI_N_GPIO + DA850_UI_EXPANDER_N_GPIOS)
+
+static struct pca953x_platform_data da850_evm_expander_info = {
+	.gpio_base	= DA850_BB_EXPANDER_GPIO_BASE,
+	.setup		= da850_evm_expander_setup,
+	.teardown	= da850_evm_expander_teardown,
+};
+#endif
 /* TPS65070 voltage regulator support */
 
 /* 3.3V */
@@ -790,12 +827,20 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 		.platform_data = &da850_evm_ui_expander_info,
 	},
 #endif
+#ifdef CONFIG_DA850_SDI_MII
+	{
+		I2C_BOARD_INFO("tca6416", 0x21),
+		.platform_data = &da850_evm_expander_info,
+	},
+#endif
 	{
 		I2C_BOARD_INFO("cdce913", 0x64),
 	},
+#ifndef CONFIG_DA850_SDI_MII
 	{
 		I2C_BOARD_INFO("tfp410", 0x21),
 	},
+#endif
 };
 
 typedef struct tfp_reg {
@@ -1162,9 +1207,10 @@ static int __init da850_evm_config_emac(void)
 
 	val = __raw_readl(cfg_chip3_base);
 
-	// HACK
+#ifndef CONFIG_DA850_SDI_MII
 	soc_info->emac_pdata->rmii_en = 1;
 	rmii_en = 1;
+#endif
 
 	if (rmii_en) {
 		val |= BIT(8);
