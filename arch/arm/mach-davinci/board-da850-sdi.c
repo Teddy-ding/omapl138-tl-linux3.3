@@ -332,7 +332,7 @@ static int am1808_wifi_set_carddetect(int val)
 
 static int am1808_wifi_power(int on)
 {
-	gpio_set_value(DA850_WLAN_EN, on);
+	gpio_set_value_cansleep(DA850_WLAN_EN, on);
 	return 0;
 }
 
@@ -517,7 +517,7 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel)
 	struct davinci_soc_info *soc_info = &davinci_soc_info;
 
 	soc_info->emac_pdata->rmii_en = 1;
-	gpio_set_value_cansleep(rmii_sel, 0);
+	gpio_set_value_cansleep_cansleep(rmii_sel, 0);
 }
 #else
 static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
@@ -526,9 +526,9 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
 #ifdef CONFIG_DA850_UI_CLCD
 static inline void da850_evm_setup_char_lcd(int a, int b, int c)
 {
-	gpio_set_value(a, 0);
-	gpio_set_value(b, 0);
-	gpio_set_value(c, 0);
+	gpio_set_value_cansleep(a, 0);
+	gpio_set_value_cansleep(b, 0);
+	gpio_set_value_cansleep(c, 0);
 }
 #else
 static inline void da850_evm_setup_char_lcd(int a, int b, int c) { }
@@ -537,7 +537,7 @@ static inline void da850_evm_setup_char_lcd(int a, int b, int c) { }
 #ifdef CONFIG_DA850_UI_VIDEO_PORT
 static inline void da850_evm_setup_video_port(int video_sel)
 {
-	gpio_set_value(video_sel, 0);
+	gpio_set_value_cansleep(video_sel, 0);
 }
 #else
 static inline void da850_evm_setup_video_port(int video_sel) { }
@@ -601,9 +601,9 @@ static int da850_evm_ui_expander_teardown(struct i2c_client *client,
 					unsigned gpio, unsigned ngpio, void *c)
 {
 	/* deselect all functionalities */
-	gpio_set_value(gpio + 5, 1);
-	gpio_set_value(gpio + 6, 1);
-	gpio_set_value(gpio + 7, 1);
+	gpio_set_value_cansleep(gpio + 5, 1);
+	gpio_set_value_cansleep(gpio + 6, 1);
+	gpio_set_value_cansleep(gpio + 7, 1);
 
 	gpio_free(gpio + 5);
 	gpio_free(gpio + 6);
@@ -1056,12 +1056,12 @@ static struct davinci_mmc_config da850_mmc_config[] = {
 static void da850_panel_power_ctrl(int val)
 {
 	/* lcd power */
-	gpio_set_value(DA850_LCD_PWR_PIN, val);
+	gpio_set_value_cansleep(DA850_LCD_PWR_PIN, val);
 
 	mdelay(200);
 
 	/* lcd backlight */
-	gpio_set_value(DA850_LCD_BL_PIN, val);
+	gpio_set_value_cansleep(DA850_LCD_BL_PIN, val);
 }
 #endif
 
