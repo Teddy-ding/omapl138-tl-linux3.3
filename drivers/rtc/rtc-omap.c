@@ -219,6 +219,7 @@ static int omap_rtc_set_time(struct device *dev, struct rtc_time *tm)
 	local_irq_disable();
 	rtc_wait_not_busy();
 
+
 	/* do a dummy write to scratch register */
 	rtc_write(OMAP_RTC_SCRATCH0_PATTERN, OMAP_RTC_SCRATCH0_REG);
 
@@ -268,6 +269,7 @@ static int omap_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *alm)
 
 static int omap_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alm)
 {
+	struct rtc_time tm;
 	u8 reg;
 
 	if (tm2bcd(&alm->time) < 0)
@@ -275,6 +277,15 @@ static int omap_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alm)
 
 	local_irq_disable();
 	rtc_wait_not_busy();
+
+	/*
+	 * Sotware workaroung to reset RTC_ALARM
+	 * line in case of da850-sdi board.
+	 */
+#ifdef CONFIG_MACH_DAVINCI_DA850_SDI
+	omap_rtc_read_time(dev, &tm);
+	omap_rtc_set_time(dev, &tm);
+#endif
 
 	rtc_write(alm->time.tm_year, OMAP_RTC_ALARM_YEARS_REG);
 	rtc_write(alm->time.tm_mon, OMAP_RTC_ALARM_MONTHS_REG);

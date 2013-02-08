@@ -109,6 +109,14 @@ ENTRY(davinci_cpu_suspend)
 	/* System goes to sleep beyond after this instruction */
 	str	ip, [r4]
 
+	/* Todo: Random delay to stabalize oscillator */
+	mov 	r7, #0x50
+3:	mov	ip, #0x1000
+4:	subs	ip, ip, #0x1
+	bne	4b
+	subs	r7, r7, #0x1
+	bne	3b
+
 	/* Wake up from sleep */
 
 	/* Clear sleep enable */
@@ -129,8 +137,8 @@ ENTRY(davinci_cpu_suspend)
 	str	ip, [r3, #PLLCTL]
 
        mov	ip, #PLL_RESET_CYCLES
-3:     subs	ip, ip, #0x1
-       bne	3b
+5:     subs	ip, ip, #0x1
+       bne	5b
 
        /* Bring PLL out of reset */
 	ldr	ip, [r3, #PLLCTL]
@@ -139,8 +147,8 @@ ENTRY(davinci_cpu_suspend)
 
 	/* Wait for PLL to lock (assume prediv = 1, 25MHz OSCIN) */
        mov	ip, #PLL_LOCK_CYCLES
-4:     subs	ip, ip, #0x1
-       bne	4b
+6:     subs	ip, ip, #0x1
+       bne	6b
 
        /* Remove PLL from bypass mode */
 	ldr	ip, [r3, #PLLCTL]
