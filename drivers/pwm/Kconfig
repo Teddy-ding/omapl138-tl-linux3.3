@@ -20,7 +20,7 @@ config DAVINCI_EHRPWM
 config ECAP_PWM
 	tristate "eCAP PWM support"
 	select HAVE_PWM
-	depends on GENERIC_PWM && ARCH_DAVINCI_DA850
+	depends on GENERIC_PWM && (ARCH_DAVINCI_DA850 || ARCH_DAVINCI_DA830)
 	help
 	  This option enables device driver support for eCAP module found
 	  on DA8xx Processors. eCAP module is used to geenrate wide range
@@ -31,7 +31,7 @@ config ECAP_PWM
 config ECAP_CAP
 	tristate "eCAP capture support"
 	select HAVE_PWM
-	depends on GENERIC_PWM && ARCH_DAVINCI_DA850
+	depends on GENERIC_PWM && (ARCH_DAVINCI_DA850 || ARCH_DAVINCI_DA830)
 	help
 	  This option enables device driver support for eCAP module found
 	  on DA850 Processors. This eCAP module is used to capture PWM wave

@@ -435,7 +435,7 @@ static const struct attribute_group ecap_device_attr_group = {
 	.attrs = (struct attribute **) ecap_attrs,
 };
 
-static int __init ecap_probe(struct platform_device *pdev)
+static int __devinit ecap_probe(struct platform_device *pdev)
 {
 	struct resource *r;
 	int irq_start, ret;

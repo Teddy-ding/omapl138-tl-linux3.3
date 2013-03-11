@@ -44,6 +44,7 @@
 #define DA830_BT_EN			GPIO_TO_PIN(2, 2)
 #define DA830_SPI_UART    		GPIO_TO_PIN(3, 10)
 #define DA830_WLAN_EN			GPIO_TO_PIN(5, 7)
+
 #define DA830_WLAN_IRQ			GPIO_TO_PIN(2, 12)
 #else
 /*
@@ -51,6 +52,26 @@
  */
 #define ON_BD_USB_DRV	GPIO_TO_PIN(1, 15)
 #define ON_BD_USB_OVC	GPIO_TO_PIN(2, 4)
+
+#if defined(CONFIG_SND_DA830_SOC_EVM) || \
+        defined(CONFIG_SND_DA830_SOC_EVM_MODULE)
+#define HAS_MCASP 1
+#else
+#define HAS_MCASP 0
+#endif
+
+#if defined(CONFIG_ECAP_PWM) || \
+	defined(CONFIG_ECAP_PWM_MODULE)
+#define HAS_ECAP_PWM 1
+#else
+#define HAS_ECAP_PWM 0
+#endif
+
+#if defined(CONFIG_ECAP_CAP) || defined(CONFIG_ECAP_CAP_MODULE)
+#define HAS_ECAP_CAP 1
+#else
+#define HAS_ECAP_CAP 0
+#endif
 
 static const short da830_evm_usb11_pins[] = {
 	DA830_GPIO1_15, DA830_GPIO2_4,
@@ -934,12 +955,14 @@ static __init void da830_evm_init(void)
 
 	davinci_serial_init(&da830_evm_uart_config);
 
-	ret = davinci_cfg_reg_list(da830_evm_mcasp1_pins);
-	if (ret)
-		pr_warning("da830_evm_init: mcasp1 mux setup failed: %d\n",
-				ret);
+	if (HAS_MCASP) {
+		ret = davinci_cfg_reg_list(da830_evm_mcasp1_pins);
+		if (ret)
+			pr_warning("da830_evm_init: mcasp1 mux setup failed: %d\n",
+					ret);
 
-	da8xx_register_mcasp(1, &da830_evm_snd_data);
+		da8xx_register_mcasp(1, &da830_evm_snd_data);
+	}
 
 	ret = da8xx_register_rtc();
 	if (ret)
@@ -950,6 +973,36 @@ static __init void da830_evm_init(void)
 #ifdef CONFIG_GLCD_DVI_VGA
 	da830_evm_init_lcdc(0);
 #endif
+
+	if (HAS_ECAP_PWM) {
+		ret = davinci_cfg_reg_list(da830_ecap1_pins);
+		if (ret)
+			pr_warning("da850_evm_init:ecap mux failed:"
+					" %d\n", ret);
+		ret = da830_register_ecap(2);
+		if (ret)
+			pr_warning("da850_evm_init:"
+				" eCAP registration failed: %d\n", ret);
+	}
+
+	if (HAS_ECAP_CAP) {
+		if (HAS_MCASP)
+			pr_warning("da850_evm_init:"
+				"ecap module 1 cannot be used "
+				"since it shares pins with McASP\n");
+		else {
+			ret = davinci_cfg_reg_list(da830_ecap2_pins);
+			if (ret)
+				pr_warning("da850_evm_init:ecap mux failed:%d\n"
+						, ret);
+			else {
+				ret = da830_register_ecap_cap(1);
+				if (ret)
+					pr_warning("da850_evm_init"
+					"eCAP registration failed: %d\n", ret);
+			}
+		}
+	}
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE

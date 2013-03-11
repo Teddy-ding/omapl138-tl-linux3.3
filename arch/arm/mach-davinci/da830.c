@@ -213,22 +213,8 @@ static struct clk spi1_clk = {
 	.gpsc		= 1,
 };
 
-static struct clk ecap0_clk = {
-	.name		= "ecap0",
-	.parent		= &pll0_sysclk2,
-	.lpsc		= DA8XX_LPSC1_ECAP,
-	.gpsc		= 1,
-};
-
-static struct clk ecap1_clk = {
-	.name		= "ecap1",
-	.parent		= &pll0_sysclk2,
-	.lpsc		= DA8XX_LPSC1_ECAP,
-	.gpsc		= 1,
-};
-
-static struct clk ecap2_clk = {
-	.name		= "ecap2",
+static struct clk ecap_clk = {
+	.name		= "ecap",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_ECAP,
 	.gpsc		= 1,
@@ -400,9 +386,7 @@ static struct clk_lookup da830_clks[] = {
 	CLK(NULL,		"uart2",	&uart2_clk),
 	CLK("spi_davinci.0",	NULL,		&spi0_clk),
 	CLK("spi_davinci.1",	NULL,		&spi1_clk),
-	CLK(NULL,		"ecap0",	&ecap0_clk),
-	CLK(NULL,		"ecap1",	&ecap1_clk),
-	CLK(NULL,		"ecap2",	&ecap2_clk),
+	CLK(NULL,		"ecap",		&ecap_clk),
 	CLK(NULL,		"pwm0",		&pwm0_clk),
 	CLK(NULL,		"pwm1",		&pwm1_clk),
 	CLK(NULL,		"pwm2",		&pwm2_clk),
@@ -1178,6 +1162,116 @@ static struct davinci_timer_info da830_timer_info = {
 	.clocksource_id	= T0_BOT,
 };
 
+#define DA8XX_ECAP0_BASE        0x01F06000
+
+static struct resource da830_ecap0_resource[] = {
+	{
+	.start		= DA8XX_ECAP0_BASE,
+	.end		= DA8XX_ECAP0_BASE + 0xfff,
+	.flags		= IORESOURCE_MEM,
+	},
+	{
+	.start          = IRQ_DA8XX_ECAP0,
+	.end            = IRQ_DA8XX_ECAP0,
+	.flags          = IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device da830_ecap0_dev = {
+	.name		= "ecap",
+	.id		= 0,
+	.resource       = da830_ecap0_resource,
+	.num_resources  = ARRAY_SIZE(da830_ecap0_resource),
+};
+
+static struct platform_device da830_ecap0_cap_dev = {
+	.name		= "ecap_cap",
+	.id		= 0,
+	.resource       = da830_ecap0_resource,
+	.num_resources  = ARRAY_SIZE(da830_ecap0_resource),
+};
+
+#define DA8XX_ECAP1_BASE        0x01F07000
+
+static struct resource da830_ecap1_resource[] = {
+	{
+	.start		= DA8XX_ECAP1_BASE,
+	.end		= DA8XX_ECAP1_BASE + 0xfff,
+	.flags		= IORESOURCE_MEM,
+	},
+	{
+	.start		= IRQ_DA8XX_ECAP1,
+	.end		= IRQ_DA8XX_ECAP1,
+	.flags		= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device da830_ecap1_dev = {
+	.name		= "ecap",
+	.id		= 1,
+	.resource	= da830_ecap1_resource,
+	.num_resources	= ARRAY_SIZE(da830_ecap1_resource),
+};
+
+static struct platform_device da830_ecap1_cap_dev = {
+	.name		= "ecap_cap",
+	.id		= 1,
+	.resource	= da830_ecap1_resource,
+	.num_resources	= ARRAY_SIZE(da830_ecap1_resource),
+};
+
+#define DA8XX_ECAP2_BASE        0x01F08000
+
+static struct resource da830_ecap2_resource[] = {
+	{
+	.start		= DA8XX_ECAP2_BASE,
+	.end		= DA8XX_ECAP2_BASE + 0xfff,
+	.flags		= IORESOURCE_MEM,
+	},
+	{
+	.start		= IRQ_DA8XX_ECAP2,
+	.end		= IRQ_DA8XX_ECAP2,
+	.flags		= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device da830_ecap2_dev = {
+	.name		= "ecap",
+	.id		= 2,
+	.resource	= da830_ecap2_resource,
+	.num_resources	= ARRAY_SIZE(da830_ecap2_resource),
+};
+
+static struct platform_device da830_ecap2_cap_dev = {
+	.name		= "ecap_cap",
+	.id		= 2,
+	.resource	= da830_ecap2_resource,
+	.num_resources	= ARRAY_SIZE(da830_ecap2_resource),
+};
+
+int __init da830_register_ecap(char instance)
+{
+	if (instance == 0)
+		return platform_device_register(&da830_ecap0_dev);
+	else if (instance == 1)
+		return platform_device_register(&da830_ecap1_dev);
+	else if (instance == 2)
+		return platform_device_register(&da830_ecap2_dev);
+	else
+		return -EINVAL;
+}
+
+int __init da830_register_ecap_cap(char instance)
+{
+	if (instance == 0)
+		return platform_device_register(&da830_ecap0_cap_dev);
+	else if (instance == 1)
+		return platform_device_register(&da830_ecap1_cap_dev);
+	else if (instance == 2)
+		return platform_device_register(&da830_ecap2_cap_dev);
+	else
+		return -EINVAL;
+}
 static struct davinci_soc_info davinci_soc_info_da830 = {
 	.io_desc		= da830_io_desc,
 	.io_desc_num		= ARRAY_SIZE(da830_io_desc),

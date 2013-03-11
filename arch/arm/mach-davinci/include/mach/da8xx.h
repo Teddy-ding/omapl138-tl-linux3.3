@@ -130,6 +130,8 @@ int __init da850_register_vpif_display
 			(struct vpif_display_config *display_config);
 int __init da850_register_vpif_capture
 			(struct vpif_capture_config *capture_config);
+int __init da830_register_ecap(char);
+int __init da830_register_ecap_cap(char);
 void da8xx_restart(char mode, const char *cmd);
 
 extern struct platform_device da8xx_serial_device;
