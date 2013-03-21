@@ -39,20 +39,6 @@
 
 #define DA830_EVM_PHY_ID		""
 
-#ifdef CONFIG_DA830_WL18XX
-#define DA830_WIFI_NAND			GPIO_TO_PIN(1, 15)
-#define DA830_BT_EN			GPIO_TO_PIN(2, 2)
-#define DA830_SPI_UART    		GPIO_TO_PIN(3, 10)
-#define DA830_WLAN_EN			GPIO_TO_PIN(5, 7)
-
-#define DA830_WLAN_IRQ			GPIO_TO_PIN(2, 12)
-#else
-/*
- * USB1 VBUS is controlled by GPIO1[15], over-current is reported on GPIO2[4].
- */
-#define ON_BD_USB_DRV	GPIO_TO_PIN(1, 15)
-#define ON_BD_USB_OVC	GPIO_TO_PIN(2, 4)
-
 #if defined(CONFIG_SND_DA830_SOC_EVM) || \
         defined(CONFIG_SND_DA830_SOC_EVM_MODULE)
 #define HAS_MCASP 1
@@ -72,6 +58,20 @@
 #else
 #define HAS_ECAP_CAP 0
 #endif
+
+#ifdef CONFIG_DA830_WL18XX
+#define DA830_WIFI_NAND			GPIO_TO_PIN(1, 15)
+#define DA830_BT_EN			GPIO_TO_PIN(2, 2)
+#define DA830_SPI_UART    		GPIO_TO_PIN(3, 10)
+#define DA830_WLAN_EN			GPIO_TO_PIN(5, 7)
+
+#define DA830_WLAN_IRQ			GPIO_TO_PIN(2, 12)
+#else
+/*
+ * USB1 VBUS is controlled by GPIO1[15], over-current is reported on GPIO2[4].
+ */
+#define ON_BD_USB_DRV	GPIO_TO_PIN(1, 15)
+#define ON_BD_USB_OVC	GPIO_TO_PIN(2, 4)
 
 static const short da830_evm_usb11_pins[] = {
 	DA830_GPIO1_15, DA830_GPIO2_4,
