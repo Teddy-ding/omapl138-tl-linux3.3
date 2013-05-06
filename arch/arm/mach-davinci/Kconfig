@@ -353,6 +353,14 @@ config DA850_SDI_MII
 	  not be functional if RMII mode is selected.
 endchoice
 
+config DA850_SDI_MAX_SPEED
+	int "Default DA850 SDI max speed (kHz)"
+	depends on MACH_DAVINCI_DA850_SDI
+	default "456000"
+	help
+	  The default value is 456000 kHz. Only change this if you want
+	  to change DA850-SDI maximum speed.
+
 config DAVINCI_MUX
 	bool "DAVINCI multiplexing support"
 	depends on ARCH_DAVINCI
@@ -391,5 +399,6 @@ config DAVINCI_RESET_CLOCKS
 	  device drivers work properly.
 
 endmenu
+
 
 endif

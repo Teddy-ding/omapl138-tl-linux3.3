@@ -1532,18 +1532,12 @@ static struct platform_device da850_gpio_i2c = {
 #ifdef CONFIG_CPU_FREQ
 static __init int da850_evm_init_cpufreq(void)
 {
-	switch (system_rev & 0xF) {
-	case 3:
-		da850_max_speed = 456000;
-		break;
-	case 2:
-		da850_max_speed = 408000;
-		break;
-	case 1:
-		da850_max_speed = 372000;
-		break;
-	}
-
+	/*
+	 * Always set da850-sdi maximum speed to
+	 * CONFIG_DA850_SDI_MAX_SPEED and removed "system_rev" check
+	 * logic which was used previously to set "da850_max_speed".
+	 */
+	da850_max_speed = CONFIG_DA850_SDI_MAX_SPEED;
 	return da850_register_cpufreq("pll0_sysclk3");
 }
 #else
