@@ -897,6 +897,7 @@ int da850_sdi_mute(int state)
 
     return 0;
 }
+EXPORT_SYMBOL(da850_sdi_mute);
 
 static int tfp_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
