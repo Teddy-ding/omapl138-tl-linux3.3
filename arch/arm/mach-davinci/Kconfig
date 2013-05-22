@@ -313,13 +313,11 @@ config MACH_MITYOMAPL138
 	  System on Module.  Information on this SoM may be found at
 	  http://www.mitydsp.com
 
-config MACH_OMAPL138_HAWKBOARD
-	bool "TI AM1808 / OMAPL-138 Hawkboard platform"
+config MACH_OMAPL138_LCDKBOARD
+	bool "TI OMAP-L138 LCDK board platform"
 	depends on ARCH_DAVINCI_DA850
 	help
-	  Say Y here to select the TI AM1808 / OMAPL-138 Hawkboard platform .
-	  Information of this board may be found at
-	  http://www.hawkboard.org/
+	  Say Y here to select the TI OMAP-L138 LCDK board.
 
 config MACH_DAVINCI_DA850_SDI
 	bool "DA850 SDI Development Board"
