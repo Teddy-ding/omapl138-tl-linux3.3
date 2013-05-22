@@ -234,6 +234,14 @@ static __init void omapl138_lcdk_init(void)
 
 	davinci_serial_init(&omapl138_lcdk_uart_config);
 
+	/*
+	 * shut down uart 0 and 1; they are not used on this board and
+	 * accessing them causes endless "too much work in irq53" messages
+	 * with arago fs
+	 */
+	__raw_writel(0, IO_ADDRESS(DA8XX_UART1_BASE) + 0x30);
+	__raw_writel(0, IO_ADDRESS(DA8XX_UART0_BASE) + 0x30);
+
 	omapl138_lcdk_config_emac();
 
 	ret = da850_register_edma(da850_edma_rsv);
