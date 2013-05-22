@@ -247,6 +247,10 @@ static __init void omapl138_lcdk_init(void)
 		pr_warning("omapl138_lcdk_init: "
 			"watchdog registration failed: %d\n",
 			ret);
+
+	ret = da8xx_register_rtc();
+	if (ret)
+		pr_warning("omapl138_lcdk_init: rtc setup failed: %d\n", ret);
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
