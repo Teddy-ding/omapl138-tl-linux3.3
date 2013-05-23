@@ -660,6 +660,18 @@ static  __init void omapl138_lcdk_keys_init(void)
 	return;
 };
 
+static struct davinci_pm_config da850_pm_pdata = {
+	.sleepcount = 128,
+};
+
+static struct platform_device da850_pm_device = {
+	.name           = "pm-davinci",
+	.dev = {
+		.platform_data  = &da850_pm_pdata,
+	},
+	.id             = -1,
+};
+
 static __init void omapl138_lcdk_init(void)
 {
 	int ret;
@@ -701,6 +713,11 @@ static __init void omapl138_lcdk_init(void)
 	ret = da850_register_sata(LCDKBOARD_SATA_REFCLKPN_RATE);
 	if (ret)
 		pr_warning("omapl138_lcdk_init: sata registration failed: %d\n",
+				ret);
+
+	ret = da850_register_pm(&da850_pm_device);
+	if (ret)
+		pr_warning("da850_evm_init: suspend registration failed: %d\n",
 				ret);
 
 	omapl138_lcdk_led_init();
