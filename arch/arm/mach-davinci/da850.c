@@ -507,6 +507,7 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850,	ACLKX,		0,	4,	15,	1,	false)
 	MUX_CFG(DA850,	AFSR,		0,	8,	15,	1,	false)
 	MUX_CFG(DA850,	AFSX,		0,	12,	15,	1,	false)
+	MUX_CFG(DA850,  AHCLKR,         0,      16,     15,     1,      false)
 	MUX_CFG(DA850,	AHCLKX,		0,	20,	15,	1,	false)
 	MUX_CFG(DA850,	AMUTE,		0,	24,	15,	1,	false)
 	MUX_CFG(DA850,	AXR_15,		1,	0,	15,	1,	false)

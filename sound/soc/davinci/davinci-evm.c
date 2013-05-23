@@ -55,7 +55,8 @@ static int evm_hw_params(struct snd_pcm_substream *substream,
 		sysclk = 12288000;
 	else if (machine_is_davinci_da830_evm() ||
 			machine_is_davinci_da850_evm() ||
-			machine_is_davinci_da850_sdi())
+			machine_is_davinci_da850_sdi() ||
+			machine_is_omapl138_lcdkboard())
 	    sysclk = 24576000;
 	else
 		return -EINVAL;
@@ -384,6 +385,9 @@ static int __init evm_init(void)
 		evm_snd_dev_data = &da850_sdi_snd_soc_card;
 		index = 0;
 #endif
+	} else if (machine_is_omapl138_lcdkboard()) {
+		evm_snd_dev_data = &da850_snd_soc_card;
+		index = 0;
 	} else
 		return -EINVAL;
 

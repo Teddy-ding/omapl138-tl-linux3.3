@@ -13,6 +13,8 @@
 #include <linux/init.h>
 #include <linux/console.h>
 #include <linux/gpio.h>
+#include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -206,6 +208,15 @@ static __init void omapl138_lcdk_usb_init(void)
 	cfgchip2 = __raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
 	cfgchip2 &= ~CFGCHIP2_REFFREQ;
 	cfgchip2 |=  CFGCHIP2_REFFREQ_24MHZ;
+
+	/*
+	 * Select internal reference clock for USB 2.0 PHY
+	 * and use it as a clock source for USB 1.1 PHY
+	 * (this is the default setting anyway).
+	 */
+	cfgchip2 &= ~CFGCHIP2_USB1PHYCLKMUX;
+	cfgchip2 |=  CFGCHIP2_USB2PHYCLKMUX;
+
 	__raw_writel(cfgchip2, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
 
 	da8xx_board_usb_init(da850_lcdk_usb11_pins, &omapl138_lcdk_usb11_pdata);
@@ -216,6 +227,83 @@ static __init void omapl138_lcdk_usb_init(void)
 static struct davinci_uart_config omapl138_lcdk_uart_config __initdata = {
 	.enabled_uarts = 0x7,
 };
+
+/* I2C */
+static struct i2c_board_info __initdata omapl138_lcdk_i2c_devices[] = {
+	{
+		I2C_BOARD_INFO("tlv320aic3x", 0x18),
+	},
+};
+
+static struct i2c_gpio_platform_data da850_gpio_i2c_pdata = {
+	.sda_pin        = GPIO_TO_PIN(1, 4),
+	.scl_pin        = GPIO_TO_PIN(1, 5),
+	.udelay         = 2,                    /* 250 KHz */
+};
+
+static struct platform_device da850_gpio_i2c = {
+	.name           = "i2c-gpio",
+	.id             = 1,
+	.dev            = {
+		.platform_data  = &da850_gpio_i2c_pdata,
+	},
+};
+
+static void omapl138_lcdk_i2c_init(void)
+{
+	int ret;
+	ret = davinci_cfg_reg_list(da850_i2c0_pins);
+	if (ret)
+		pr_warn("omapl138_lcdk_init: i2c0 mux setup failed: %d\n",
+				ret);
+
+	platform_device_register(&da850_gpio_i2c);
+
+	if (ret)
+		pr_warn("omapl138_lcdk_init: i2c0 registration failed: %d\n",
+				ret);
+	i2c_register_board_info(1, omapl138_lcdk_i2c_devices,
+			ARRAY_SIZE(omapl138_lcdk_i2c_devices));
+}
+
+/* Set up OMAP-L138 LCDK low-level McASP driver */
+static u8 da850_iis_serializer_direction[] = {
+	INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,
+	INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,
+	INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,  INACTIVE_MODE,
+	INACTIVE_MODE,  TX_MODE,        RX_MODE,        INACTIVE_MODE,
+};
+
+static struct snd_platform_data omapl138_lcdk_snd_data = {
+	.tx_dma_offset  = 0x2000,
+	.rx_dma_offset  = 0x2000,
+	.op_mode        = DAVINCI_MCASP_IIS_MODE,
+	.num_serializer = ARRAY_SIZE(da850_iis_serializer_direction),
+	.tdm_slots      = 2,
+	.serial_dir     = da850_iis_serializer_direction,
+	.asp_chan_q     = EVENTQ_0,
+	.version        = MCASP_VERSION_2,
+	.txnumevt       = 1,
+	.rxnumevt       = 1,
+};
+
+static const short omapl138_lcdk_mcasp_pins[] __initconst = {
+	DA850_AHCLKX,   DA850_ACLKX,    DA850_AFSX,
+	DA850_AHCLKR,   DA850_ACLKR,    DA850_AFSR,     DA850_AMUTE,
+	DA850_AXR_13,   DA850_AXR_14,
+	-1
+};
+
+static void omapl138_lcdk_sound_init(void)
+{
+	int ret;
+	ret = davinci_cfg_reg_list(omapl138_lcdk_mcasp_pins);
+	if (ret)
+		pr_warn("omapl138_lcdk_init: mcasp mux setup failed: %d\n",
+				ret);
+
+	da8xx_register_mcasp(0, &omapl138_lcdk_snd_data);
+}
 
 static __init void omapl138_lcdk_init(void)
 {
@@ -251,6 +339,9 @@ static __init void omapl138_lcdk_init(void)
 	ret = da8xx_register_rtc();
 	if (ret)
 		pr_warning("omapl138_lcdk_init: rtc setup failed: %d\n", ret);
+
+	omapl138_lcdk_i2c_init();
+	omapl138_lcdk_sound_init();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE

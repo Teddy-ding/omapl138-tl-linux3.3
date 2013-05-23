@@ -20,3 +20,4 @@ obj-$(CONFIG_SND_DA830_SOC_EVM) += snd-soc-evm.o
 obj-$(CONFIG_SND_DA850_SOC_EVM) += snd-soc-evm.o
 obj-$(CONFIG_SND_DA850_SOC_SDI) += snd-soc-evm.o
 obj-$(CONFIG_SND_DAVINCI_SOC_SFFSDR) += snd-soc-sffsdr.o
+obj-$(CONFIG_SND_OMAPL138_LCDKBOARD) += snd-soc-evm.o
