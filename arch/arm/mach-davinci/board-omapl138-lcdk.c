@@ -15,6 +15,9 @@
 #include <linux/gpio.h>
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
+#include <linux/leds.h>
+#include <linux/gpio_keys.h>
+#include <linux/input.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -30,6 +33,23 @@
 #define DA850_USB1_OC_PIN		GPIO_TO_PIN(6, 13)
 
 #define LCDKBOARD_SATA_REFCLKPN_RATE   (100 * 1000 * 1000)
+
+#define DA850_LCDK_USER_LED0		GPIO_TO_PIN(6, 12)
+#define DA850_LCDK_USER_LED1		GPIO_TO_PIN(6, 13)
+#define DA850_LCDK_USER_LED2		GPIO_TO_PIN(2, 12)
+#define DA850_LCDK_USER_LED3		GPIO_TO_PIN(0, 9)
+
+#define	DA850_LCDK_USER_KEY0            GPIO_TO_PIN(2, 4)
+#define	DA850_LCDK_USER_KEY1            GPIO_TO_PIN(2, 5)
+
+#if defined(CONFIG_USB_OHCI_HCD)
+#define HAS_OHCI               1
+#else
+#define HAS_OHCI               0
+#endif
+
+#define        DA850_LCDK_KEYS_DEBOUNCE_MS     10
+#define        DA850_LCDK_GPIO_KEYS_POLL_MS    200
 
 static short omapl138_lcdk_mii_pins[] __initdata = {
 	DA850_MII_TXEN, DA850_MII_TXCLK, DA850_MII_COL, DA850_MII_TXD_3,
@@ -240,7 +260,9 @@ static __init void omapl138_lcdk_usb_init(void)
 
 	__raw_writel(cfgchip2, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
 
-	da8xx_board_usb_init(da850_lcdk_usb11_pins, &omapl138_lcdk_usb11_pdata);
+	if (HAS_OHCI)
+		da8xx_board_usb_init(da850_lcdk_usb11_pins,
+				     &omapl138_lcdk_usb11_pdata);
 
 	return;
 }
@@ -326,6 +348,121 @@ static void omapl138_lcdk_sound_init(void)
 	da8xx_register_mcasp(0, &omapl138_lcdk_snd_data);
 }
 
+static const short omapl138_lcdk_led_pin_mux[] __initconst = {
+	DA850_GPIO6_12,
+#if !HAS_OHCI
+	DA850_GPIO6_13,
+#endif
+	DA850_GPIO2_12,
+	DA850_GPIO0_9,
+	-1
+};
+
+static struct gpio_led gpio_leds[] = {
+	{
+		.active_low = 1,
+		.gpio = DA850_LCDK_USER_LED0,
+		.name = "user_led0",
+	},
+#if !HAS_OHCI
+	{
+		.active_low = 1,
+		.gpio   = DA850_LCDK_USER_LED1,
+		.name   = "user_led1",
+	},
+#endif
+	{
+		.active_low = 1,
+		.gpio = DA850_LCDK_USER_LED2,
+		.name = "user_led2",
+	},
+	{
+		.active_low = 1,
+		.gpio   = DA850_LCDK_USER_LED3,
+		.name   = "user_led3",
+	},
+};
+
+static struct gpio_led_platform_data gpio_led_info = {
+	.leds           = gpio_leds,
+	.num_leds       = ARRAY_SIZE(gpio_leds),
+};
+
+static struct platform_device leds_gpio = {
+	.name   = "leds-gpio",
+	.id     = -1,
+	.dev    = {
+		.platform_data  = &gpio_led_info,
+	},
+};
+
+static  __init void omapl138_lcdk_led_init(void)
+{
+	int err;
+
+	davinci_cfg_reg_list(omapl138_lcdk_led_pin_mux);
+	err = platform_device_register(&leds_gpio);
+	if (err)
+		pr_err("failed to register leds_gpio device\n");
+	return;
+};
+
+static const short omapl138_lcdk_keys_pin_mux[] __initconst = {
+#if !HAS_OHCI
+	DA850_GPIO2_4,
+#endif
+	DA850_GPIO2_5,
+	-1
+};
+
+static struct gpio_keys_button omapl138_lcdk_evm_keys[] = {
+#if !HAS_OHCI
+	{
+		.type                   = EV_KEY,
+		.active_low             = 1,
+		.wakeup                 = 0,
+		.debounce_interval      = DA850_LCDK_KEYS_DEBOUNCE_MS,
+		.code                   = KEY_F8,
+		.gpio                   = DA850_LCDK_USER_KEY0,
+		.desc                   = "pb1",
+	},
+#endif
+	{
+		.type                   = EV_KEY,
+		.active_low             = 1,
+		.wakeup                 = 0,
+		.debounce_interval      = DA850_LCDK_KEYS_DEBOUNCE_MS,
+		.code                   = KEY_F7,
+		.gpio                   = DA850_LCDK_USER_KEY1,
+		.desc                   = "pb2",
+	},
+};
+
+static struct gpio_keys_platform_data omapl138_lcdk_evm_keys_pdata = {
+	.buttons = omapl138_lcdk_evm_keys,
+	.nbuttons = ARRAY_SIZE(omapl138_lcdk_evm_keys),
+	.poll_interval = DA850_LCDK_GPIO_KEYS_POLL_MS,
+};
+
+static struct platform_device omapl138_lcdk_evm_keys_device = {
+	.name = "gpio-keys-polled",
+	.id = 0,
+	.dev = {
+		.platform_data = &omapl138_lcdk_evm_keys_pdata
+	},
+};
+
+static  __init void omapl138_lcdk_keys_init(void)
+{
+	int err;
+
+	davinci_cfg_reg_list(omapl138_lcdk_keys_pin_mux);
+	err = platform_device_register(&omapl138_lcdk_evm_keys_device);
+	if (err)
+		pr_err("failed to register omapl138_lcdk_evm_keys_device\n");
+	return;
+};
+
 static __init void omapl138_lcdk_init(void)
 {
 	int ret;
@@ -368,6 +505,10 @@ static __init void omapl138_lcdk_init(void)
 	if (ret)
 		pr_warning("omapl138_lcdk_init: sata registration failed: %d\n",
 				ret);
+
+	omapl138_lcdk_led_init();
+	omapl138_lcdk_keys_init();
+
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE

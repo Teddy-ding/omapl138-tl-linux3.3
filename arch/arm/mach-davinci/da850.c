@@ -613,6 +613,7 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850, NEMA_CS_2,	7,	0,	15,	1,	false)
 	/* GPIO function */
 	MUX_CFG(DA850, GPIO2_4,		6,	12,	15,	8,	false)
+	MUX_CFG(DA850, GPIO2_5,         6,      12,     15,     8,      false)
 	MUX_CFG(DA850, GPIO2_6,		6,	4,	15,	8,	false)
 	MUX_CFG(DA850, GPIO2_8,		5,	28,	15,	8,	false)
 	MUX_CFG(DA850, GPIO2_15,	5,	0,	15,	8,	false)
@@ -626,6 +627,9 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850, GPIO1_4,		4,	12,	15,	8,	false)
 	MUX_CFG(DA850, GPIO1_5,		4,	8,	15,	8,	false)
 	MUX_CFG(DA850, GPIO0_11,	0,	16,	15,	8,	false)
+	MUX_CFG(DA850, GPIO2_12,        5,      12,     15,     8,      false)
+	MUX_CFG(DA850, GPIO0_9,         0,      24,     15,     8,      false)
+	MUX_CFG(DA850, GPIO6_12,        13,     12,     15,     8,      false)
 	MUX_CFG(DA850, RTC_ALARM,	0,	28,	15,	2,	false)
 	MUX_CFG(DA850, GPIO7_4,         17,     20,     15,     8,      false)
 	/* eHRPWM0 function */
