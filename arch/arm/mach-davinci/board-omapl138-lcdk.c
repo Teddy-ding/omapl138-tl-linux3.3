@@ -18,6 +18,11 @@
 #include <linux/leds.h>
 #include <linux/gpio_keys.h>
 #include <linux/input.h>
+#include <linux/platform_device.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/nand.h>
+#include <linux/mtd/partitions.h>
+#include <linux/mfd/davinci_aemif.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -25,6 +30,7 @@
 #include <mach/cp_intc.h>
 #include <mach/da8xx.h>
 #include <mach/mux.h>
+#include <mach/nand.h>
 
 #define LCDKBOARD_PHY_ID		"davinci_mdio-0:07"
 #define DA850_LCDK_MMCSD_CD_PIN		GPIO_TO_PIN(4, 0)
@@ -50,6 +56,95 @@
 
 #define        DA850_LCDK_KEYS_DEBOUNCE_MS     10
 #define        DA850_LCDK_GPIO_KEYS_POLL_MS    200
+
+#if defined(CONFIG_MTD_NAND_DAVINCI) || \
+	defined(CONFIG_MTD_NAND_DAVINCI_MODULE)
+struct mtd_partition omapl138_lcdk_nandflash_partition[] = {
+	{
+		.name           = "u-boot env",
+		.offset         = 0,
+		.size           = SZ_128K,
+		.mask_flags     = MTD_WRITEABLE,
+	},
+	{
+		.name           = "u-boot",
+		.offset         = MTDPART_OFS_APPEND,
+		.size           = SZ_512K,
+		.mask_flags     = MTD_WRITEABLE,
+	},
+	{
+		.name           = "kernel",
+		.offset         = MTDPART_OFS_APPEND,
+		.size           = SZ_2M,
+		.mask_flags     = 0,
+	},
+	{
+		.name           = "filesystem",
+		.offset         = MTDPART_OFS_APPEND,
+		.size           = MTDPART_SIZ_FULL,
+		.mask_flags     = 0,
+	},
+};
+
+static struct davinci_nand_pdata omapl138_lcdk_nandflash_data = {
+	.parts          = omapl138_lcdk_nandflash_partition,
+	.nr_parts       = ARRAY_SIZE(omapl138_lcdk_nandflash_partition),
+	.ecc_mode       = NAND_ECC_HW,
+	.options        = NAND_BUSWIDTH_16,
+	.ecc_bits       = 1, /* 4 bit mode is not
+			      * supported with 16 bit NAND */
+	.bbt_options    = NAND_BBT_USE_FLASH,
+};
+
+static const short omapl138_lcdk_nand_pins[] = {
+	DA850_EMA_D_0, DA850_EMA_D_1, DA850_EMA_D_2, DA850_EMA_D_3,
+	DA850_EMA_D_4, DA850_EMA_D_5, DA850_EMA_D_6, DA850_EMA_D_7,
+	DA850_EMA_D_8, DA850_EMA_D_9, DA850_EMA_D_10, DA850_EMA_D_11,
+	DA850_EMA_D_12, DA850_EMA_D_13, DA850_EMA_D_14, DA850_EMA_D_15,
+	DA850_EMA_A_1, DA850_EMA_A_2, DA850_NEMA_CS_3, DA850_NEMA_CS_4,
+	DA850_NEMA_WE, DA850_NEMA_OE,
+	-1
+};
+
+static struct resource omapl138_lcdk_nandflash_resource[] = {
+	{
+		.start  = DA8XX_AEMIF_CS3_BASE,
+		.end    = DA8XX_AEMIF_CS3_BASE + SZ_512K + 2 * SZ_1K - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	{
+		.start  = DA8XX_AEMIF_CTL_BASE,
+		.end    = DA8XX_AEMIF_CTL_BASE + SZ_32K - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device omapl138_lcdk_nandflash_device = {
+	.name           = "davinci_nand",
+	.id             = 1,
+	.dev            = {
+		.platform_data  = &omapl138_lcdk_nandflash_data,
+	},
+	.resource       = omapl138_lcdk_nandflash_resource,
+	.num_resources  = ARRAY_SIZE(omapl138_lcdk_nandflash_resource),
+};
+
+static __init void omapl138_lcdk_nand_init(void)
+{
+	int ret;
+
+	ret = davinci_cfg_reg_list(omapl138_lcdk_nand_pins);
+	if (ret) {
+		pr_warn("da850_lcdk_init:"
+				"nand mux setup failed: %d\n", ret);
+		return;
+	}
+	platform_device_register(&omapl138_lcdk_nandflash_device);
+}
+#else
+static void omapl138_lcdk_nand_init(void) { }
+#endif
+
 
 static short omapl138_lcdk_mii_pins[] __initdata = {
 	DA850_MII_TXEN, DA850_MII_TXCLK, DA850_MII_COL, DA850_MII_TXD_3,
@@ -508,7 +603,7 @@ static __init void omapl138_lcdk_init(void)
 
 	omapl138_lcdk_led_init();
 	omapl138_lcdk_keys_init();
-
+	omapl138_lcdk_nand_init();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
