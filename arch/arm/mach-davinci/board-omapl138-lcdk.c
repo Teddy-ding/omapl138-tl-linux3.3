@@ -22,8 +22,7 @@
 #include <mach/mux.h>
 
 #define LCDKBOARD_PHY_ID		"davinci_mdio-0:07"
-#define DA850_LCDK_MMCSD_CD_PIN		GPIO_TO_PIN(3, 12)
-#define DA850_LCDK_MMCSD_WP_PIN		GPIO_TO_PIN(3, 13)
+#define DA850_LCDK_MMCSD_CD_PIN		GPIO_TO_PIN(4, 0)
 
 #define DA850_USB1_VBUS_PIN		GPIO_TO_PIN(2, 4)
 #define DA850_USB1_OC_PIN		GPIO_TO_PIN(6, 13)
@@ -124,7 +123,7 @@ static const short lcdk_mmcsd0_pins[] = {
 
 static int da850_lcdk_mmc_get_ro(int index)
 {
-	return gpio_get_value(DA850_LCDK_MMCSD_WP_PIN);
+	return 0;
 }
 
 static int da850_lcdk_mmc_get_cd(int index)
@@ -160,14 +159,6 @@ static __init void omapl138_lcdk_mmc_init(void)
 		return;
 	}
 
-	ret = gpio_request_one(DA850_LCDK_MMCSD_WP_PIN,
-			GPIOF_DIR_IN, "MMC WP");
-	if (ret < 0) {
-		pr_warning("%s: can not open GPIO %d\n",
-			__func__, DA850_LCDK_MMCSD_WP_PIN);
-		goto mmc_setup_wp_fail;
-	}
-
 	ret = da8xx_register_mmcsd0(&da850_mmc_config);
 	if (ret) {
 		pr_warning("%s: MMC/SD0 registration failed: %d\n",
@@ -178,8 +169,6 @@ static __init void omapl138_lcdk_mmc_init(void)
 	return;
 
 mmc_setup_mmcsd_fail:
-	gpio_free(DA850_LCDK_MMCSD_WP_PIN);
-mmc_setup_wp_fail:
 	gpio_free(DA850_LCDK_MMCSD_CD_PIN);
 }
 
