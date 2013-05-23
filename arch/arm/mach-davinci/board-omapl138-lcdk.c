@@ -57,6 +57,9 @@
 #define        DA850_LCDK_KEYS_DEBOUNCE_MS     10
 #define        DA850_LCDK_GPIO_KEYS_POLL_MS    200
 
+#define DA850_LCD_PWR_PIN              GPIO_TO_PIN(2, 8)
+#define DA850_LCD_BL_PIN               GPIO_TO_PIN(2, 15)
+
 #if defined(CONFIG_MTD_NAND_DAVINCI) || \
 	defined(CONFIG_MTD_NAND_DAVINCI_MODULE)
 struct mtd_partition omapl138_lcdk_nandflash_partition[] = {
@@ -314,6 +317,105 @@ static irqreturn_t omapl138_lcdk_usb_ocic_irq(int irq, void *handler)
 	if (handler != NULL)
 		((da8xx_ocic_handler_t)handler)(&omapl138_lcdk_usb11_pdata, 1);
 	return IRQ_HANDLED;
+}
+
+/* VGA */
+static const short omapl138_lcdk_lcdc_pins[] = {
+	DA850_GPIO2_8, DA850_GPIO2_15,
+	-1
+};
+
+/* Backlight and power is for use with LCD expansion header only */
+static void da850_panel_power_ctrl(int val)
+{
+	/* lcd backlight */
+	gpio_set_value(DA850_LCD_BL_PIN, val);
+	/* lcd power */
+	gpio_set_value(DA850_LCD_PWR_PIN, val);
+}
+
+static int da850_lcd_hw_init(void)
+{
+	void __iomem *cfg_mstpri1_base;
+	void __iomem *cfg_mstpri2_base;
+	void __iomem *emifb;
+	void __iomem *myptr;
+	int status;
+	u32 val;
+
+	/*
+	 * Default master priorities in reg 0 are all lower by default than LCD
+	 * which is set below to 0. Hence don't need to change here.
+	 */
+
+	/* set EDMA30TC0 and TC1 to lower than LCDC (4 < 0) */
+	cfg_mstpri1_base = DA8XX_SYSCFG0_VIRT(DA8XX_MSTPRI1_REG);
+	val = __raw_readl(cfg_mstpri1_base);
+	val &= 0xFFFF00FF;
+	val |= 4 << 8;             /* 0-high, 7-low priority*/
+	val |= 4 << 12;            /* 0-high, 7-low priority*/
+	__raw_writel(val, cfg_mstpri1_base);
+
+	/*
+	 * Reconfigure the LCDC priority to the highest to ensure that
+	 * the throughput/latency requirements for the LCDC are met.
+	 */
+	cfg_mstpri2_base = DA8XX_SYSCFG0_VIRT(DA8XX_MSTPRI2_REG);
+
+	val = __raw_readl(cfg_mstpri2_base);
+	val &= 0x0fffffff;
+	__raw_writel(val, cfg_mstpri2_base);
+
+	/* set BPRIO */
+#define DA8XX_EMIF30_CONTROL_BASE               0xB0000000
+#define DA8XX_EMIF30_BPRIO_OFFSET               0x20
+#define DA8XX_EMIFB_VIRT(x)     (emifb + (x))
+	emifb = ioremap(DA8XX_EMIF30_CONTROL_BASE, SZ_4K);
+	myptr = DA8XX_EMIFB_VIRT(0x20);
+	__raw_writel(0x20, myptr);
+
+	status = gpio_request(DA850_LCD_BL_PIN, "lcd bl\n");
+	if (status < 0)
+		return status;
+
+	status = gpio_request(DA850_LCD_PWR_PIN, "lcd pwr\n");
+	if (status < 0) {
+		gpio_free(DA850_LCD_BL_PIN);
+		return status;
+	}
+
+	gpio_direction_output(DA850_LCD_BL_PIN, 0);
+	gpio_direction_output(DA850_LCD_PWR_PIN, 0);
+
+	/* Switch off panel power and backlight */
+	da850_panel_power_ctrl(0);
+
+	/* Switch on panel power and backlight */
+	da850_panel_power_ctrl(1);
+
+	return 0;
+}
+
+static void omapl138_lcdk_display_init(void)
+{
+	int ret;
+
+	ret = davinci_cfg_reg_list(da850_lcdcntl_pins);
+	if (ret)
+		pr_warn("omapl138_lcdk_init: lcdcntl mux setup failed:%d\n",
+				ret);
+
+	ret = davinci_cfg_reg_list(omapl138_lcdk_lcdc_pins);
+	if (ret)
+		pr_warn("omapl138_lcdk_init: evm specific lcd mux setup "
+				"failed: %d\n", ret);
+
+	da850_lcd_hw_init();
+
+	ret = da8xx_register_lcdc(&vga_monitor_pdata);
+	if (ret)
+		pr_warn("omapl138_lcdk_init: lcdc registration failed: %d\n",
+				ret);
 }
 
 static __init void omapl138_lcdk_usb_init(void)
@@ -604,6 +706,7 @@ static __init void omapl138_lcdk_init(void)
 	omapl138_lcdk_led_init();
 	omapl138_lcdk_keys_init();
 	omapl138_lcdk_nand_init();
+	omapl138_lcdk_display_init();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
