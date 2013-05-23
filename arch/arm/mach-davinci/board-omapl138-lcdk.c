@@ -29,6 +29,8 @@
 #define DA850_USB1_VBUS_PIN		GPIO_TO_PIN(2, 4)
 #define DA850_USB1_OC_PIN		GPIO_TO_PIN(6, 13)
 
+#define LCDKBOARD_SATA_REFCLKPN_RATE   (100 * 1000 * 1000)
+
 static short omapl138_lcdk_mii_pins[] __initdata = {
 	DA850_MII_TXEN, DA850_MII_TXCLK, DA850_MII_COL, DA850_MII_TXD_3,
 	DA850_MII_TXD_2, DA850_MII_TXD_1, DA850_MII_TXD_0, DA850_MII_RXER,
@@ -361,6 +363,11 @@ static __init void omapl138_lcdk_init(void)
 
 	omapl138_lcdk_i2c_init();
 	omapl138_lcdk_sound_init();
+
+	ret = da850_register_sata(LCDKBOARD_SATA_REFCLKPN_RATE);
+	if (ret)
+		pr_warning("omapl138_lcdk_init: sata registration failed: %d\n",
+				ret);
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
