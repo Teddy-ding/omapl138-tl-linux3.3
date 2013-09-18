@@ -1005,6 +1005,12 @@ enum davinci_da850_index {
 	DA850_MCBSP1_DX,
 	DA850_MCBSP1_CLKS,
 
+	/* SPI1 function */
+	DA850_SPI1_CS_0,
+	DA850_SPI1_CS_1,
+	DA850_SPI1_CLK,
+	DA850_SPI1_SOMI,
+	DA850_SPI1_SIMO,
 };
 
 enum davinci_tnetv107x_index {
