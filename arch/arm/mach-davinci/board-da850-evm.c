@@ -32,6 +32,8 @@
 #include <linux/input/tps6507x-ts.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/spi/ads7846.h>
+
 #include <linux/delay.h>
 #include <linux/wl12xx.h>
 #include <linux/pwm_backlight.h>
@@ -66,6 +68,8 @@
 
 #define DA850_SD_ENABLE_PIN		GPIO_TO_PIN(0, 11)
 
+#define DA850_TS_INT			GPIO_TO_PIN(2,12)
+
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
 #define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
@@ -80,6 +84,12 @@ static struct platform_pwm_backlight_data da850evm_backlight_data = {
 static struct platform_device da850evm_backlight = {
 	.name		= "pwm-backlight",
 	.id		= -1,
+};
+
+static const short da850_spi1_pins[] = {
+	DA850_SPI1_CS_0, DA850_SPI1_CS_1,
+	DA850_SPI1_CLK, DA850_SPI1_SOMI, DA850_SPI1_SIMO,
+	-1
 };
 
 static struct mtd_partition da850evm_spiflash_part[] = {
@@ -134,6 +144,25 @@ static struct davinci_spi_config da850evm_spiflash_cfg = {
 	.t2cdelay	= 8,
 };
 
+static struct ads7846_platform_data ads7846_config = {
+	.model 			= 7846,
+	.x_max			= 0x0fff,
+	.y_max			= 0x0fff,
+	.x_plate_ohms		= 180,
+	.pressure_max		= 255,
+	.debounce_max		= 10,
+	.debounce_tol		= 3,
+	.debounce_rep		= 1,
+	.settle_delay_usecs	= 150,
+	.keep_vref_on 		= 1,
+	.gpio_pendown		= DA850_TS_INT,
+	.wakeup			= true,
+};
+
+static struct davinci_spi_config da850evm_spits_cfg = {
+	.io_type	= SPI_IO_TYPE_POLL,
+};
+
 static struct spi_board_info da850evm_spi_info[] = {
 	{
 		.modalias		= "m25p80",
@@ -143,6 +172,15 @@ static struct spi_board_info da850evm_spi_info[] = {
 		.max_speed_hz		= 30000000,
 		.bus_num		= 1,
 		.chip_select		= 0,
+	},
+	{
+		.modalias		= "ads7846",
+		.platform_data		= &ads7846_config,
+		.controller_data	= &da850evm_spits_cfg,
+		.mode			= SPI_MODE_0,
+		.max_speed_hz		= 1500000, /* max sample rate at 3V */
+		.bus_num		= 1,
+		.chip_select		= 1,
 	},
 };
 
@@ -1251,7 +1289,8 @@ static int __init pmic_tps65070_init(void)
 }
 
 static const short da850_evm_lcdc_pins[] = {
-	DA850_GPIO2_8, DA850_GPIO2_15,
+//	DA850_GPIO2_8, DA850_GPIO2_15,
+	DA850_GPIO2_8,
 	-1
 };
 
@@ -1979,6 +2018,18 @@ static __init void da850_evm_init(void)
 			pr_warning("da850_evm_init: VPIF display setup failed:"
 					"%d\n", ret);
 	}
+
+	ret = davinci_cfg_reg(DA850_GPIO2_12);
+	if (ret)
+		pr_warning("da850_evm_init: TS mux failed:"
+				" %d\n", ret);
+
+	ret = davinci_cfg_reg_list(da850_spi1_pins);
+	if (ret)
+		pr_warning("da850_evm_init : SPI1 mux failed :"
+				"%d\n", ret);
+
+	da850evm_spi_info[1].irq = gpio_to_irq(DA850_TS_INT);
 
 	ret = da8xx_register_spi(1, da850evm_spi_info,
 				 ARRAY_SIZE(da850evm_spi_info));
