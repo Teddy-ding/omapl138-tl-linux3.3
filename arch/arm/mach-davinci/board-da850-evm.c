@@ -70,6 +70,9 @@
 
 #define DA850_TS_INT			GPIO_TO_PIN(2,12)
 
+#define DA850_USER_LED1			GPIO_TO_PIN(6,12)
+#define DA850_USER_LED2			GPIO_TO_PIN(6,13)
+
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
 #define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
@@ -954,6 +957,58 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	},
 };
 
+/* assign the tl som board LED-GPIOs*/
+static const short da850_evm_tl_user_led_pins[] = {
+	DA850_GPIO6_12, DA850_GPIO6_13,
+	-1
+};
+
+#define DA850_N_TL_USER_LED	2
+
+static struct gpio_led da850_evm_tl_leds[] = {
+	[0] = {
+		.active_low = 0,
+		.gpio = DA850_USER_LED1,
+		.name = "user_led1",
+		.default_trigger = "heartbeat",
+	},
+	[1] = {
+		.active_low = 0,
+		.gpio = DA850_USER_LED2,
+		.name = "user_led2",
+		.default_trigger = "mmc0",
+	},
+};
+
+static struct gpio_led_platform_data da850_evm_tl_leds_pdata = {
+	.leds = da850_evm_tl_leds,
+	.num_leds = ARRAY_SIZE(da850_evm_tl_leds),
+};
+
+static struct platform_device da850_evm_tl_leds_device = {
+	.name		= "leds-gpio",
+	.id		= -1,
+	.dev = {
+		.platform_data = &da850_evm_tl_leds_pdata
+	}
+};
+
+static void da850_evm_tl_leds_init(void)
+{
+	int ret;
+
+	ret = davinci_cfg_reg_list(da850_evm_tl_user_led_pins);
+	if (ret)
+		pr_warning("da850_evm_tl_leds_init : User LED mux failed :"
+				"%d\n", ret);
+
+	ret = platform_device_register(&da850_evm_tl_leds_device);
+	if (ret) {
+		pr_warning("Could not register som GPIO expander LEDS");
+	}
+}
+
+#if 0
 /*
  * USB1 VBUS is controlled by GPIO2[4], over-current is reported on GPIO6[13].
  */
@@ -984,6 +1039,7 @@ static irqreturn_t da850_evm_usb_ocic_irq(int irq, void *handler)
 		((da8xx_ocic_handler_t)handler)(&da850_evm_usb11_pdata, 1);
 	return IRQ_HANDLED;
 }
+#endif
 
 static __init void da850_evm_usb_init(void)
 {
@@ -1027,8 +1083,10 @@ static __init void da850_evm_usb_init(void)
 		pr_warning("%s: USB 2.0 registration failed: %d\n",
 			   __func__, ret);
 
+#if 0
 	/* initilaize usb module */
 	da8xx_board_usb_init(da850_evm_usb11_pins, &da850_evm_usb11_pdata);
+#endif
 }
 
 static struct davinci_uart_config da850_evm_uart_config __initdata = {
@@ -2130,6 +2188,8 @@ static __init void da850_evm_init(void)
 			}
 		}
 	}
+
+	da850_evm_tl_leds_init();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
