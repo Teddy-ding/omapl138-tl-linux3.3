@@ -1906,7 +1906,7 @@ struct uio_pruss_pdata da8xx_pruss_uio_pdata = {
 	.pintc_base	= 0x4000,
 };
 
-#define DA850EVM_SATA_REFCLKPN_RATE	(100 * 1000 * 1000)
+#define DA850EVM_SATA_REFCLKPN_RATE	(75 * 1000 * 1000)
 
 static __init void da850_evm_init(void)
 {
