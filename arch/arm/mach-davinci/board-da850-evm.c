@@ -486,6 +486,18 @@ static inline int have_imager(void)
 #endif
 }
 
+static inline void da850_evm_setup_nand(void)
+{
+	int ret = 0;
+
+	ret = davinci_cfg_reg_list(da850_evm_nand_pins);
+	if (ret)
+		pr_warning("da850_evm_init: nand mux setup failed: "
+				"%d\n", ret);
+
+	platform_device_register(&davinci_emif_device);
+}
+
 static inline void da850_evm_setup_nor_nand(void)
 {
 	int ret = 0;
@@ -2190,6 +2202,8 @@ static __init void da850_evm_init(void)
 	}
 
 	da850_evm_tl_leds_init();
+
+	da850_evm_setup_nand();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
