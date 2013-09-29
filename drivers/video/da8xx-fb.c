@@ -308,6 +308,20 @@ static struct da8xx_panel known_lcd_panels[] = {
 		.pxl_clk = 25000000,
 		.invert_pxl_clk = 1,
 	},
+	/* Lnnolux AT070TN83 */
+	[6] = {
+		.name = "Lnnolux_AT070TN83",
+		.width = 800,
+		.height = 480,
+		.hfp = 0xd2,
+		.hbp = 0x2c,
+		.hsw = 2,
+		.vfp = 0x16,
+		.vbp = 0x15,
+		.vsw = 2,
+		.pxl_clk = 33250000,
+		.invert_pxl_clk = 0,
+	},
 };
 
 /* Enable the Raster Engine of the LCD Controller */
