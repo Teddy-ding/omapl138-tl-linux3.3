@@ -79,6 +79,8 @@
 
 
 static struct platform_pwm_backlight_data da850evm_backlight_data = {
+	.pwm_id		= "ecap.2",
+	.ch		= -1,
 	.max_brightness	= DAVINCI_BACKLIGHT_MAX_BRIGHTNESS,
 	.dft_brightness	= DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS,
 	.pwm_period_ns	= DAVINCI_PWM_PERIOD_NANO_SECONDS,
@@ -87,6 +89,7 @@ static struct platform_pwm_backlight_data da850evm_backlight_data = {
 static struct platform_device da850evm_backlight = {
 	.name		= "pwm-backlight",
 	.id		= -1,
+	.dev.platform_data = &da850evm_backlight_data,
 };
 
 static const short da850_spi1_pins[] = {
@@ -2033,8 +2036,11 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init: lcd initialization failed: %d\n",
 				ret);
 
+#if 0
 	sharp_lk043t1dg01_pdata.panel_power_ctrl = da850_panel_power_ctrl,
 	ret = da8xx_register_lcdc(&sharp_lk043t1dg01_pdata);
+#endif
+	ret = da8xx_register_lcdc(&lnnolux_at070tn83_pdata);
 	if (ret)
 		pr_warning("da850_evm_init: lcdc registration failed: %d\n",
 				ret);
@@ -2174,8 +2180,11 @@ static __init void da850_evm_init(void)
 	}
 
 	if (HAS_BACKLIGHT) {
+#if 0
 		ret = da850_register_backlight(&da850evm_backlight,
 				&da850evm_backlight_data);
+#endif
+		ret = platform_device_register(&da850evm_backlight);
 		if (ret)
 			pr_warning("da850_evm_init:"
 				" backlight device registration"
