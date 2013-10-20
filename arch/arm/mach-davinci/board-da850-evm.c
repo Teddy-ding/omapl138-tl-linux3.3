@@ -55,7 +55,7 @@
 #include <media/davinci/vpif_types.h>
 
 #define DA850_EVM_PHY_ID		"davinci_mdio-0:00"
-#define DA850_LCD_PWR_PIN		GPIO_TO_PIN(2, 8)
+#define DA850_LCD_PWR_PIN		GPIO_TO_PIN(8, 10)
 #define DA850_LCD_BL_PIN		GPIO_TO_PIN(2, 15)
 
 #define DA850_MMCSD_CD_PIN		GPIO_TO_PIN(4, 0)
@@ -1167,10 +1167,12 @@ static void da850_panel_power_ctrl(int val)
 	/* lcd power */
 	gpio_set_value_cansleep(DA850_LCD_PWR_PIN, val);
 
+#if 0
 	mdelay(200);
 
 	/* lcd backlight */
 	gpio_set_value_cansleep(DA850_LCD_BL_PIN, val);
+#endif
 }
 
 static int da850_lcd_hw_init(void)
@@ -1363,7 +1365,7 @@ static int __init pmic_tps65070_init(void)
 
 static const short da850_evm_lcdc_pins[] = {
 //	DA850_GPIO2_8, DA850_GPIO2_15,
-	DA850_GPIO2_8,
+	DA850_GPIO8_10,
 	-1
 };
 
@@ -1919,6 +1921,8 @@ static __init void da850_evm_init(void)
 
 	u8 rmii_en = soc_info->emac_pdata->rmii_en;
 
+	struct da8xx_lcdc_platform_data *lcd_pdata;
+
 	ret = pmic_tps65070_init();
 	if (ret)
 		pr_warning("da850_evm_init: TPS65070 PMIC init failed: %d\n",
@@ -2040,7 +2044,14 @@ static __init void da850_evm_init(void)
 	sharp_lk043t1dg01_pdata.panel_power_ctrl = da850_panel_power_ctrl,
 	ret = da8xx_register_lcdc(&sharp_lk043t1dg01_pdata);
 #endif
-	ret = da8xx_register_lcdc(&lnnolux_at070tn83_pdata);
+#ifdef CONFIG_DA850_SDI_LCDC
+	lcd_pdata = &lnnolux_at070tn83_pdata;
+#endif
+#ifdef CONFIG_DA850_SDI_DVI_VGA
+	lcd_pdata = &vga_monitor_pdata;
+#endif
+	lcd_pdata->panel_power_ctrl = da850_panel_power_ctrl;
+	ret = da8xx_register_lcdc(lcd_pdata);
 	if (ret)
 		pr_warning("da850_evm_init: lcdc registration failed: %d\n",
 				ret);
