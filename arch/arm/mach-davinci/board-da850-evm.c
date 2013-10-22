@@ -1158,6 +1158,19 @@ static const short da850_evm_mmcsd0_pins[] __initconst = {
 	-1
 };
 
+static struct da8xx_lcdc_platform_data *da850_lcdc_panel = NULL;
+
+static int __init da850_panel_setup(char *str)
+{
+	if (!strcmp(str, "LCD"))
+		da850_lcdc_panel = &lnnolux_at070tn83_pdata;
+	else if (!strcmp(str, "VGA"))
+		da850_lcdc_panel = &vga_monitor_pdata;
+
+	return 1;
+}
+__setup("da850-panel=", da850_panel_setup);
+
 static void da850_panel_power_ctrl(int val)
 {
 	/* lcd power */
@@ -2046,6 +2059,9 @@ static __init void da850_evm_init(void)
 #ifdef CONFIG_DA850_SDI_DVI_VGA
 	lcd_pdata = &vga_monitor_pdata;
 #endif
+	if (da850_lcdc_panel != NULL)
+		lcd_pdata = da850_lcdc_panel;
+
 	lcd_pdata->panel_power_ctrl = da850_panel_power_ctrl;
 	ret = da8xx_register_lcdc(lcd_pdata);
 	if (ret)
