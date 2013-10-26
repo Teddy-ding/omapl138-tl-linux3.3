@@ -1026,11 +1026,11 @@ static void da850_evm_tl_leds_init(void)
 /*
  * USB1 VBUS is controlled by GPIO2[4], over-current is reported on GPIO6[13].
  */
-#define ON_BD_USB_DRV	GPIO_TO_PIN(2, 4)
-#define ON_BD_USB_OVC	GPIO_TO_PIN(6, 13)
+#define ON_BD_USB_DRV	GPIO_TO_PIN(6, 2)
+#define ON_BD_USB_OVC	GPIO_TO_PIN(6, 3)
 
 static const short da850_evm_usb11_pins[] = {
-	DA850_GPIO2_4, DA850_GPIO6_13,
+	DA850_GPIO6_2, DA850_GPIO6_3,
 	-1
 };
 
