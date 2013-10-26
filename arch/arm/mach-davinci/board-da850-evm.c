@@ -1026,6 +1026,7 @@ static void da850_evm_tl_leds_init(void)
 /*
  * USB1 VBUS is controlled by GPIO2[4], over-current is reported on GPIO6[13].
  */
+#if 0
 #define ON_BD_USB_DRV	GPIO_TO_PIN(6, 2)
 #define ON_BD_USB_OVC	GPIO_TO_PIN(6, 3)
 
@@ -1053,6 +1054,9 @@ static irqreturn_t da850_evm_usb_ocic_irq(int irq, void *handler)
 		((da8xx_ocic_handler_t)handler)(&da850_evm_usb11_pdata, 1);
 	return IRQ_HANDLED;
 }
+#endif
+
+static struct da8xx_ohci_root_hub da850_evm_usb11_pdata;
 
 static __init void da850_evm_usb_init(void)
 {
@@ -1097,7 +1101,13 @@ static __init void da850_evm_usb_init(void)
 			   __func__, ret);
 
 	/* initilaize usb module */
+#if 0
 	da8xx_board_usb_init(da850_evm_usb11_pins, &da850_evm_usb11_pdata);
+#endif
+	ret = da8xx_register_usb11(&da850_evm_usb11_pdata);
+	if (ret)
+		pr_warning("%s: USB 1.1 registration failed: %d\n",
+			   __func__, ret);
 }
 
 static struct davinci_uart_config da850_evm_uart_config __initdata = {
