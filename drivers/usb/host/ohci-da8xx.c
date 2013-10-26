@@ -351,10 +351,13 @@ static int usb_hcd_da8xx_probe(const struct hc_driver *driver,
 
 	if (hub->ocic_notify) {
 		error = hub->ocic_notify(ohci_da8xx_ocic_handler, hub);
-		if (!error)
-			return 0;
+		if (error)
+			goto err5;
 	}
 
+	return 0;
+
+err5:
 	usb_remove_hcd(hcd);
 err4:
 	iounmap(hcd->regs);
