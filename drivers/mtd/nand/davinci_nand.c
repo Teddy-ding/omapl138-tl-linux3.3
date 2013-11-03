@@ -508,6 +508,25 @@ static struct nand_ecclayout hwecc4_small __initconst = {
  */
 static struct nand_ecclayout hwecc4_2048 __initconst = {
 	.eccbytes = 40,
+#ifdef CONFIG_MTD_NAND_DAVINCI_ECC_LAYOUT_RBL
+	/* RBL/UBL ECC layouts
+	* 64 Bytes of ECC layout has 6 bytes oob free and 10 bytes of ECC alternatively.
+	*/
+	/*
+	* Each page includes N segments of spare bytes, where N is the number of
+	* data bytes per page divided by 512.
+	* Each segment of spare bytes contains 6 test bytes and 10 ECC bytes.
+	*/
+	.eccpos = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+		22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+		38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+		54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+	},
+	.oobfree = {{2, 4}, {16, 6}, {32, 6}, {48, 6}},
+#else
+	/* U-boot/Linux ECC layouts
+	* 64 bytes of ECC layout has first 24bytes of other data and 40 bytes of ECC.
+	*/
 	.eccpos = {
 		/* at the end of spare sector */
 		24, 25, 26, 27, 28, 29,	30, 31, 32, 33,
@@ -521,6 +540,7 @@ static struct nand_ecclayout hwecc4_2048 __initconst = {
 		/* 5 bytes at offset 8 hold BBT markers */
 		/* 8 bytes at offset 16 hold JFFS2 clean markers */
 	},
+#endif
 };
 
 #ifdef CONFIG_CPU_FREQ
@@ -764,6 +784,7 @@ static int __init nand_davinci_probe(struct platform_device *pdev)
 		 * badblock marking data ... and make sure a flash BBT
 		 * table marker fits in the free bytes.
 		 */
+
 		if (chunks == 1) {
 			info->ecclayout = hwecc4_small;
 			info->ecclayout.oobfree[1].length =
