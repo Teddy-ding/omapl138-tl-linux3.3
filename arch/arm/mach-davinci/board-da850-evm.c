@@ -295,14 +295,14 @@ static struct mtd_partition da850_evm_nandflash_partition[] = {
 	{
 		.name		= "UBL",
 		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_128K,
-		.mask_flags	= MTD_WRITEABLE,
+		.size		= 4 * SZ_128K,
+		.mask_flags	= 0,
 	},
 	{
 		.name		= "u-boot",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= 4 * SZ_128K,
-		.mask_flags	= MTD_WRITEABLE,
+		.mask_flags	= 0,
 	},
 	{
 		.name		= "kernel",
