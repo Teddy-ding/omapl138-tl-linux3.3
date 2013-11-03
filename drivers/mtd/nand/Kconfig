@@ -504,6 +504,13 @@ config MTD_NAND_DAVINCI
 	  Enable the driver for NAND flash chips on Texas Instruments
 	  DaVinci processors.
 
+config MTD_NAND_DAVINCI_ECC_LAYOUT_RBL
+        tristate "NAND_DAVINCI_ECC_LAYOUT match with DAVINCI RBL"
+        depends on MTD_NAND_DAVINCI
+        help
+      RBL/UBL ECC layouts 64 Bytes of ECC layout has 6 bytes oob free
+      and 10 bytes of ECC alternatively.
+
 config MTD_NAND_TXX9NDFMC
 	tristate "NAND Flash support for TXx9 SoC"
 	depends on SOC_TX4938 || SOC_TX4939
