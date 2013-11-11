@@ -1196,8 +1196,47 @@ static void da850_panel_power_ctrl(int val)
 
 static int da850_lcd_hw_init(void)
 {
+	void __iomem *cfg_mstpri1_base;
+	void __iomem *cfg_mstpri2_base;
+	void __iomem *emifb;
+	void __iomem *myptr;
+#ifdef CONFIG_DA850_SDI_LCDC
 	int status;
+#endif
+	u32 val;
 
+	/*
+	 * Default master priorities in reg 0 are all lower by default than LCD
+	 * which is set below to 0. Hence don't need to change here.
+	 */
+
+	/* set EDMA30TC0 and TC1 to lower than LCDC (4 < 0) */
+	cfg_mstpri1_base = DA8XX_SYSCFG0_VIRT(DA8XX_MSTPRI1_REG);
+	val = __raw_readl(cfg_mstpri1_base);
+	val &= 0xFFFF00FF;
+	val |= 4 << 8;             /* 0-high, 7-low priority*/
+	val |= 4 << 12;            /* 0-high, 7-low priority*/
+	__raw_writel(val, cfg_mstpri1_base);
+
+	/*
+	 * Reconfigure the LCDC priority to the highest to ensure that
+	 * the throughput/latency requirements for the LCDC are met.
+	 */
+	cfg_mstpri2_base = DA8XX_SYSCFG0_VIRT(DA8XX_MSTPRI2_REG);
+
+	val = __raw_readl(cfg_mstpri2_base);
+	val &= 0x0fffffff;
+	__raw_writel(val, cfg_mstpri2_base);
+
+	/* set BPRIO */
+#define DA8XX_EMIF30_CONTROL_BASE		0xB0000000
+#define DA8XX_EMIF30_BPRIO_OFFSET  		0x20
+#define DA8XX_EMIFB_VIRT(x)	(emifb + (x))
+	emifb = ioremap(DA8XX_EMIF30_CONTROL_BASE, SZ_4K);
+	myptr = DA8XX_EMIFB_VIRT(0x20);
+	__raw_writel(0x20, myptr);
+
+#ifdef CONFIG_DA850_SDI_LCDC
 	status = gpio_request(DA850_LCD_BL_PIN, "lcd bl\n");
 	if (status < 0)
 		return status;
@@ -1210,6 +1249,7 @@ static int da850_lcd_hw_init(void)
 
 	gpio_direction_output(DA850_LCD_BL_PIN, 0);
 	gpio_direction_output(DA850_LCD_PWR_PIN, 0);
+#endif
 
 	return 0;
 }
