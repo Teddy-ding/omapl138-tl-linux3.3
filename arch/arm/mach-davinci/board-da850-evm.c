@@ -73,6 +73,10 @@
 #define DA850_USER_LED1			GPIO_TO_PIN(6,12)
 #define DA850_USER_LED2			GPIO_TO_PIN(6,13)
 
+#define AD7606_BUSY			GPIO_TO_PIN(6, 8)
+#define AD7606_CONVST			GPIO_TO_PIN(6, 10)
+#define AD7606_RESET			GPIO_TO_PIN(0, 13)
+
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
 #define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
@@ -94,7 +98,15 @@ static struct platform_device da850evm_backlight = {
 
 static const short da850_spi1_pins[] = {
 	DA850_SPI1_CS_0, DA850_SPI1_CS_1,
+#if defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE)
+	DA850_SPI1_CS_3,
+#endif
 	DA850_SPI1_CLK, DA850_SPI1_SOMI, DA850_SPI1_SIMO,
+	-1
+};
+
+static const short ad7606_gpio_pins[] = {
+	DA850_GPIO6_8, DA850_GPIO6_10, DA850_GPIO0_13,
 	-1
 };
 
@@ -165,6 +177,48 @@ static struct ads7846_platform_data ads7846_config = {
 	.wakeup			= true,
 };
 
+#if defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE)
+/**
+ * struct ad7606_platform_data - platform/board specifc information
+ * @default_os:		default oversampling value {0, 2, 4, 8, 16, 32, 64}
+ * @default_range:	default range +/-{5000, 10000} mVolt
+ * @gpio_convst:	number of gpio connected to the CONVST pin
+ * @gpio_reset:		gpio connected to the RESET pin, if not used set to -1
+ * @gpio_range:		gpio connected to the RANGE pin, if not used set to -1
+ * @gpio_os0:		gpio connected to the OS0 pin, if not used set to -1
+ * @gpio_os1:		gpio connected to the OS1 pin, if not used set to -1
+ * @gpio_os2:		gpio connected to the OS2 pin, if not used set to -1
+ * @gpio_frstdata:	gpio connected to the FRSTDAT pin, if not used set to -1
+ * @gpio_stby:		gpio connected to the STBY pin, if not used set to -1
+ */
+
+struct ad7606_platform_data {
+	unsigned			default_os;
+	unsigned			default_range;
+	unsigned			gpio_convst;
+	unsigned			gpio_reset;
+	unsigned			gpio_range;
+	unsigned			gpio_os0;
+	unsigned			gpio_os1;
+	unsigned			gpio_os2;
+	unsigned			gpio_frstdata;
+	unsigned			gpio_stby;
+};
+
+static struct ad7606_platform_data ad7606_pdata = {
+	.default_os		= 0,
+	.default_range		= 5000,
+	.gpio_convst		= AD7606_CONVST,
+	.gpio_reset		= AD7606_RESET,
+	.gpio_range		= -1,
+	.gpio_os0		= -1,
+	.gpio_os1		= -1,
+	.gpio_os2		= -1,
+	.gpio_frstdata		= -1,
+	.gpio_stby		= -1,
+};
+#endif	/* defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE) */
+
 static struct davinci_spi_config da850evm_spits_cfg = {
 	.io_type	= SPI_IO_TYPE_POLL,
 };
@@ -188,6 +242,17 @@ static struct spi_board_info da850evm_spi_info[] = {
 		.bus_num		= 1,
 		.chip_select		= 1,
 	},
+#if defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE)
+	[3] = {
+		.modalias		= "ad7606-8",
+		.platform_data		= &ad7606_pdata,
+		.controller_data	= &da850evm_spits_cfg,
+		.mode			= SPI_MODE_3,
+		.max_speed_hz		= 15000000, /* max sample rate at 3.3V */
+		.bus_num		= 1,
+		.chip_select		= 3,
+	},
+#endif	/* defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE) */
 };
 
 #define TVP5147_CH0		"tvp514x-0"
@@ -477,6 +542,12 @@ static const short da850_evm_nor_pins[] = {
 #define HAS_ECAP_CAP 1
 #else
 #define HAS_ECAP_CAP 0
+#endif
+
+#if defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE)
+#define HAS_ADC	1
+#else
+#define HAS_ADC	0
 #endif
 
 /* have_imager() - Check if we have support for imager interface */
@@ -1137,7 +1208,8 @@ static struct snd_platform_data da850_evm_snd_data = {
 
 static const short da850_evm_mcasp_pins[] __initconst = {
 	DA850_AHCLKX, DA850_ACLKX, DA850_AFSX,
-	DA850_ACLKR, DA850_AFSR, DA850_AMUTE,
+//	DA850_ACLKR, DA850_AFSR, DA850_AMUTE,
+	DA850_ACLKR, DA850_AMUTE,
 	DA850_AXR_11, DA850_AXR_12,
 	-1
 };
@@ -2014,11 +2086,14 @@ static __init void da850_evm_init(void)
 		pr_warning("da830_evm_init: watchdog registration failed: %d\n",
 				ret);
 
+#if defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE)
+	/* UART1_RXD cannot be used since it is being used by ADC SPI1_CS3 */
 	/* Support for UART 1 */
 	ret = davinci_cfg_reg_list(da850_uart1_pins);
 	if (ret)
 		pr_warning("da850_evm_init: UART 1 mux setup failed:"
 						" %d\n", ret);
+#endif
 
 	if (HAS_MMC) {
 		ret = davinci_cfg_reg_list(da850_evm_mmcsd0_pins);
@@ -2179,6 +2254,23 @@ static __init void da850_evm_init(void)
 				"%d\n", ret);
 
 	da850evm_spi_info[1].irq = gpio_to_irq(DA850_TS_INT);
+
+	if (HAS_ADC) {
+		ret = davinci_cfg_reg_list(ad7606_gpio_pins);
+		if (ret)
+			pr_warning("da850_evm_init : "
+				"ad7606_gpio_pins mux failed :%d\n", ret);
+		else {
+			pr_warning("da850_evm_init:"
+				" UART1 module UART1_RXD cannot be used since"
+				" it is being used by ADC SPI1_CS3\n");
+			pr_warning("da850_evm_init:"
+				" McASP module McASP_AFSR cannot be used since"
+				" it is being used by ADC reset pin\n");
+		}
+
+		da850evm_spi_info[3].irq = gpio_to_irq(AD7606_BUSY);
+	}
 
 	ret = da8xx_register_spi(1, da850evm_spi_info,
 				 ARRAY_SIZE(da850evm_spi_info));
