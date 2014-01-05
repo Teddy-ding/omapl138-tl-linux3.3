@@ -739,7 +739,7 @@ const short da850_mmcsd1_pins[] __initdata = {
 
 
 const short da850_i2c0_pins[] __initdata = {
-	DA850_GPIO1_4, DA850_GPIO1_5,
+	DA850_I2C0_SCL, DA850_I2C0_SDA,
 	-1
 };
 
