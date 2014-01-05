@@ -2013,6 +2013,7 @@ static __init int da850_wl12xx_init(void)
 
 #endif /* CONFIG_DA850_WL12XX */
 
+#if 0
 static struct i2c_gpio_platform_data da850_gpio_i2c_pdata = {
 	.sda_pin	= GPIO_TO_PIN(1, 4),
 	.scl_pin	= GPIO_TO_PIN(1, 5),
@@ -2025,6 +2026,12 @@ static struct platform_device da850_gpio_i2c = {
 	.dev		= {
 		.platform_data	= &da850_gpio_i2c_pdata,
 	},
+};
+#endif
+
+static struct davinci_i2c_platform_data da850_evm_i2c_pdata = {
+    .bus_freq   = 100,  /* kHz */
+    .bus_delay  = 0,    /* usec */
 };
 
 static __init int da850_set_emif_clk_rate(void)
@@ -2079,7 +2086,15 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init: i2c0 mux setup failed: %d\n",
 				ret);
 
+#if 0
 	platform_device_register(&da850_gpio_i2c);
+#endif
+	ret = da8xx_register_i2c(0, &da850_evm_i2c_pdata);
+	if (ret) {
+	    pr_warning("da850_evm_init: i2c0 mux setup failed: %d\n",
+		    ret);
+	    return;
+	}
 
 	ret = da8xx_register_watchdog();
 	if (ret)
