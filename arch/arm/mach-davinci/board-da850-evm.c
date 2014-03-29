@@ -177,6 +177,10 @@ static struct ads7846_platform_data ads7846_config = {
 	.wakeup			= true,
 };
 
+static struct davinci_spi_config da850evm_spits_cfg = {
+	.io_type	= SPI_IO_TYPE_DMA,
+};
+
 #if defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE)
 /**
  * struct ad7606_platform_data - platform/board specifc information
@@ -217,11 +221,12 @@ static struct ad7606_platform_data ad7606_pdata = {
 	.gpio_frstdata		= -1,
 	.gpio_stby		= -1,
 };
+
+static struct davinci_spi_config da850evm_spiad_cfg = {
+	.io_type	= SPI_IO_TYPE_DMA,
+};
 #endif	/* defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE) */
 
-static struct davinci_spi_config da850evm_spits_cfg = {
-	.io_type	= SPI_IO_TYPE_POLL,
-};
 
 static struct spi_board_info da850evm_spi_info[] = {
 	{
@@ -246,7 +251,7 @@ static struct spi_board_info da850evm_spi_info[] = {
 	[3] = {
 		.modalias		= "ad7606-8",
 		.platform_data		= &ad7606_pdata,
-		.controller_data	= &da850evm_spits_cfg,
+		.controller_data	= &da850evm_spiad_cfg,
 		.mode			= SPI_MODE_3,
 		.max_speed_hz		= 15000000, /* max sample rate at 3.3V */
 		.bus_num		= 1,
