@@ -40,6 +40,8 @@
 #include <linux/slab.h>
 #include <linux/cpufreq.h>
 #include <linux/clk.h>
+#include <linux/gpio.h>
+#include <linux/interrupt.h>
 
 #include <mach/cputype.h>
 
@@ -1470,6 +1472,7 @@ void serial8250_tx_chars(struct uart_8250_port *up)
 {
 	struct circ_buf *xmit = &up->port.state->xmit;
 	int count;
+	int tx_count = 0;
 
 	if (up->port.x_char) {
 		serial_outp(up, UART_TX, up->port.x_char);
@@ -1486,11 +1489,24 @@ void serial8250_tx_chars(struct uart_8250_port *up)
 		return;
 	}
 
+#if 1
+	/* The funcation with RS485 flow control */
+	if (up->port.private_data) {
+		struct serial8250_flow_ctrl *flow_ctrl_p;
+		flow_ctrl_p = up->port.private_data;
+
+		if (flow_ctrl_p->gpio) {
+			gpio_set_value(flow_ctrl_p->gpio, 1);
+			ndelay(50); /* Propagation delay >= 50ns */
+		}
+	}
+#endif
 	count = up->tx_loadsz;
 	do {
 		serial_out(up, UART_TX, xmit->buf[xmit->tail]);
 		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
 		up->port.icount.tx++;
+		tx_count++;
 		if (uart_circ_empty(xmit))
 			break;
 	} while (--count > 0);
@@ -1500,8 +1516,21 @@ void serial8250_tx_chars(struct uart_8250_port *up)
 
 	DEBUG_INTR("THRE...");
 
-	if (uart_circ_empty(xmit))
+	if (uart_circ_empty(xmit)) {
 		__stop_tx(up);
+#if 1
+		/* The funcation with RS485 flow control */
+		if (up->port.private_data) {
+			struct serial8250_flow_ctrl *flow_ctrl_p;
+			flow_ctrl_p = up->port.private_data;
+
+			if (flow_ctrl_p->gpio) {
+				flow_ctrl_p->tx_sizes = tx_count;
+				tasklet_schedule(&flow_ctrl_p->tasklet);
+			}
+		}
+#endif
+	}
 }
 EXPORT_SYMBOL_GPL(serial8250_tx_chars);
 
@@ -1788,6 +1817,26 @@ static void serial8250_backup_timeout(unsigned long data)
 	mod_timer(&up->timer,
 		jiffies + uart_poll_timeout(&up->port) + HZ / 5);
 }
+
+#if 1
+static void serial8250_flowctrl_work(unsigned long data)
+{
+	struct uart_8250_port *up = (struct uart_8250_port *)data;
+
+	struct serial8250_flow_ctrl *flow_ctrl_p;
+	unsigned int baud;
+
+	flow_ctrl_p = up->port.private_data;
+	baud = up->port.state->port.tty->termios->c_ospeed;
+
+	if (gpio_get_value(flow_ctrl_p->gpio)) {
+		flow_ctrl_p->delay_us = (1000000 / baud + 1) * 12;
+		udelay(flow_ctrl_p->delay_us * flow_ctrl_p->tx_sizes);
+
+		gpio_set_value(flow_ctrl_p->gpio, 0);
+	}
+}
+#endif
 
 static unsigned int serial8250_tx_empty(struct uart_port *port)
 {
@@ -3298,6 +3347,26 @@ int serial8250_register_port(struct uart_port *port)
 			serial8250_isa_config(0, &uart->port,
 					&uart->capabilities);
 
+#if 1
+		/* The funcation with RS485 flow control */
+		if (port->private_data) {
+			struct serial8250_flow_ctrl *flow_ctrl_p;
+			flow_ctrl_p = port->private_data;
+
+			if (gpio_is_valid(flow_ctrl_p->gpio)) {
+				ret = gpio_request_one(flow_ctrl_p->gpio,
+							GPIOF_OUT_INIT_LOW,
+							"UART_FLOW_CTRL");
+				if (ret)
+					dev_err(port->dev,
+					"failed to request GPIO FLOW_CTRL\n");
+
+				tasklet_init(&flow_ctrl_p->tasklet,
+					serial8250_flowctrl_work,
+					(unsigned long)uart);
+			}
+		}
+#endif
 		ret = uart_add_one_port(&serial8250_reg, &uart->port);
 		if (ret == 0)
 			ret = uart->port.line;

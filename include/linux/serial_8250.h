@@ -14,6 +14,14 @@
 #include <linux/serial_core.h>
 #include <linux/platform_device.h>
 
+struct serial8250_flow_ctrl {
+	struct serial_rs485	rs485;		/* rs485 settings */
+	unsigned int		gpio;
+	unsigned int		delay_us;
+	unsigned int		tx_sizes;
+	struct tasklet_struct 	tasklet;
+};
+
 /*
  * This is the platform device platform_data structure
  */
