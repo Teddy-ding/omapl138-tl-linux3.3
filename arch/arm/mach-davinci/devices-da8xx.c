@@ -17,6 +17,7 @@
 #include <linux/ahci_platform.h>
 #include <linux/clk.h>
 #include <linux/export.h>
+#include <linux/gpio.h>
 
 #include <mach/cputype.h>
 #include <mach/common.h>
@@ -53,6 +54,8 @@
 #define DA8XX_EMAC_RAM_OFFSET		0x0000
 #define DA8XX_EMAC_CTRL_RAM_SIZE	SZ_8K
 
+#define DA850_UART1_RS485_FLOW_CTRL	GPIO_TO_PIN(0,11)
+
 #define DA8XX_DMA_SPI0_RX	EDMA_CTLR_CHAN(0, 14)
 #define DA8XX_DMA_SPI0_TX	EDMA_CTLR_CHAN(0, 15)
 #define DA8XX_DMA_MMCSD0_RX	EDMA_CTLR_CHAN(0, 16)
@@ -65,6 +68,10 @@
 void __iomem *da8xx_syscfg0_base;
 EXPORT_SYMBOL(da8xx_syscfg0_base);
 void __iomem *da8xx_syscfg1_base;
+
+struct serial8250_flow_ctrl da8xx_uart1_flow_ctrl_pdata = {
+	.gpio		= DA850_UART1_RS485_FLOW_CTRL,
+};
 
 static struct plat_serial8250_port da8xx_serial_pdata[] = {
 	{
@@ -84,6 +91,9 @@ static struct plat_serial8250_port da8xx_serial_pdata[] = {
 		.type		= PORT_AR7,
 		.iotype		= UPIO_MEM,
 		.regshift	= 2,
+#if defined(CONFIG_DAVINCI_UART1_RS485)
+		.private_data	= &da8xx_uart1_flow_ctrl_pdata,
+#endif
 	},
 	{
 		.mapbase	= DA8XX_UART2_BASE,
