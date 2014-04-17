@@ -79,6 +79,18 @@
 #define AD7606_SPI_RESET		GPIO_TO_PIN(0, 13)
 #endif
 
+#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
+	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
+#define AD7606_PAR_BUSY			GPIO_TO_PIN(5, 11)
+#define AD7606_PAR_CONVST		GPIO_TO_PIN(5, 13)
+#define AD7606_PAR_RESET		GPIO_TO_PIN(5, 12)
+#define AD7606_PAR_FRSTDATA		GPIO_TO_PIN(5, 10)
+#define AD7606_PAR_RANGE		GPIO_TO_PIN(5, 6)
+#define AD7606_PAR_OS0			GPIO_TO_PIN(5, 4)
+#define AD7606_PAR_OS1			GPIO_TO_PIN(5, 2)
+#define AD7606_PAR_OS2			GPIO_TO_PIN(5, 0)
+#endif
+
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
 #define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
@@ -110,6 +122,24 @@ static const short da850_spi1_pins[] = {
 #if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
 static const short ad7606_spi_gpio_pins[] = {
 	DA850_GPIO6_8, DA850_GPIO6_10, DA850_GPIO0_13,
+	-1
+};
+#endif
+
+#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
+	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
+static const short ad7606_par_gpio_pins[] = {
+	DA850_GPIO5_0, DA850_GPIO5_2, DA850_GPIO5_4, DA850_GPIO5_6,
+	DA850_GPIO5_10, DA850_GPIO5_11, DA850_GPIO5_12, DA850_GPIO5_13,
+	-1
+};
+
+static const short da850_evm_ad7606_par_pins[] = {
+	DA850_NEMA_CS_2, DA850_EMA_CLK, DA850_EMA_D_0, DA850_EMA_D_1,
+	DA850_EMA_D_2, DA850_EMA_D_3, DA850_EMA_D_4, DA850_EMA_D_5,
+	DA850_EMA_D_6, DA850_EMA_D_7, DA850_EMA_D_8, DA850_EMA_D_9,
+	DA850_EMA_D_10, DA850_EMA_D_11, DA850_EMA_D_12, DA850_EMA_D_13,
+	DA850_EMA_D_14, DA850_EMA_D_15,
 	-1
 };
 #endif
@@ -212,6 +242,22 @@ struct ad7606_platform_data {
 	unsigned			gpio_frstdata;
 	unsigned			gpio_stby;
 };
+
+#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
+	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
+static struct ad7606_platform_data ad7606_par_pdata = {
+	.default_os		= 0,
+	.default_range		= 5000,
+	.gpio_convst		= AD7606_PAR_CONVST,
+	.gpio_reset		= AD7606_PAR_RESET,
+	.gpio_range		= AD7606_PAR_RANGE,
+	.gpio_os0		= AD7606_PAR_OS0,
+	.gpio_os1		= AD7606_PAR_OS1,
+	.gpio_os2		= AD7606_PAR_OS2,
+	.gpio_frstdata		= AD7606_PAR_FRSTDATA,
+	.gpio_stby		= -1,
+};
+#endif
 
 #if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
 static struct ad7606_platform_data ad7606_spi_pdata = {
@@ -570,6 +616,60 @@ static inline int have_imager(void)
 	return 0;
 #endif
 }
+
+#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
+	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
+static struct resource ad7606_resources[] = {
+	[0] = {
+		.start	= DA8XX_AEMIF_CS2_BASE,
+		.end	= DA8XX_AEMIF_CS2_BASE + 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.start	= -1,
+		.end	= -1,
+		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
+	},
+};
+
+static struct platform_device ad7606_device = {
+	.name		= "ad7606-8",
+	.dev = {
+		.platform_data = &ad7606_par_pdata,
+	},
+	.num_resources	= ARRAY_SIZE(ad7606_resources),
+	.resource	= ad7606_resources,
+};
+
+static inline void da850_evm_setup_ad7606_par(void)
+{
+	void __iomem *aemif_addr;
+	int ret = 0;
+
+	ret = davinci_cfg_reg_list(ad7606_par_gpio_pins);
+	if (ret)
+		pr_warning("da850_evm_init : "
+			"ad7606_gpio_pins mux failed :%d\n", ret);
+
+	ret = davinci_cfg_reg_list(da850_evm_ad7606_par_pins);
+	if (ret)
+		pr_warning("da850_evm_init: ad7606 mux setup failed: %d\n", ret);
+
+	aemif_addr = ioremap(DA8XX_AEMIF_CTL_BASE, SZ_32K);
+
+	/* Configure data bus width of CS2 to 16 bit */
+	writel(readl(aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET) |
+		DA8XX_AEMIF_ASIZE_16BIT,
+		aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET);
+
+	iounmap(aemif_addr);
+
+	ad7606_resources[1].start = gpio_to_irq(AD7606_PAR_BUSY);
+	ad7606_resources[1].end= ad7606_resources[1].start;
+
+	platform_device_register(&ad7606_device);
+}
+#endif
 
 static inline void da850_evm_setup_nand(void)
 {
@@ -2244,6 +2344,8 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init: suspend registration failed: %d\n",
 				ret);
 
+	da850_evm_setup_nand();
+
 	if (HAS_VPIF_DISPLAY || HAS_VPIF_CAPTURE) {
 		ret = da850_register_vpif();
 		if (ret)
@@ -2303,6 +2405,10 @@ static __init void da850_evm_init(void)
 		}
 
 		da850evm_spi_info[3].irq = gpio_to_irq(AD7606_SPI_BUSY);
+#endif
+#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
+			defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
+		da850_evm_setup_ad7606_par();
 #endif
 	}
 
@@ -2410,8 +2516,6 @@ static __init void da850_evm_init(void)
 	}
 
 	da850_evm_tl_leds_init();
-
-	da850_evm_setup_nand();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
