@@ -522,7 +522,7 @@ static void vpif_config_format(struct channel_obj *ch)
 	    = config_params.channel_bufsize[ch->channel_id];
 
 	if (ch->vpifparams.iface.if_type == VPIF_IF_RAW_BAYER)
-		common->fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SBGGR8;
+		common->fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB565;
 	else
 		common->fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV422P;
 	common->fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -562,16 +562,17 @@ static int vpif_check_format(struct channel_obj *ch,
 	vpif_dbg(2, debug, "vpif_check_format\n");
 	/**
 	 * first check for the pixel format. If if_type is Raw bayer,
-	 * only V4L2_PIX_FMT_SBGGR8 format is supported. Otherwise only
-	 * V4L2_PIX_FMT_YUV422P is supported
+	 * only V4L2_PIX_FMT_RGB565 or V4L2_PIX_FMT_UYVY format is supported.
+	 * Otherwise only V4L2_PIX_FMT_YUV422P is supported
 	 */
 	if (vpif_params->iface.if_type == VPIF_IF_RAW_BAYER) {
-		if (pixfmt->pixelformat != V4L2_PIX_FMT_SBGGR8) {
+		if ((pixfmt->pixelformat != V4L2_PIX_FMT_RGB565) &&
+			(pixfmt->pixelformat != V4L2_PIX_FMT_UYVY)) {
 			if (!update) {
 				vpif_dbg(2, debug, "invalid pix format\n");
 				goto exit;
 			}
-			pixfmt->pixelformat = V4L2_PIX_FMT_SBGGR8;
+			pixfmt->pixelformat = V4L2_PIX_FMT_RGB565;
 		}
 	} else {
 		if (pixfmt->pixelformat != V4L2_PIX_FMT_YUV422P) {
@@ -598,7 +599,7 @@ static int vpif_check_format(struct channel_obj *ch,
 		field = vpif_get_default_field(&vpif_params->iface);
 
 	/* validate the hpitch */
-	hpitch = pixfmt->bytesperline;
+	hpitch = pixfmt->bytesperline / 2;	/* each pixel have 2 bytes */
 	if (hpitch < vpif_params->std_info.width) {
 		if (!update) {
 			vpif_dbg(2, debug, "invalid hpitch\n");
@@ -1527,8 +1528,8 @@ static int vpif_enum_fmt_vid_cap(struct file *file, void  *priv,
 	/* Fill in the information about format */
 	if (ch->vpifparams.iface.if_type == VPIF_IF_RAW_BAYER) {
 		fmt->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		strcpy(fmt->description, "Raw Mode -Bayer Pattern GrRBGb");
-		fmt->pixelformat = V4L2_PIX_FMT_SBGGR8;
+		strcpy(fmt->description, "Raw Mode -Bayer Pattern RGB565");
+		fmt->pixelformat = V4L2_PIX_FMT_RGB565;
 	} else {
 		fmt->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		strcpy(fmt->description, "YCbCr4:2:2 YC Planar");
@@ -1625,11 +1626,17 @@ static int vpif_s_fmt_vid_cap(struct file *file, void *priv,
 	if (vpifparams->iface.if_type == VPIF_IF_RAW_BAYER) {
 		mf.width = fmt->fmt.pix.width;
 		mf.height = fmt->fmt.pix.height;
+
+		if (pixfmt->pixelformat == V4L2_PIX_FMT_RGB565)
+			mf.code = V4L2_MBUS_FMT_RGB565_2X8_LE;
+		else
+			mf.code = V4L2_MBUS_FMT_UYVY8_2X8;
+
 		ret = v4l2_subdev_call(vpif_obj.sd[ch->curr_sd_index],
 				video, s_mbus_fmt, &mf);
 		if (ret)
 			return ret;
-		pixfmt->pixelformat = V4L2_PIX_FMT_SBGGR8;
+		//pixfmt->pixelformat = V4L2_PIX_FMT_RGB565;
 	} else {
 		pixfmt->pixelformat = V4L2_PIX_FMT_YUV422P;
 	}
