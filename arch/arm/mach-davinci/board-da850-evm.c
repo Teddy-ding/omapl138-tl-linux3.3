@@ -1753,7 +1753,7 @@ static const struct vpif_input da850_ch2_inputs[] = {
 			.type = V4L2_INPUT_TYPE_CAMERA,
 			.std = V4L2_STD_BAYER_ALL
 		},
-		.subdev_name = "mt9t031",
+		.subdev_name = "ov2640",
 	},
 };
 
@@ -1884,9 +1884,9 @@ static struct tvp514x_platform_data tvp5146_pdata = {
 static struct vpif_subdev_info da850_vpif_capture_sdev_info[] = {
 #if defined(CONFIG_DA850_UI_CAMERA)
 	{
-		.name	= "mt9t031",
+		.name	= "ov2640",
 		.board_info = {
-			I2C_BOARD_INFO("mt9t031", 0x5d),
+			I2C_BOARD_INFO("ov2640", 0x30),
 			.platform_data = (void *)1,
 		},
 		.vpif_if = {
