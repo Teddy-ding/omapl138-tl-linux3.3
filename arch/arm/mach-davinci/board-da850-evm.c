@@ -17,9 +17,9 @@
 #include <linux/console.h>
 #include <linux/i2c.h>
 #include <linux/i2c/at24.h>
-#include <linux/i2c/pca953x.h>
+//#include <linux/i2c/pca953x.h>
 #include <linux/input.h>
-#include <linux/mfd/tps6507x.h>
+//#include <linux/mfd/tps6507x.h>
 #include <linux/gpio.h>
 #include <linux/gpio_keys.h>
 #include <linux/platform_device.h>
@@ -28,8 +28,8 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
 #include <linux/regulator/machine.h>
-#include <linux/regulator/tps6507x.h>
-#include <linux/input/tps6507x-ts.h>
+//#include <linux/regulator/tps6507x.h>
+//#include <linux/input/tps6507x-ts.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/spi/ads7846.h>
@@ -37,7 +37,7 @@
 #include <linux/delay.h>
 #include <linux/wl12xx.h>
 #include <linux/pwm_backlight.h>
-#include <linux/i2c-gpio.h>
+//#include <linux/i2c-gpio.h>
 #include <linux/videodev2.h>
 #include <linux/module.h>
 
@@ -754,7 +754,7 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel)
 static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
 #endif
 
-
+#if 0
 #define DA850_KEYS_DEBOUNCE_MS	10
 /*
  * At 200ms polling interval it is possible to miss an
@@ -1133,11 +1133,13 @@ static struct pca953x_platform_data da850_evm_bb_expander_info = {
 	.teardown	= da850_evm_bb_expander_teardown,
 	.names		= da850_evm_bb_exp,
 };
+#endif
 
 static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	{
 		I2C_BOARD_INFO("tlv320aic3x", 0x18),
 	},
+#if 0
 	{
 		I2C_BOARD_INFO("tca6416", 0x20),
 		.platform_data = &da850_evm_ui_expander_info,
@@ -1152,6 +1154,7 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	{
 		I2C_BOARD_INFO("PCA9543A", 0x73),
 	},
+#endif
 };
 
 /* assign the tl som board LED-GPIOs*/
@@ -1366,10 +1369,10 @@ __setup("da850-panel=", da850_panel_setup);
 
 static void da850_panel_power_ctrl(int val)
 {
+#if 0
 	/* lcd power */
 	gpio_set_value_cansleep(DA850_LCD_PWR_PIN, val);
 
-#if 0
 	mdelay(200);
 
 	/* lcd backlight */
@@ -1383,9 +1386,6 @@ static int da850_lcd_hw_init(void)
 	void __iomem *cfg_mstpri2_base;
 	void __iomem *emifb;
 	void __iomem *myptr;
-#ifdef CONFIG_DA850_SDI_LCDC
-	int status;
-#endif
 	u32 val;
 
 	/*
@@ -1419,24 +1419,10 @@ static int da850_lcd_hw_init(void)
 	myptr = DA8XX_EMIFB_VIRT(0x20);
 	__raw_writel(0x20, myptr);
 
-#ifdef CONFIG_DA850_SDI_LCDC
-	status = gpio_request(DA850_LCD_BL_PIN, "lcd bl\n");
-	if (status < 0)
-		return status;
-
-	status = gpio_request(DA850_LCD_PWR_PIN, "lcd pwr\n");
-	if (status < 0) {
-		gpio_free(DA850_LCD_BL_PIN);
-		return status;
-	}
-
-	gpio_direction_output(DA850_LCD_BL_PIN, 0);
-	gpio_direction_output(DA850_LCD_PWR_PIN, 0);
-#endif
-
 	return 0;
 }
 
+#if 0
 /* TPS65070 voltage regulator support */
 
 /* 3.3V */
@@ -1604,6 +1590,7 @@ static int __init pmic_tps65070_init(void)
 	return i2c_register_board_info(1, da850_evm_tps65070_info,
 					ARRAY_SIZE(da850_evm_tps65070_info));
 }
+#endif
 
 static const short da850_evm_lcdc_pins[] = {
 //	DA850_GPIO2_8, DA850_GPIO2_15,
@@ -1611,6 +1598,7 @@ static const short da850_evm_lcdc_pins[] = {
 	-1
 };
 
+#if 0
 static struct i2c_client *pca9543a;
 
 static int pca9543a_probe(struct i2c_client *client,
@@ -1667,6 +1655,7 @@ static int da850_enable_pca9543a(int en)
 	pr_info("da850evm_enable_pca9543a, status = %d\n", status);
 	return status;
 }
+#endif
 
 static const short da850_evm_mii_pins[] = {
 	DA850_MII_TXEN, DA850_MII_TXCLK, DA850_MII_COL, DA850_MII_TXD_3,
@@ -1849,8 +1838,10 @@ int da850_vpif_setup_input_path(int ch, const char *name)
 {
 	int ret = 1;
 
+#if 0
 	 if (!strcmp(name, "mt9t031") && have_imager())
 		ret = da850_enable_pca9543a(1);
+#endif
 
 	return ret;
 }
@@ -2172,10 +2163,12 @@ static __init void da850_evm_init(void)
 
 	struct da8xx_lcdc_platform_data *lcd_pdata;
 
+#if 0
 	ret = pmic_tps65070_init();
 	if (ret)
 		pr_warning("da850_evm_init: TPS65070 PMIC init failed: %d\n",
 				ret);
+#endif
 
 	/*
 	 * Though bootloader takes care to set emif clock at allowed
@@ -2258,8 +2251,10 @@ static __init void da850_evm_init(void)
 
 	davinci_serial_init(&da850_evm_uart_config);
 
+#if 0
 	if (have_imager())
 		i2c_add_driver(&pca9543a_driver);
+#endif
 
 	i2c_register_board_info(1, da850_evm_i2c_devices,
 			ARRAY_SIZE(da850_evm_i2c_devices));
