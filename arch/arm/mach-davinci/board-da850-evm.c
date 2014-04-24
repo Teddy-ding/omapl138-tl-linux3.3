@@ -1135,9 +1135,18 @@ static struct pca953x_platform_data da850_evm_bb_expander_info = {
 };
 #endif
 
+static struct at24_platform_data da850_evm_i2c_eeprom_info = {
+	.byte_len	= SZ_2K / 8,
+	.page_size	= 8,
+};
+
 static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	{
 		I2C_BOARD_INFO("tlv320aic3x", 0x18),
+	},
+	{
+		I2C_BOARD_INFO("24c02", 0x50),
+		.platform_data	= &da850_evm_i2c_eeprom_info,
 	},
 #if 0
 	{
