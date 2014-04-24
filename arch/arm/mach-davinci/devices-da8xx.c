@@ -696,6 +696,12 @@ struct da8xx_lcdc_platform_data vga_monitor_pdata = {
 	.type                   = "VGA_Monitor",
 };
 
+struct da8xx_lcdc_platform_data svga_monitor_pdata = {
+	.manu_name              = "SVGA monitor",
+	.controller_data        = &lcd_cfg,
+	.type                   = "SVGA_Monitor",
+};
+
 #if !defined(CONFIG_FB_DA8XX) && !defined(CONFIG_FB_DA8XX_MODULE)
 static struct da8xx_clcd_platform_data da8xx_evm_clcd_pdata = {
 	.version = CONFIG_SPACE_1,

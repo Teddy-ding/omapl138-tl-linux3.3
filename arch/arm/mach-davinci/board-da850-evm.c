@@ -1371,6 +1371,8 @@ static int __init da850_panel_setup(char *str)
 		da850_lcdc_panel = &lnnolux_at070tn83_pdata;
 	else if (!strcmp(str, "VGA"))
 		da850_lcdc_panel = &vga_monitor_pdata;
+	else if (!strcmp(str, "SVGA"))
+		da850_lcdc_panel = &svga_monitor_pdata;
 
 	return 1;
 }
