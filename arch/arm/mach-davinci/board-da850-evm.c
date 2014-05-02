@@ -148,14 +148,14 @@ static struct mtd_partition da850evm_spiflash_part[] = {
 	[0] = {
 		.name = "UBL",
 		.offset = 0,
-		.size = SZ_64K,
-		.mask_flags = MTD_WRITEABLE,
+		.size = SZ_512K,
+		.mask_flags = 0,
 	},
 	[1] = {
 		.name = "U-Boot",
 		.offset = MTDPART_OFS_APPEND,
-		.size = SZ_512K,
-		.mask_flags = MTD_WRITEABLE,
+		.size = SZ_512K - SZ_64K,
+		.mask_flags = 0,
 	},
 	[2] = {
 		.name = "U-Boot-Env",
@@ -166,9 +166,10 @@ static struct mtd_partition da850evm_spiflash_part[] = {
 	[3] = {
 		.name = "Kernel",
 		.offset = MTDPART_OFS_APPEND,
-		.size = SZ_2M + SZ_512K,
+		.size = MTDPART_SIZ_FULL,
 		.mask_flags = 0,
 	},
+#if 0
 	[4] = {
 		.name = "Filesystem",
 		.offset = MTDPART_OFS_APPEND,
@@ -181,17 +182,18 @@ static struct mtd_partition da850evm_spiflash_part[] = {
 		.size = SZ_64K,
 		.mask_flags = MTD_WRITEABLE,
 	},
+#endif
 };
 
 static struct flash_platform_data da850evm_spiflash_data = {
 	.name		= "m25p80",
 	.parts		= da850evm_spiflash_part,
 	.nr_parts	= ARRAY_SIZE(da850evm_spiflash_part),
-	.type		= "m25p64",
+	.type		= "w25q32",
 };
 
 static struct davinci_spi_config da850evm_spiflash_cfg = {
-	.io_type	= SPI_IO_TYPE_DMA,
+	.io_type	= SPI_IO_TYPE_POLL,
 	.c2tdelay	= 8,
 	.t2cdelay	= 8,
 };
@@ -285,7 +287,7 @@ static struct spi_board_info da850evm_spi_info[] = {
 		.modalias		= "m25p80",
 		.platform_data		= &da850evm_spiflash_data,
 		.controller_data	= &da850evm_spiflash_cfg,
-		.mode			= SPI_MODE_0,
+		.mode			= SPI_MODE_3,
 		.max_speed_hz		= 30000000,
 		.bus_num		= 1,
 		.chip_select		= 0,
