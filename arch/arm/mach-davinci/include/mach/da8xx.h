@@ -178,6 +178,7 @@ extern const short da830_eqep1_pins[];
 extern const short da850_vpif_capture_pins[];
 extern const short da850_vpif_display_pins[];
 
+extern const short da850_uart0_pins[];
 extern const short da850_uart1_pins[];
 extern const short da850_i2c0_pins[];
 extern const short da850_i2c1_pins[];

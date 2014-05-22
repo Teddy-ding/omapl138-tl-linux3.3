@@ -54,7 +54,8 @@
 #define DA8XX_EMAC_RAM_OFFSET		0x0000
 #define DA8XX_EMAC_CTRL_RAM_SIZE	SZ_8K
 
-#define DA850_UART1_RS485_FLOW_CTRL	GPIO_TO_PIN(0,11)
+#define DA850_UART0_RS485_FLOW_CTRL	GPIO_TO_PIN(8, 1)
+#define DA850_UART1_RS485_FLOW_CTRL	GPIO_TO_PIN(0, 11)
 
 #define DA8XX_DMA_SPI0_RX	EDMA_CTLR_CHAN(0, 14)
 #define DA8XX_DMA_SPI0_TX	EDMA_CTLR_CHAN(0, 15)
@@ -69,9 +70,17 @@ void __iomem *da8xx_syscfg0_base;
 EXPORT_SYMBOL(da8xx_syscfg0_base);
 void __iomem *da8xx_syscfg1_base;
 
+#if defined(CONFIG_DAVINCI_UART0_RS485)
+struct serial8250_flow_ctrl da8xx_uart0_flow_ctrl_pdata = {
+	.gpio		= DA850_UART0_RS485_FLOW_CTRL,
+};
+#endif
+
+#if defined(CONFIG_DAVINCI_UART1_RS485)
 struct serial8250_flow_ctrl da8xx_uart1_flow_ctrl_pdata = {
 	.gpio		= DA850_UART1_RS485_FLOW_CTRL,
 };
+#endif
 
 static struct plat_serial8250_port da8xx_serial_pdata[] = {
 	{
@@ -82,6 +91,9 @@ static struct plat_serial8250_port da8xx_serial_pdata[] = {
 		.type		= PORT_AR7,
 		.iotype		= UPIO_MEM,
 		.regshift	= 2,
+#if defined(CONFIG_DAVINCI_UART0_RS485)
+		.private_data	= &da8xx_uart0_flow_ctrl_pdata,
+#endif
 	},
 	{
 		.mapbase	= DA8XX_UART1_BASE,
