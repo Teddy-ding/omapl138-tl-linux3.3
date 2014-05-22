@@ -49,6 +49,12 @@ config DAVINCI_UART1_AFE
 	  is necessary to detect pinmux clash between UART1 RTS/CTS lines with
 	  MCASP.
 
+config DAVINCI_UART0_RS485
+	bool "Enable UART0 RS485 funcation"
+	depends on SERIAL_8250=y && ARCH_DAVINCI_DA850=y
+	help
+	  Say Y here if you want to enable flow control on UART0.
+
 config DAVINCI_UART1_RS485
 	bool "Enable UART1 RS485 funcation"
 	depends on SERIAL_8250=y && ARCH_DAVINCI_DA850=y
