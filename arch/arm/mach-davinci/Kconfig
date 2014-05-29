@@ -226,6 +226,12 @@ config MACH_DAVINCI_DA850_EVM
 	help
 	  Say Y here to select the TI DA850/OMAP-L138/AM18x Evaluation Module.
 
+config MACH_DAVINCI_DA850_PHYSMAP_FLASH
+	bool "Enable BASE EMIFA PHYSMAP FLASH"
+	depends on MACH_DAVINCI_DA850_EVM
+	help
+	  Say Y here to select the TI DA850/OMAP-L138/AM18x Evaluation Module.
+
 choice
 	prompt "Select peripherals connected to expander on UI board"
 	depends on MACH_DAVINCI_DA850_EVM

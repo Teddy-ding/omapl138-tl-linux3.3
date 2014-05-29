@@ -484,8 +484,7 @@ static struct platform_device da850_evm_devices[] = {
 		.num_resources	= ARRAY_SIZE(da850_evm_nandflash_resource),
 		.resource	= da850_evm_nandflash_resource,
 	},
-#if !defined(CONFIG_MMC_DAVINCI) || \
-    !defined(CONFIG_MMC_DAVINCI_MODULE)
+#if defined(CONFIG_MACH_DAVINCI_DA850_PHYSMAP_FLASH)
 	{
 		.name		= "physmap-flash",
 		.id		= 0,
@@ -546,9 +545,9 @@ static const short da850_evm_nor_pins[] = {
 	DA850_EMA_A_2, DA850_EMA_A_3, DA850_EMA_A_4, DA850_EMA_A_5,
 	DA850_EMA_A_6, DA850_EMA_A_7, DA850_EMA_A_8, DA850_EMA_A_9,
 	DA850_EMA_A_10, DA850_EMA_A_11, DA850_EMA_A_12, DA850_EMA_A_13,
-	DA850_EMA_A_14, DA850_EMA_A_15, DA850_EMA_A_16, DA850_EMA_A_17,
+	DA850_EMA_A_14, DA850_EMA_A_15,/* DA850_EMA_A_16, DA850_EMA_A_17,
 	DA850_EMA_A_18, DA850_EMA_A_19, DA850_EMA_A_20, DA850_EMA_A_21,
-	DA850_EMA_A_22, DA850_EMA_A_23,
+	DA850_EMA_A_22, DA850_EMA_A_23,*/
 	-1
 };
 
@@ -694,6 +693,15 @@ static inline void da850_evm_setup_nor_nand(void)
 		pr_warning("da850_evm_init: nand mux setup failed: "
 				"%d\n", ret);
 
+#if defined(CONFIG_MACH_DAVINCI_DA850_PHYSMAP_FLASH)
+	ret = davinci_cfg_reg_list(da850_evm_nor_pins);
+	if (ret)
+		pr_warning("da850_evm_init: nor mux setup failed: %d\n",
+			ret);
+
+	da850_evm_init_nor();
+#endif
+#if 0
 	if (!HAS_MMC) {
 		ret = davinci_cfg_reg(DA850_GPIO0_11);
 		if (ret)
@@ -740,6 +748,7 @@ static inline void da850_evm_setup_nor_nand(void)
 		/* Driver GP0[11] high for SD to work */
 		gpio_direction_output(DA850_SD_ENABLE_PIN, 1);
 	}
+#endif
 
 	platform_device_register(&davinci_emif_device);
 }
@@ -2352,7 +2361,7 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init: suspend registration failed: %d\n",
 				ret);
 
-	da850_evm_setup_nand();
+	da850_evm_setup_nor_nand();
 
 	if (HAS_VPIF_DISPLAY || HAS_VPIF_CAPTURE) {
 		ret = da850_register_vpif();
