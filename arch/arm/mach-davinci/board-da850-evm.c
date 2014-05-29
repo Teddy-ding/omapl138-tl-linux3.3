@@ -1146,9 +1146,21 @@ static struct pca953x_platform_data da850_evm_bb_expander_info = {
 };
 #endif
 
+#if defined(CONFIG_EEPROM_24C64)
+#define EEPROM_DEVICE		"24c64"
+#else
+#define EEPROM_DEVICE		"24c02"
+#endif
+
 static struct at24_platform_data da850_evm_i2c_eeprom_info = {
+#if defined(CONFIG_EEPROM_24C64)
+	.byte_len	= SZ_64K / 8,
+	.page_size	= 8192,
+	.flags		= AT24_FLAG_ADDR16 | AT24_FLAG_IRUGO,
+#else
 	.byte_len	= SZ_2K / 8,
 	.page_size	= 8,
+#endif
 };
 
 static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
@@ -1156,7 +1168,7 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 		I2C_BOARD_INFO("tlv320aic3x", 0x18),
 	},
 	{
-		I2C_BOARD_INFO("24c02", 0x50),
+		I2C_BOARD_INFO(EEPROM_DEVICE, 0x50),
 		.platform_data	= &da850_evm_i2c_eeprom_info,
 	},
 #if 0
@@ -1704,6 +1716,10 @@ static int __init da850_evm_config_emac(void)
 	struct davinci_soc_info *soc_info = &davinci_soc_info;
 	u8 rmii_en = soc_info->emac_pdata->rmii_en;
 
+#ifdef CONFIG_DA850_UI_RMII
+	soc_info->emac_pdata->rmii_en = 1;
+	rmii_en = soc_info->emac_pdata->rmii_en;
+#endif
 	if (!machine_is_davinci_da850_evm())
 		return 0;
 
@@ -2227,6 +2243,23 @@ static __init void da850_evm_init(void)
 		pr_warning("da830_evm_init: watchdog registration failed: %d\n",
 				ret);
 
+#ifdef CONFIG_DA850_UI_RMII
+	/* UART0_TXD.RXD cannot be used since it is being used by MII_RXDx */
+	/* Support for UART 0 */
+	ret = davinci_cfg_reg_list(da850_uart0_pins);
+	if (ret)
+		pr_warning("da850_evm_init: UART 0 mux setup failed:"
+						" %d\n", ret);
+#endif
+
+#if defined(CONFIG_DAVINCI_UART0_RS485)
+	/* TL-OMAPL138 as it requires the GP8[1] pin for UART0 flow control. */
+	ret = davinci_cfg_reg(DA850_GPIO8_1);
+	if (ret)
+		pr_warning("da850_evm_init:GPIO(8,1) mux setup "
+				"failed\n");
+#endif
+
 #if defined(CONFIG_DAVINCI_UART1_RS485)
 	/* TL-OMAPL138 as it requires the GP0[11] pin for UART1 flow control. */
 	ret = davinci_cfg_reg(DA850_GPIO0_11);
@@ -2281,12 +2314,14 @@ static __init void da850_evm_init(void)
 	i2c_register_board_info(1, da850_evm_i2c_devices,
 			ARRAY_SIZE(da850_evm_i2c_devices));
 
+#if 0
 	/*
 	 * shut down uart 0 and 1; they are not used on the board and
 	 * accessing them causes endless "too much work in irq53" messages
 	 * with arago fs
 	 */
 	__raw_writel(0, IO_ADDRESS(DA8XX_UART0_BASE) + 0x30);
+#endif
 
 	if (HAS_MCASP) {
 		if (HAS_UART1_AFE)
