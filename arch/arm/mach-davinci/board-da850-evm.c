@@ -78,6 +78,9 @@
 #define DA850_USER_LED2			GPIO_TO_PIN(0, 1)
 #define DA850_USER_LED3			GPIO_TO_PIN(0, 2)
 
+#define DA850_USER_KEY0			GPIO_TO_PIN(0, 6)
+#define DA850_USER_KEY1			GPIO_TO_PIN(6, 1)
+
 #if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
 #define AD7606_SPI_BUSY			GPIO_TO_PIN(6, 8)
 #define AD7606_SPI_CONVST		GPIO_TO_PIN(6, 10)
@@ -770,7 +773,6 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel)
 static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
 #endif
 
-#if 0
 #define DA850_KEYS_DEBOUNCE_MS	10
 /*
  * At 200ms polling interval it is possible to miss an
@@ -781,6 +783,62 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
  */
 #define DA850_GPIO_KEYS_POLL_MS	200
 
+/* assign the tl base board KEY-GPIOs*/
+static const short da850_evm_tl_user_key_pins[] = {
+	DA850_GPIO0_6, DA850_GPIO6_1,
+	-1
+};
+
+static struct gpio_keys_button da850_evm_tl_keys[] = {
+	[0] = {
+		.type			= EV_KEY,
+		.active_low		= 1,
+		.wakeup			= 0,
+		.debounce_interval	= DA850_KEYS_DEBOUNCE_MS,
+		.code			= KEY_PROG1,
+		.desc			= "user_key0",
+		.gpio			= DA850_USER_KEY0,
+	},
+	[1] = {
+		.type			= EV_KEY,
+		.active_low		= 1,
+		.wakeup 		= 0,
+		.debounce_interval	= DA850_KEYS_DEBOUNCE_MS,
+		.code			= KEY_PROG2,
+		.desc			= "user_key1",
+		.gpio			= DA850_USER_KEY1,
+	},
+};
+
+static struct gpio_keys_platform_data da850_evm_tl_keys_pdata = {
+	.buttons = da850_evm_tl_keys,
+	.nbuttons = ARRAY_SIZE(da850_evm_tl_keys),
+	//.poll_interval = DA850_GPIO_KEYS_POLL_MS,
+};
+
+static struct platform_device da850_evm_tl_keys_device = {
+	.name = "gpio-keys",
+	.id = 1,
+	.dev = {
+		.platform_data = &da850_evm_tl_keys_pdata,
+	},
+};
+
+static void da850_evm_tl_keys_init(void)
+{
+	int ret;
+
+	ret = davinci_cfg_reg_list(da850_evm_tl_user_key_pins);
+	if (ret)
+		pr_warning("da850_evm_tl_leds_init : User LED mux failed :"
+				"%d\n", ret);
+
+	ret = platform_device_register(&da850_evm_tl_keys_device);
+	if (ret)
+		pr_warning("Could not register baseboard GPIO tronlong keys");
+}
+
+#if 0
 enum da850_evm_ui_exp_pins {
 	DA850_EVM_UI_EXP_SEL_C = 5,
 	DA850_EVM_UI_EXP_SEL_B,
@@ -2598,6 +2656,8 @@ static __init void da850_evm_init(void)
 	}
 
 	da850_evm_tl_leds_init();
+
+	da850_evm_tl_keys_init();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
