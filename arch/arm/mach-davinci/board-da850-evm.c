@@ -70,8 +70,13 @@
 
 #define DA850_TS_INT			GPIO_TO_PIN(2,12)
 
-#define DA850_USER_LED1			GPIO_TO_PIN(6,12)
-#define DA850_USER_LED2			GPIO_TO_PIN(6,13)
+#define DA850_HEARTBEAT_LED		GPIO_TO_PIN(6, 12)
+#define DA850_DISC_LED			GPIO_TO_PIN(6, 13)
+
+#define DA850_USER_LED0			GPIO_TO_PIN(0, 5)
+#define DA850_USER_LED1			GPIO_TO_PIN(0, 0)
+#define DA850_USER_LED2			GPIO_TO_PIN(0, 1)
+#define DA850_USER_LED3			GPIO_TO_PIN(0, 2)
 
 #if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
 #define AD7606_SPI_BUSY			GPIO_TO_PIN(6, 8)
@@ -1192,6 +1197,7 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 /* assign the tl som board LED-GPIOs*/
 static const short da850_evm_tl_user_led_pins[] = {
 	DA850_GPIO6_12, DA850_GPIO6_13,
+	DA850_GPIO0_0, DA850_GPIO0_1, DA850_GPIO0_2, DA850_GPIO0_5,
 	-1
 };
 
@@ -1200,15 +1206,39 @@ static const short da850_evm_tl_user_led_pins[] = {
 static struct gpio_led da850_evm_tl_leds[] = {
 	[0] = {
 		.active_low = 0,
-		.gpio = DA850_USER_LED1,
-		.name = "user_led1",
+		.gpio = DA850_HEARTBEAT_LED,
+		.name = "heartbeat",
 		.default_trigger = "heartbeat",
 	},
 	[1] = {
 		.active_low = 0,
+		.gpio = DA850_DISC_LED,
+		.name = "disc",
+		.default_trigger = "mmc0",
+	},
+	[2] = {
+		.active_low = 0,
+		.gpio = DA850_USER_LED0,
+		.name = "user_led0",
+		.default_trigger = "default-on",
+	},
+	[3] = {
+		.active_low = 0,
+		.gpio = DA850_USER_LED1,
+		.name = "user_led1",
+		.default_trigger = "default-on",
+	},
+	[4] = {
+		.active_low = 0,
 		.gpio = DA850_USER_LED2,
 		.name = "user_led2",
-		.default_trigger = "mmc0",
+		.default_trigger = "default-on",
+	},
+	[5] = {
+		.active_low = 0,
+		.gpio = DA850_USER_LED3,
+		.name = "user_led3",
+		.default_trigger = "default-on",
 	},
 };
 
