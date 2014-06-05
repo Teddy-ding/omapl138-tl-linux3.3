@@ -26,6 +26,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/slab.h>
 #include <mach/sram.h>
+#include <linux/genalloc.h>
 
 #define DRV_NAME "pruss_uio"
 #define DRV_VERSION "1.0"
@@ -65,10 +66,11 @@ struct uio_pruss_dev {
 	phys_addr_t sram_paddr;
 	dma_addr_t ddr_paddr;
 	void __iomem *prussio_vaddr;
-	void *sram_vaddr;
+	unsigned long sram_vaddr;
 	void *ddr_vaddr;
 	unsigned int hostirq_start;
 	unsigned int pintc_base;
+	struct gen_pool *sram_pool;
 };
 
 static irqreturn_t pruss_handler(int irq, struct uio_info *info)
@@ -106,8 +108,9 @@ static void pruss_cleanup(struct platform_device *dev,
 			gdev->ddr_paddr);
 	}
 	if (gdev->sram_vaddr)
-		gen_pool_free(davinci_gen_pool,
-			      (unsigned long)gdev->sram_vaddr, sram_pool_sz);
+		gen_pool_free(gdev->sram_pool,
+			      gdev->sram_vaddr,
+			      sram_pool_sz);
 	kfree(gdev->info);
 	clk_put(gdev->pruss_clk);
 	kfree(gdev);
@@ -153,11 +156,17 @@ static int __devinit pruss_probe(struct platform_device *dev)
 		goto out_free;
 	}
 
-	gdev->sram_vaddr = (void *)gen_pool_alloc(davinci_gen_pool,
-						  sram_pool_sz);
-	if (!gdev->sram_vaddr) {
-		dev_err(&dev->dev, "Could not allocate SRAM pool\n");
-		goto out_free;
+	if (pdata->l3ram_pool) {
+		gdev->sram_pool = pdata->l3ram_pool;
+		gdev->sram_vaddr =
+			gen_pool_alloc(gdev->sram_pool, sram_pool_sz);
+		if (!gdev->sram_vaddr) {
+			dev_err(&dev->dev, "Could not allocate SRAM pool\n");
+			goto out_free;
+		}
+		gdev->sram_paddr =
+			gen_pool_virt_to_phys(gdev->sram_pool,
+					      gdev->sram_vaddr);
 	}
 
 	gdev->sram_paddr = gen_pool_virt_to_phys(davinci_gen_pool,
