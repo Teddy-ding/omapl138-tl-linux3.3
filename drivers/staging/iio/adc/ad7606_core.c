@@ -42,11 +42,13 @@ static int ad7606_scan_direct(struct iio_dev *indio_dev, unsigned ch)
 	int ret;
 
 	st->done = false;
-	gpio_set_value(st->pdata->gpio_convst, 1);
+	gpio_set_value(st->pdata->gpio_convst, 0);
 
+#if 0
 	ret = wait_event_interruptible(st->wq_data_avail, st->done);
 	if (ret)
 		goto error_ret;
+#endif
 
 	if (gpio_is_valid(st->pdata->gpio_frstdata)) {
 		ret = st->bops->read_block(st->dev, 1, st->data);
@@ -64,7 +66,7 @@ static int ad7606_scan_direct(struct iio_dev *indio_dev, unsigned ch)
 			goto error_ret;
 	} else {
 		ret = st->bops->read_block(st->dev,
-			st->chip_info->num_channels, st->data);
+			ch + 1, st->data);
 		if (ret)
 			goto error_ret;
 	}
@@ -72,7 +74,7 @@ static int ad7606_scan_direct(struct iio_dev *indio_dev, unsigned ch)
 	ret = st->data[ch];
 
 error_ret:
-	gpio_set_value(st->pdata->gpio_convst, 0);
+	gpio_set_value(st->pdata->gpio_convst, 1);
 
 	return ret;
 }
@@ -429,7 +431,9 @@ static irqreturn_t ad7606_interrupt(int irq, void *dev_id)
 			schedule_work(&st->poll_work);
 	} else {
 		st->done = true;
+#if 0
 		wake_up_interruptible(&st->wq_data_avail);
+#endif
 	}
 
 	return IRQ_HANDLED;
