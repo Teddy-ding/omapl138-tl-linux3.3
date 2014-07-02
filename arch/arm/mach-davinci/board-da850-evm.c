@@ -264,7 +264,7 @@ static struct ad7606_platform_data ad7606_par_pdata = {
 	.gpio_os0		= AD7606_PAR_OS0,
 	.gpio_os1		= AD7606_PAR_OS1,
 	.gpio_os2		= AD7606_PAR_OS2,
-	.gpio_frstdata		= AD7606_PAR_FRSTDATA,
+	.gpio_frstdata		= -1,
 	.gpio_stby		= -1,
 };
 #endif
@@ -650,9 +650,35 @@ static struct platform_device ad7606_device = {
 	.resource	= ad7606_resources,
 };
 
+/* Timing value configuration */
+#define TA(x)		((x) << 2)
+#define RHOLD(x)	((x) << 4)
+#define RSTROBE(x)	((x) << 7)
+#define RSETUP(x)	((x) << 13)
+#define WHOLD(x)	((x) << 17)
+#define WSTROBE(x)	((x) << 20)
+#define WSETUP(x)	((x) << 26)
+
+#define TA_MAX		0x3
+#define RHOLD_MAX	0x7
+#define RSTROBE_MAX	0x3f
+#define RSETUP_MAX	0xf
+#define WHOLD_MAX	0x7
+#define WSTROBE_MAX	0x3f
+#define WSETUP_MAX	0xf
+
+#define TIMING_MASK	(TA(TA_MAX) | \
+				RHOLD(RHOLD_MAX) | \
+				RSTROBE(RSTROBE_MAX) |	\
+				RSETUP(RSETUP_MAX) | \
+				WHOLD(WHOLD_MAX) | \
+				WSTROBE(WSTROBE_MAX) | \
+				WSETUP(WSETUP_MAX))
+
 static inline void da850_evm_setup_ad7606_par(void)
 {
 	void __iomem *aemif_addr;
+	unsigned set, val;
 	int ret = 0;
 
 	ret = davinci_cfg_reg_list(ad7606_par_gpio_pins);
@@ -670,6 +696,15 @@ static inline void da850_evm_setup_ad7606_par(void)
 	writel(readl(aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET) |
 		DA8XX_AEMIF_ASIZE_16BIT,
 		aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET);
+
+	/* setup timing values for a given AEMIF interface */
+	set = TA(1) | RHOLD(1) | RSTROBE(3) | RSETUP(1) |
+		WHOLD(3) | WSTROBE(3) | WSETUP(3);
+
+	val = readl(aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET);
+	val &= ~TIMING_MASK;
+	val |= set;
+	writel(val, aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET);
 
 	iounmap(aemif_addr);
 
