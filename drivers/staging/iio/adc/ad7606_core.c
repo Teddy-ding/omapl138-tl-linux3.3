@@ -485,6 +485,7 @@ struct iio_dev *ad7606_probe(struct device *dev, int irq,
 
 	st->pdata = pdata;
 	st->chip_info = &ad7606_chip_info_tbl[id];
+	st->irq = irq;
 
 	indio_dev->dev.parent = dev;
 	indio_dev->info = &ad7606_info;

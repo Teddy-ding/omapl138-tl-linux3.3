@@ -65,6 +65,7 @@ struct ad7606_state {
 	struct ad7606_platform_data	*pdata;
 	struct regulator		*reg;
 	struct work_struct		poll_work;
+	int				irq;
 	wait_queue_head_t		wq_data_avail;
 	const struct ad7606_bus_ops	*bops;
 	unsigned			range;

@@ -10,10 +10,12 @@
 #include <linux/device.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
+#include <linux/delay.h>
 
 #include "../iio.h"
 #include "../buffer.h"
 #include "../ring_sw.h"
+#include "../kfifo_buf.h"
 #include "../trigger_consumer.h"
 
 #include "ad7606.h"
@@ -49,12 +51,19 @@ static void ad7606_poll_bh_to_ring(struct work_struct *work_s)
 	struct iio_buffer *ring = indio_dev->buffer;
 	s64 time_ns;
 	__u8 *buf;
+	int i, count = ring->length;
 	int ret;
+
 
 	buf = kzalloc(ring->access->get_bytes_per_datum(ring),
 		      GFP_KERNEL);
 	if (buf == NULL)
 		return;
+
+	disable_irq(st->irq);
+
+	for (i = 0; i < count; i++) {
+	gpio_set_value(st->pdata->gpio_convst, 1);
 
 	if (gpio_is_valid(st->pdata->gpio_frstdata)) {
 		ret = st->bops->read_block(st->dev, 1, buf);
@@ -80,17 +89,25 @@ static void ad7606_poll_bh_to_ring(struct work_struct *work_s)
 			goto done;
 	}
 
+	gpio_set_value(st->pdata->gpio_convst, 0);
+
 	time_ns = iio_get_time_ns();
 
+#if 0
 	if (ring->scan_timestamp)
 		*((s64 *)(buf + ring->access->get_bytes_per_datum(ring) -
 			  sizeof(s64))) = time_ns;
+#endif
 
 	ring->access->store_to(indio_dev->buffer, buf, time_ns);
+
+	ndelay(100);
+	}
 done:
 	gpio_set_value(st->pdata->gpio_convst, 0);
 	iio_trigger_notify_done(indio_dev->trig);
 	kfree(buf);
+	enable_irq(st->irq);
 }
 
 static const struct iio_buffer_setup_ops ad7606_ring_setup_ops = {
@@ -111,7 +128,7 @@ int ad7606_register_ring_funcs_and_init(struct iio_dev *indio_dev)
 	}
 
 	/* Effectively select the ring buffer implementation */
-	indio_dev->buffer->access = &ring_sw_access_funcs;
+	indio_dev->buffer->access = &kfifo_access_funcs;
 	indio_dev->pollfunc = iio_alloc_pollfunc(&ad7606_trigger_handler_th_bh,
 						 &ad7606_trigger_handler_th_bh,
 						 0,
