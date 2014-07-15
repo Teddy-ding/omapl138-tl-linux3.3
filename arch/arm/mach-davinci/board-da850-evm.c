@@ -78,6 +78,10 @@
 #define DA850_USER_LED2			GPIO_TO_PIN(0, 1)
 #define DA850_USER_LED3			GPIO_TO_PIN(0, 2)
 
+#ifdef CONFIG_MACH_OMAPL138_XYSTART
+#define DA850_USER_VGA_POWER		GPIO_TO_PIN(6, 1)
+#endif
+
 #define DA850_USER_KEY0			GPIO_TO_PIN(0, 6)
 #define DA850_USER_KEY1			GPIO_TO_PIN(6, 1)
 
@@ -808,6 +812,7 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel)
 static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
 #endif
 
+#ifndef CONFIG_MACH_OMAPL138_XYSTART
 #define DA850_KEYS_DEBOUNCE_MS	10
 /*
  * At 200ms polling interval it is possible to miss an
@@ -872,6 +877,7 @@ static void da850_evm_tl_keys_init(void)
 	if (ret)
 		pr_warning("Could not register baseboard GPIO tronlong keys");
 }
+#endif
 
 #if 0
 enum da850_evm_ui_exp_pins {
@@ -1291,6 +1297,9 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 static const short da850_evm_tl_user_led_pins[] = {
 	DA850_GPIO6_12, DA850_GPIO6_13,
 	DA850_GPIO0_0, DA850_GPIO0_1, DA850_GPIO0_2, DA850_GPIO0_5,
+#ifdef CONFIG_MACH_OMAPL138_XYSTART
+	DA850_GPIO6_1,
+#endif
 	-1
 };
 
@@ -1333,6 +1342,14 @@ static struct gpio_led da850_evm_tl_leds[] = {
 		.name = "user_led3",
 		.default_trigger = "default-on",
 	},
+#ifdef CONFIG_MACH_OMAPL138_XYSTART
+	[6] = {
+		.active_low = 1,
+		.gpio = DA850_USER_VGA_POWER,
+		.name = "vga_power",
+		.default_trigger = "default-on",
+	},
+#endif
 };
 
 static struct gpio_led_platform_data da850_evm_tl_leds_pdata = {
@@ -2692,7 +2709,9 @@ static __init void da850_evm_init(void)
 
 	da850_evm_tl_leds_init();
 
+#ifndef CONFIG_MACH_OMAPL138_XYSTART
 	da850_evm_tl_keys_init();
+#endif
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
