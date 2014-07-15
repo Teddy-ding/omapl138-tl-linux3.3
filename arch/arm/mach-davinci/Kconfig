@@ -339,6 +339,12 @@ config MACH_OMAPL138_LCDKBOARD
 	help
 	  Say Y here to select the TI OMAP-L138 LCDK board.
 
+config MACH_OMAPL138_XYSTART
+	bool "TI OMAP-L138 XY-START board platform"
+	depends on ARCH_DAVINCI_DA850
+	help
+	  Say Y here to select the TI OMAP-L138 XY-START board.
+
 config MACH_DAVINCI_DA850_SDI
 	bool "DA850 SDI Development Board"
 	default ARCH_DAVINCI_DA850
