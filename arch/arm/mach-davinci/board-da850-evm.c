@@ -40,6 +40,7 @@
 //#include <linux/i2c-gpio.h>
 #include <linux/videodev2.h>
 #include <linux/module.h>
+#include <linux/serial_8250.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -102,6 +103,19 @@
 #define AD7606_PAR_OS1			GPIO_TO_PIN(5, 2)
 #define AD7606_PAR_OS2			GPIO_TO_PIN(5, 0)
 #endif
+
+#if defined(CONFIG_SERIAL_8250_EXTENDED)
+#define TL16754_RESET			GPIO_TO_PIN(5, 7)
+#define TL16754_UART0_IRQ		GPIO_TO_PIN(5, 8)
+#define TL16754_UART1_IRQ		GPIO_TO_PIN(5, 9)
+#define TL16754_UART2_IRQ		GPIO_TO_PIN(5, 10)
+#define TL16754_UART3_IRQ		GPIO_TO_PIN(5, 11)
+#define TL16754_UART4_IRQ		GPIO_TO_PIN(5, 12)
+#define TL16754_UART5_IRQ		GPIO_TO_PIN(5, 13)
+#define TL16754_UART6_IRQ		GPIO_TO_PIN(5, 14)
+#define TL16754_UART7_IRQ		GPIO_TO_PIN(5, 15)
+#endif
+
 
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
@@ -523,7 +537,10 @@ static struct platform_device davinci_emif_device = {
 };
 
 #define DA8XX_AEMIF_CE2CFG_OFFSET	0x10
+#define DA8XX_AEMIF_CE4CFG_OFFSET	0x18
+#define DA8XX_AEMIF_ASIZE_MASK		0x3
 #define DA8XX_AEMIF_ASIZE_16BIT		0x1
+#define DA8XX_AEMIF_ASIZE_8BIT		0x0
 
 static void __init da850_evm_init_nor(void)
 {
@@ -716,6 +733,167 @@ static inline void da850_evm_setup_ad7606_par(void)
 	ad7606_resources[1].end= ad7606_resources[1].start;
 
 	platform_device_register(&ad7606_device);
+}
+#endif
+
+#if defined(CONFIG_SERIAL_8250_EXTENDED)
+#define TL16754_CLK	14745600
+
+static const short tl16754_serial_gpio_pins[] = {
+	DA850_GPIO5_8, DA850_GPIO5_9, DA850_GPIO5_10, DA850_GPIO5_11,
+	DA850_GPIO5_12, DA850_GPIO5_13, DA850_GPIO5_14, DA850_GPIO5_15,
+	DA850_GPIO5_7,
+	-1
+};
+
+static const short da850_evm_tl16754_serial_pins[] = {
+	DA850_NEMA_CS_4, DA850_EMA_CLK, DA850_EMA_D_0, DA850_EMA_D_1,
+	DA850_EMA_D_2, DA850_EMA_D_3, DA850_EMA_D_4, DA850_EMA_D_5,
+	DA850_EMA_D_6, DA850_EMA_D_7, DA850_EMA_BA_0, DA850_EMA_BA_1,
+	DA850_EMA_A_0, DA850_EMA_A_1, DA850_EMA_A_2, DA850_EMA_A_3,
+	DA850_NEMA_WE, DA850_NEMA_OE,
+	-1
+};
+
+static struct plat_serial8250_port tl16754_serial_pdata[] = {
+	{
+		.mapbase	= DA8XX_AEMIF_CS4_BASE,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
+					UPF_IOREMAP | UPF_FIXED_TYPE,
+		.type		= PORT_16750,
+		.iotype		= UPIO_MEM,
+		.regshift	= 0,
+		.uartclk	= TL16754_CLK,
+	},
+	{
+		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*1,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
+					UPF_IOREMAP | UPF_FIXED_TYPE,
+		.type		= PORT_16750,
+		.iotype		= UPIO_MEM,
+		.regshift	= 0,
+		.uartclk	= TL16754_CLK,
+	},
+	{
+		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*2,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
+					UPF_IOREMAP | UPF_FIXED_TYPE,
+		.type		= PORT_16750,
+		.iotype		= UPIO_MEM,
+		.regshift	= 0,
+		.uartclk	= TL16754_CLK,
+	},
+	{
+		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*3,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
+					UPF_IOREMAP | UPF_FIXED_TYPE,
+		.type		= PORT_16750,
+		.iotype 	= UPIO_MEM,
+		.regshift	= 0,
+		.uartclk	= TL16754_CLK,
+	},
+	{
+		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*4,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
+					UPF_IOREMAP | UPF_FIXED_TYPE,
+		.type		= PORT_16750,
+		.iotype 	= UPIO_MEM,
+		.regshift	= 0,
+		.uartclk	= TL16754_CLK,
+	},
+	{
+		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*5,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
+					UPF_IOREMAP | UPF_FIXED_TYPE,
+		.type		= PORT_16750,
+		.iotype 	= UPIO_MEM,
+		.regshift	= 0,
+		.uartclk	= TL16754_CLK,
+	},
+	{
+		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*6,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
+					UPF_IOREMAP | UPF_FIXED_TYPE,
+		.type		= PORT_16750,
+		.iotype 	= UPIO_MEM,
+		.regshift	= 0,
+		.uartclk	= TL16754_CLK,
+	},
+	{
+		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*7,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
+					UPF_IOREMAP | UPF_FIXED_TYPE,
+		.type		= PORT_16750,
+		.iotype 	= UPIO_MEM,
+		.regshift	= 0,
+		.uartclk	= TL16754_CLK,
+	},
+	{
+		.flags	= 0,
+	},
+};
+
+struct platform_device tl16754_serial_device = {
+	.name	= "serial8250",
+	.id	= PLAT8250_DEV_PLATFORM1,
+	.dev	= {
+		.platform_data	= tl16754_serial_pdata,
+	},
+};
+
+static inline void da850_evm_setup_tl16754(void)
+{
+	void __iomem *aemif_addr;
+	unsigned set, val;
+	int ret = 0;
+
+	ret = davinci_cfg_reg_list(da850_evm_tl16754_serial_pins);
+	if (ret)
+		pr_warning("da850_evm_init: tl16754 serial mux setup failed: "
+				"%d\n", ret);
+
+	ret = davinci_cfg_reg_list(tl16754_serial_gpio_pins);
+	if (ret)
+		pr_warning("da850_evm_init: tl16754 gpio mux setup failed: "
+				"%d\n", ret);
+
+	aemif_addr = ioremap(DA8XX_AEMIF_CTL_BASE, SZ_32K);
+
+	/* Configure data bus width of CS4 to 8 bit */
+	writel(readl(aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET) &
+		(~DA8XX_AEMIF_ASIZE_MASK),
+		aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET);
+
+	/* setup timing values for a given AEMIF interface */
+	set = TA(3) | RHOLD(3) | RSTROBE(3) | RSETUP(3) |
+		WHOLD(3) | WSTROBE(3) | WSETUP(3);
+
+	val = readl(aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET);
+	val &= ~TIMING_MASK;
+	val |= set;
+	writel(val, aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET);
+
+	iounmap(aemif_addr);
+
+	tl16754_serial_pdata[0].irq = gpio_to_irq(TL16754_UART0_IRQ);
+	tl16754_serial_pdata[1].irq = gpio_to_irq(TL16754_UART1_IRQ);
+	tl16754_serial_pdata[2].irq = gpio_to_irq(TL16754_UART2_IRQ);
+	tl16754_serial_pdata[3].irq = gpio_to_irq(TL16754_UART3_IRQ);
+	tl16754_serial_pdata[4].irq = gpio_to_irq(TL16754_UART4_IRQ);
+	tl16754_serial_pdata[5].irq = gpio_to_irq(TL16754_UART5_IRQ);
+	tl16754_serial_pdata[6].irq = gpio_to_irq(TL16754_UART6_IRQ);
+	tl16754_serial_pdata[7].irq = gpio_to_irq(TL16754_UART7_IRQ);
+
+	ret = gpio_request(TL16754_RESET, "tl16754-reset");
+	if (ret)
+		pr_warning("Fail to request tl16754-reset gpio PIN %d.\n",
+				TL16754_RESET);
+
+	gpio_direction_output(TL16754_RESET, 1);
+	ndelay(200);
+	gpio_set_value(TL16754_RESET, 0);
+
+	platform_device_register(&tl16754_serial_device);
 }
 #endif
 
@@ -2711,6 +2889,10 @@ static __init void da850_evm_init(void)
 
 #ifndef CONFIG_MACH_OMAPL138_XYSTART
 	da850_evm_tl_keys_init();
+#endif
+
+#if defined(CONFIG_SERIAL_8250_EXTENDED)
+	da850_evm_setup_tl16754();
 #endif
 }
 
