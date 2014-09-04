@@ -102,7 +102,7 @@ static struct clk pll0_sysclk3 = {
 	.flags		= CLK_PLL,
 	.div_reg	= PLLDIV3,
 	.set_rate	= da850_set_pll0sysclk3_rate,
-	.maxrate	= 148000000,
+	.maxrate	= 152000000,
 };
 
 static struct clk pll0_sysclk4 = {
