@@ -396,6 +396,7 @@ static void da850_evm_setup_mac_addr(void)
 static void da850_evm_setup_mac_addr(void) { }
 #endif
 
+#if defined(CONFIG_MACH_DAVINCI_DA850_PHYSMAP_FLASH)
 static struct mtd_partition da850_evm_norflash_partition[] = {
 	{
 		.name           = "bootloaders + env",
@@ -441,6 +442,7 @@ static struct resource da850_evm_norflash_resource[] = {
 		.flags	= IORESOURCE_MEM,
 	},
 };
+#endif
 
 static struct davinci_pm_config da850_pm_pdata = {
 	.sleepcount = 128,
@@ -566,6 +568,7 @@ static struct platform_device davinci_emif_device = {
 #define DA8XX_AEMIF_ASIZE_16BIT		0x1
 #define DA8XX_AEMIF_ASIZE_8BIT		0x0
 
+#if defined(CONFIG_MACH_DAVINCI_DA850_PHYSMAP_FLASH)
 static void __init da850_evm_init_nor(void)
 {
 	void __iomem *aemif_addr;
@@ -579,6 +582,7 @@ static void __init da850_evm_init_nor(void)
 
 	iounmap(aemif_addr);
 }
+#endif
 
 static const short da850_evm_nand_pins[] = {
 	DA850_EMA_D_0, DA850_EMA_D_1, DA850_EMA_D_2, DA850_EMA_D_3,
