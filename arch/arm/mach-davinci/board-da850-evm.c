@@ -116,6 +116,30 @@
 #define TL16754_UART7_IRQ		GPIO_TO_PIN(5, 15)
 #endif
 
+/* Timing value configuration */
+#define TA(x)		((x) << 2)
+#define RHOLD(x)	((x) << 4)
+#define RSTROBE(x)	((x) << 7)
+#define RSETUP(x)	((x) << 13)
+#define WHOLD(x)	((x) << 17)
+#define WSTROBE(x)	((x) << 20)
+#define WSETUP(x)	((x) << 26)
+
+#define TA_MAX		0x3
+#define RHOLD_MAX	0x7
+#define RSTROBE_MAX	0x3f
+#define RSETUP_MAX	0xf
+#define WHOLD_MAX	0x7
+#define WSTROBE_MAX	0x3f
+#define WSETUP_MAX	0xf
+
+#define TIMING_MASK	(TA(TA_MAX) | \
+				RHOLD(RHOLD_MAX) | \
+				RSTROBE(RSTROBE_MAX) |	\
+				RSETUP(RSETUP_MAX) | \
+				WHOLD(WHOLD_MAX) | \
+				WSTROBE(WSTROBE_MAX) | \
+				WSETUP(WSETUP_MAX))
 
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
@@ -670,31 +694,6 @@ static struct platform_device ad7606_device = {
 	.num_resources	= ARRAY_SIZE(ad7606_resources),
 	.resource	= ad7606_resources,
 };
-
-/* Timing value configuration */
-#define TA(x)		((x) << 2)
-#define RHOLD(x)	((x) << 4)
-#define RSTROBE(x)	((x) << 7)
-#define RSETUP(x)	((x) << 13)
-#define WHOLD(x)	((x) << 17)
-#define WSTROBE(x)	((x) << 20)
-#define WSETUP(x)	((x) << 26)
-
-#define TA_MAX		0x3
-#define RHOLD_MAX	0x7
-#define RSTROBE_MAX	0x3f
-#define RSETUP_MAX	0xf
-#define WHOLD_MAX	0x7
-#define WSTROBE_MAX	0x3f
-#define WSETUP_MAX	0xf
-
-#define TIMING_MASK	(TA(TA_MAX) | \
-				RHOLD(RHOLD_MAX) | \
-				RSTROBE(RSTROBE_MAX) |	\
-				RSETUP(RSETUP_MAX) | \
-				WHOLD(WHOLD_MAX) | \
-				WSTROBE(WSTROBE_MAX) | \
-				WSETUP(WSETUP_MAX))
 
 static inline void da850_evm_setup_ad7606_par(void)
 {
