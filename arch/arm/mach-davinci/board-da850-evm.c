@@ -868,8 +868,8 @@ static inline void da850_evm_setup_tl16754(void)
 		aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET);
 
 	/* setup timing values for a given AEMIF interface */
-	set = TA(3) | RHOLD(3) | RSTROBE(3) | RSETUP(3) |
-		WHOLD(3) | WSTROBE(3) | WSETUP(3);
+	set = TA(10) | RHOLD(3) | RSTROBE(10) | RSETUP(4) |
+		WHOLD(3) | WSTROBE(10) | WSETUP(4);
 
 	val = readl(aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET);
 	val &= ~TIMING_MASK;
