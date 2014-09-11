@@ -993,6 +993,7 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel)
 static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
 #endif
 
+#if 0
 #ifndef CONFIG_MACH_OMAPL138_XYSTART
 #define DA850_KEYS_DEBOUNCE_MS	10
 /*
@@ -1058,6 +1059,7 @@ static void da850_evm_tl_keys_init(void)
 	if (ret)
 		pr_warning("Could not register baseboard GPIO tronlong keys");
 }
+#endif
 #endif
 
 #if 0
@@ -2890,8 +2892,10 @@ static __init void da850_evm_init(void)
 
 	da850_evm_tl_leds_init();
 
+#if 0
 #ifndef CONFIG_MACH_OMAPL138_XYSTART
 	da850_evm_tl_keys_init();
+#endif
 #endif
 
 #if defined(CONFIG_SERIAL_8250_EXTENDED)
