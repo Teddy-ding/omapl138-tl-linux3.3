@@ -1339,6 +1339,7 @@ static int vpif_s_std(struct file *file, void *priv, v4l2_std_id *std_id)
 {
 	struct vpif_fh *fh = priv;
 	struct channel_obj *ch = fh->channel;
+	struct vpif_params *vpifparams = &ch->vpifparams;
 	struct common_obj *common = &ch->common[VPIF_VIDEO_INDEX];
 	int ret = 0;
 
@@ -1376,6 +1377,10 @@ static int vpif_s_std(struct file *file, void *priv, v4l2_std_id *std_id)
 
 	/* Configure the default format information */
 	vpif_config_format(ch);
+
+	/* VPIF is raw bayer mode do not need set standard */
+	if (vpifparams->iface.if_type == VPIF_IF_RAW_BAYER)
+		return ret;
 
 	/* set standard in the sub device */
 	ret = v4l2_subdev_call(vpif_obj.sd[ch->curr_sd_index], core,
