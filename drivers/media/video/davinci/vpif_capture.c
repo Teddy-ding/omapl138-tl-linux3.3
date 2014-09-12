@@ -566,7 +566,8 @@ static int vpif_check_format(struct channel_obj *ch,
 	 * Otherwise only V4L2_PIX_FMT_YUV422P is supported
 	 */
 	if (vpif_params->iface.if_type == VPIF_IF_RAW_BAYER) {
-		if ((pixfmt->pixelformat != V4L2_PIX_FMT_RGB565) &&
+		if ((pixfmt->pixelformat != V4L2_PIX_FMT_RGB565) && \
+			(pixfmt->pixelformat != V4L2_PIX_FMT_YUYV) && \
 			(pixfmt->pixelformat != V4L2_PIX_FMT_UYVY)) {
 			if (!update) {
 				vpif_dbg(2, debug, "invalid pix format\n");
@@ -1632,10 +1633,18 @@ static int vpif_s_fmt_vid_cap(struct file *file, void *priv,
 		mf.width = fmt->fmt.pix.width;
 		mf.height = fmt->fmt.pix.height;
 
-		if (pixfmt->pixelformat == V4L2_PIX_FMT_RGB565)
+		switch (pixfmt->pixelformat)
+		{
+		case V4L2_PIX_FMT_RGB565:
 			mf.code = V4L2_MBUS_FMT_RGB565_2X8_LE;
-		else
+			break;
+		case V4L2_PIX_FMT_YUYV:
+			mf.code = V4L2_MBUS_FMT_YUYV8_2X8;
+			break;
+		case V4L2_PIX_FMT_UYVY:
+		default:
 			mf.code = V4L2_MBUS_FMT_UYVY8_2X8;
+		}
 
 		ret = v4l2_subdev_call(vpif_obj.sd[ch->curr_sd_index],
 				video, s_mbus_fmt, &mf);
