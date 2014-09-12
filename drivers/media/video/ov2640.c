@@ -592,8 +592,18 @@ static const struct regval_list ov2640_format_change_preamble_regs[] = {
 	ENDMARKER,
 };
 
-static const struct regval_list ov2640_yuv422_regs[] = {
+static const struct regval_list ov2640_yuv422_uyvy_regs[] = {
 	{ IMAGE_MODE, IMAGE_MODE_LBYTE_FIRST | IMAGE_MODE_YUV422 },
+	{ 0xD7, 0x01 },
+	{ 0x33, 0xa0 },
+	{ 0xe1, 0x67 },
+	{ RESET,  0x00 },
+	{ R_BYPASS, R_BYPASS_USE_DSP },
+	ENDMARKER,
+};
+
+static const struct regval_list ov2640_yuv422_yuyv_regs[] = {
+	{ IMAGE_MODE, IMAGE_MODE_YUV422 },
 	{ 0xD7, 0x01 },
 	{ 0x33, 0xa0 },
 	{ 0xe1, 0x67 },
@@ -853,10 +863,14 @@ static int ov2640_set_params(struct i2c_client *client, u32 *width, u32 *height,
 		dev_dbg(&client->dev, "%s: Selected cfmt RGB565", __func__);
 		selected_cfmt_regs = ov2640_rgb565_regs;
 		break;
+	case V4L2_MBUS_FMT_YUYV8_2X8:
+		dev_dbg(&client->dev, "%s: Selected cfmt YUV422 YUYV", __func__);
+		selected_cfmt_regs = ov2640_yuv422_yuyv_regs;
+		break;
 	default:
 	case V4L2_MBUS_FMT_UYVY8_2X8:
-		dev_dbg(&client->dev, "%s: Selected cfmt YUV422", __func__);
-		selected_cfmt_regs = ov2640_yuv422_regs;
+		dev_dbg(&client->dev, "%s: Selected cfmt YUV422 UYVY", __func__);
+		selected_cfmt_regs = ov2640_yuv422_uyvy_regs;
 	}
 
 	/* reset hardware */
@@ -944,6 +958,9 @@ static int ov2640_g_fmt(struct v4l2_subdev *sd,
 	case V4L2_MBUS_FMT_RGB565_2X8_LE:
 		mf->colorspace = V4L2_COLORSPACE_SRGB;
 		break;
+	case V4L2_MBUS_FMT_YUYV8_2X8:
+		mf->colorspace = V4L2_COLORSPACE_JPEG;
+		break;
 	default:
 	case V4L2_MBUS_FMT_UYVY8_2X8:
 		mf->colorspace = V4L2_COLORSPACE_JPEG;
@@ -963,6 +980,9 @@ static int ov2640_s_fmt(struct v4l2_subdev *sd,
 	switch (mf->code) {
 	case V4L2_MBUS_FMT_RGB565_2X8_LE:
 		mf->colorspace = V4L2_COLORSPACE_SRGB;
+		break;
+	case V4L2_MBUS_FMT_YUYV8_2X8:
+		mf->colorspace = V4L2_COLORSPACE_JPEG;
 		break;
 	default:
 		mf->code = V4L2_MBUS_FMT_UYVY8_2X8;
@@ -990,6 +1010,9 @@ static int ov2640_try_fmt(struct v4l2_subdev *sd,
 	switch (mf->code) {
 	case V4L2_MBUS_FMT_RGB565_2X8_LE:
 		mf->colorspace = V4L2_COLORSPACE_SRGB;
+		break;
+	case V4L2_MBUS_FMT_YUYV8_2X8:
+		mf->colorspace = V4L2_COLORSPACE_JPEG;
 		break;
 	default:
 		mf->code = V4L2_MBUS_FMT_UYVY8_2X8;
