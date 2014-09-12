@@ -367,7 +367,13 @@ static const struct regval_list ov2640_init_regs[] = {
 	{ 0x70,   0x02 },
 	{ 0x71,   0x94 },
 	{ 0x73,   0xc1 },
-	{ 0x3d,   0x34 },
+	/* SVGA Preview, 25fps, 24 Mhz input clock */
+	{ 0x2a,   0x00 },
+	{ 0x2b,   0x00 },
+	{ 0x46,   0x87 },
+	{ 0x47,   0x00 },
+	{ 0x3d,   0x38 },
+	/**/
 	{ COM7, COM7_RES_UXGA | COM7_ZOOM_EN },
 	{ 0x5a,   0x57 },
 	{ BD50,   0xbb },
@@ -609,6 +615,74 @@ static enum v4l2_mbus_pixelcode ov2640_codes[] = {
 	V4L2_MBUS_FMT_RGB565_2X8_LE,
 };
 
+/* Light Mode */
+static const struct regval_list ov2640_lightmode_Auto[] = {
+        /* Light Mode: Auto */
+        { BANK_SEL, BANK_SEL_DSP },
+        { 0xc7,   0x00 },   /* AWB on */
+        ENDMARKER,
+};
+
+static const struct regval_list ov2640_lightmode_Sunny[] = {
+        /* Light Mode: Sunny */
+        { BANK_SEL, BANK_SEL_DSP },
+        { 0xc7,   0x40 },   /* AWB off */
+        { 0xcc,   0x5e },
+        { 0xcd,   0x41 },
+        { 0xce,   0x54 },
+        ENDMARKER,
+};
+
+static const struct regval_list ov2640_lightmode_Cloudy[] = {
+        /* Light Mode: Cloudy */
+        { BANK_SEL, BANK_SEL_DSP },
+        { 0xc7,   0x40 },   /* AWB off */
+        { 0xcc,   0x65 },
+        { 0xcd,   0x41 },
+        { 0xce,   0x4f },
+        ENDMARKER,
+};
+
+static const struct regval_list ov2640_lightmode_Office[] = {
+        /* Light Mode: Office */
+        { BANK_SEL, BANK_SEL_DSP },
+        { 0xc7,   0x40 },   /* AWB off */
+        { 0xcc,   0x52 },
+        { 0xcd,   0x41 },
+        { 0xce,   0x66 },
+        ENDMARKER,
+};
+
+static const struct regval_list ov2640_lightmode_Home[] = {
+        /* Light Mode: Home */
+        { BANK_SEL, BANK_SEL_DSP },
+        { 0xc7,   0x40 },   /* AWB off */
+        { 0xcc,   0x42 },
+        { 0xcd,   0x3f },
+        { 0xce,   0x71 },
+        ENDMARKER,
+};
+
+static void  * light_mode_regs[]= {
+        (void  *)ov2640_lightmode_Auto,
+        (void  *)ov2640_lightmode_Sunny,
+        (void  *)ov2640_lightmode_Cloudy,
+        (void  *)ov2640_lightmode_Office,
+        (void  *)ov2640_lightmode_Home,
+};
+
+static char * light_mode_ary[]= {
+        "Auto", "Sunny", "Cloudy", "Office", "Home",
+};
+
+/* module parameters */
+static char *lightmode = "Cloudy";
+
+module_param(lightmode, charp, 0644);
+
+MODULE_PARM_DESC(lightmode,
+        "light mode (default:Cloudy): Auto,Sunny,Cloudy,Office,Home");
+
 /*
  * General functions
  */
@@ -766,6 +840,7 @@ static int ov2640_set_params(struct i2c_client *client, u32 *width, u32 *height,
 {
 	struct ov2640_priv       *priv = to_ov2640(client);
 	const struct regval_list *selected_cfmt_regs;
+	int i;
 	int ret;
 
 	/* select win */
@@ -790,6 +865,24 @@ static int ov2640_set_params(struct i2c_client *client, u32 *width, u32 *height,
 	/* initialize the sensor with default data */
 	dev_dbg(&client->dev, "%s: Init default", __func__);
 	ret = ov2640_write_array(client, ov2640_init_regs);
+	if (ret < 0)
+		goto err;
+
+	/* set light mode */
+        for (i = 0; i < ARRAY_SIZE(light_mode_ary); i++)
+                if(!strncmp(lightmode, light_mode_ary[i],
+                                sizeof(light_mode_ary[i])))
+                        break;
+
+        if (i >= ARRAY_SIZE(light_mode_ary)) {
+                i = 2;		/* set light mode: Cloudy */
+                lightmode = light_mode_ary[i];
+        }
+
+        dev_dbg(&client->dev, "%s: light mode (%s)", __func__,
+                        light_mode_ary[i]);
+        ret = ov2640_write_array(client,
+                        (struct regval_list *)light_mode_regs[i]);
 	if (ret < 0)
 		goto err;
 
