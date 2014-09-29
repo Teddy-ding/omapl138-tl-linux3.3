@@ -370,6 +370,42 @@ static struct spi_board_info da850evm_spi_info[] = {
 #define VPIF_STATUS		0x002c
 #define VPIF_STATUS_CLR		0x0030
 
+/*
+ * Handle Linux boot parameters. This routine allows for assigning a value
+ * to a parameter with MAC addr value.
+ * ie. eth=12:01:40:34:8f:70
+ */
+static int __init da850_eth_setup(char *str)
+{
+	char *mac_addr = davinci_soc_info.emac_pdata->mac_addr;
+	char *end;
+	int i;
+
+	for (i = 0; i < 6; ++i) {
+		mac_addr[i] = str ? simple_strtoul(str, &end, 16) : 0;
+		if (str)
+			str = (*end) ? end + 1 : end;
+	}
+
+	return 1;
+}
+__setup("eth=", da850_eth_setup);
+
+/*
+ * Handle Linux boot parameters. This routine allows for assigning a value
+ * to a parameter with emac mode.
+ * ie. da850-emac=rmii
+ */
+static int __init da850_emac_setup(char *str)
+{
+	if (!strcmp(str, "rmii"))
+		davinci_soc_info.emac_pdata->rmii_en = 1;
+
+	return 1;
+}
+
+__setup("da850-emac=", da850_emac_setup);
+
 #ifdef CONFIG_MTD
 static void da850_evm_m25p80_notify_add(struct mtd_info *mtd)
 {
@@ -981,6 +1017,7 @@ static inline void da850_evm_setup_nor_nand(void)
 	platform_device_register(&davinci_emif_device);
 }
 
+#if 0
 #ifdef CONFIG_DA850_UI_RMII
 static inline void da850_evm_setup_emac_rmii(int rmii_sel)
 {
@@ -991,6 +1028,7 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel)
 }
 #else
 static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
+#endif
 #endif
 
 #if 0
@@ -2069,6 +2107,7 @@ static int __init da850_evm_config_emac(void)
 	/* configure the CFGCHIP3 register for RMII or MII */
 	__raw_writel(val, cfg_chip3_base);
 
+#if 0
 	ret = davinci_cfg_reg(DA850_GPIO2_6);
 	if (ret)
 		pr_warning("da850_evm_init:GPIO(2,6) mux setup "
@@ -2083,6 +2122,7 @@ static int __init da850_evm_config_emac(void)
 
 	/* Enable/Disable MII MDIO clock */
 	gpio_direction_output(DA850_MII_MDIO_CLKEN_PIN, rmii_en);
+#endif
 
 	soc_info->emac_pdata->phy_id = DA850_EVM_PHY_ID;
 
