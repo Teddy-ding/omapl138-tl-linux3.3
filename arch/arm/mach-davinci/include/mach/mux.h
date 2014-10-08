@@ -966,6 +966,7 @@ enum davinci_da850_index {
 	DA850_GPIO0_2,
 	DA850_GPIO0_5,
 	DA850_GPIO0_6,
+	DA850_GPIO0_8,
 
 	/* eHRPWM0 function */
 	DA850_EHRPWM0_A,
