@@ -41,6 +41,9 @@
 #include <linux/videodev2.h>
 #include <linux/module.h>
 #include <linux/serial_8250.h>
+#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
+#include <linux/smsc911x.h>
+#endif
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -114,6 +117,11 @@
 #define TL16754_UART5_IRQ		GPIO_TO_PIN(5, 13)
 #define TL16754_UART6_IRQ		GPIO_TO_PIN(5, 14)
 #define TL16754_UART7_IRQ		GPIO_TO_PIN(5, 15)
+#endif
+
+#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
+#define SMSC911X_GPIO_IRQ		GPIO_TO_PIN(2, 1)
+#define SMSC911X_FIFO_SEL		GPIO_TO_PIN(5, 8)
 #endif
 
 /* Timing value configuration */
@@ -600,6 +608,7 @@ static struct platform_device davinci_emif_device = {
 
 #define DA8XX_AEMIF_CE2CFG_OFFSET	0x10
 #define DA8XX_AEMIF_CE4CFG_OFFSET	0x18
+#define DA8XX_AEMIF_CE5CFG_OFFSET	0x1c
 #define DA8XX_AEMIF_ASIZE_MASK		0x3
 #define DA8XX_AEMIF_ASIZE_16BIT		0x1
 #define DA8XX_AEMIF_ASIZE_8BIT		0x0
@@ -2134,6 +2143,110 @@ static int __init da850_evm_config_emac(void)
 	return 0;
 }
 device_initcall(da850_evm_config_emac);
+
+
+#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
+
+static const short da850_evm_smsc911x_pins[] = {
+	DA850_NEMA_CS_5, DA850_EMA_CLK, DA850_EMA_D_0, DA850_EMA_D_1,
+	DA850_EMA_D_2, DA850_EMA_D_3, DA850_EMA_D_4, DA850_EMA_D_5,
+	DA850_EMA_D_6, DA850_EMA_D_7, DA850_EMA_D_8, DA850_EMA_D_9,
+	DA850_EMA_D_10, DA850_EMA_D_11, DA850_EMA_D_12, DA850_EMA_D_13,
+	DA850_EMA_D_14, DA850_EMA_D_15, DA850_EMA_BA_1, DA850_EMA_A_0,
+	DA850_EMA_A_1, DA850_EMA_A_2, DA850_EMA_A_3, DA850_EMA_A_4,
+	DA850_EMA_A_5, DA850_NEMA_WE, DA850_NEMA_OE,
+	-1
+};
+
+static struct resource smsc911x_resources[] = {
+	[0] = {
+		.start	= DA8XX_AEMIF_CS5_BASE,
+		.end	= DA8XX_AEMIF_CS5_BASE + 0xff,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_LOWEDGE,
+	},
+};
+
+static struct smsc911x_platform_config da850_evm_smsc911x_config = {
+	.phy_interface	= PHY_INTERFACE_MODE_MII,
+	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
+	.irq_type	= SMSC911X_IRQ_TYPE_OPEN_DRAIN,
+	.flags		= SMSC911X_USE_16BIT,
+};
+
+struct platform_device smsc911x_device = {
+	.name	= "smsc911x",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &da850_evm_smsc911x_config,
+	},
+	.num_resources	= ARRAY_SIZE(smsc911x_resources),
+	.resource	= smsc911x_resources,
+};
+
+/* Initialize smsc911x device connected to the EMIFA. */
+static int __init da850_evm_smsc911x_init(void)
+{
+	void __iomem *aemif_addr;
+	unsigned set, val;
+	int ret = 0;
+
+	ret = davinci_cfg_reg_list(da850_evm_smsc911x_pins);
+	if (ret)
+		pr_warning("da850_evm_init: smsc911x mux setup failed: "
+				"%d\n", ret);
+
+	ret = davinci_cfg_reg(DA850_GPIO2_1);
+	if (ret)
+		pr_warning("da850_evm_init: smsc911x gpio irq mux setup failed: "
+				"%d\n", ret);
+
+	ret = davinci_cfg_reg(DA850_GPIO5_8);
+	if (ret)
+		pr_warning("da850_evm_init: smsc911x FIFO_SEL mux setup failed: "
+				"%d\n", ret);
+
+
+	aemif_addr = ioremap(DA8XX_AEMIF_CTL_BASE, SZ_32K);
+
+	/* Configure data bus width of CS5 to 16 bit */
+	writel(readl(aemif_addr + DA8XX_AEMIF_CE5CFG_OFFSET) |
+		DA8XX_AEMIF_ASIZE_16BIT,
+		aemif_addr + DA8XX_AEMIF_CE5CFG_OFFSET);
+
+
+	/* setup timing values for a given AEMIF interface */
+	set = TA(2) | RHOLD(2) | RSTROBE(5) | RSETUP(1) |
+		WHOLD(2) | WSTROBE(5) | WSETUP(1);
+
+	val = readl(aemif_addr + DA8XX_AEMIF_CE5CFG_OFFSET);
+	val &= ~TIMING_MASK;
+	val |= set;
+	writel(val, aemif_addr + DA8XX_AEMIF_CE5CFG_OFFSET);
+
+	iounmap(aemif_addr);
+
+	smsc911x_resources[1].start = gpio_to_irq(SMSC911X_GPIO_IRQ);
+
+	ret = gpio_request(SMSC911X_FIFO_SEL, "smsc911x-fifo-sel");
+	if (ret)
+		pr_warning("Fail to request smsc911x-fifo-sel gpio PIN %d.\n",
+				SMSC911X_FIFO_SEL);
+
+	/*
+	When driven high all accesses to the
+	LAN9221/LAN9221i are to the RX or TX Data FIFOs.
+	In this mode, the A[7:3] upper address inputs are
+	ignored. The chip need to setup and set FIFO_SEL low.
+	*/
+	gpio_direction_output(SMSC911X_FIFO_SEL, 0);
+
+	return platform_device_register(&smsc911x_device);
+}
+device_initcall(da850_evm_smsc911x_init);
+#endif
 
 static const struct vpif_input da850_ch2_inputs[] = {
 		{
