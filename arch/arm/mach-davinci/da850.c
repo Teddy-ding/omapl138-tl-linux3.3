@@ -1522,9 +1522,11 @@ int __init da850_register_pm(struct platform_device *pdev)
 	int ret;
 	struct davinci_pm_config *pdata = pdev->dev.platform_data;
 
+#if 0
 	ret = davinci_cfg_reg(DA850_RTC_ALARM);
 	if (ret)
 		return ret;
+#endif
 
 	pdata->ddr2_ctlr_base = da8xx_get_mem_ctlr();
 	pdata->deepsleep_reg = DA8XX_SYSCFG1_VIRT(DA8XX_DEEPSLEEP_REG);

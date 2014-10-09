@@ -3045,6 +3045,30 @@ static __init void da850_evm_init(void)
 
 	da850_evm_tl_leds_init();
 
+#if 1
+	/* TL138-EVM as it requires the GP0[8] pin at low for experiment box. */
+	ret = davinci_cfg_reg(DA850_GPIO0_8);
+	if (ret)
+		pr_warning("da850_evm_init:GPIO(0,8) mux setup failed\n");
+
+	ret = gpio_request(GPIO_TO_PIN(0, 8), "gpio0_8");
+	if (ret)
+		pr_warning("Fail to request gpio0_8 PIN.\n");
+
+	gpio_direction_output(GPIO_TO_PIN(0, 8), 0);
+
+	/* TL138-EVM as it requires the GP0[9] pin at low for experiment box. */
+	ret = davinci_cfg_reg(DA850_GPIO0_9);
+	if (ret)
+		pr_warning("da850_evm_init:GPIO(0,9) mux setup failed\n");
+
+	ret = gpio_request(GPIO_TO_PIN(0, 9), "gpio0_9");
+	if (ret)
+		pr_warning("Fail to request gpio0_9 PIN.\n");
+
+	gpio_direction_output(GPIO_TO_PIN(0, 9), 0);
+#endif
+
 #if 0
 #ifndef CONFIG_MACH_OMAPL138_XYSTART
 	da850_evm_tl_keys_init();
