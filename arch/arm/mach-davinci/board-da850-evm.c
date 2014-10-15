@@ -1732,7 +1732,10 @@ static const short da850_evm_mcasp_pins[] __initconst = {
 
 static int da850_evm_mmc_get_ro(int index)
 {
+#if 0
 	return gpio_get_value(DA850_MMCSD_WP_PIN);
+#endif
+	return 0;
 }
 
 static int da850_evm_mmc_get_cd(int index)
