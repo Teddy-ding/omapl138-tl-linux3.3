@@ -1311,6 +1311,26 @@ static void serial8250_start_tx(struct uart_port *port)
 	struct uart_8250_port *up =
 		container_of(port, struct uart_8250_port, port);
 
+	if (up->port.type == PORT_16750) {
+		/*
+		disables the concurrent write of all four (754) or
+		two (752) channels simultaneously.
+		*/
+		unsigned char save_lcr;
+		save_lcr = serial_inp(up, UART_LCR);
+
+		/*
+		Alternate Function Register (AFR):
+		Accessible only when LCR[7:5] = 100
+		*/
+		serial_out(up, UART_LCR, (save_lcr & 0x1f) | 0x80);
+
+		/* clear CONC bit */
+		serial_out(up, UART_IIR, serial_inp(up, UART_IIR) & ~0x01);
+
+		serial_out(up, UART_LCR, save_lcr);
+	}
+
 	if (!(up->ier & UART_IER_THRI)) {
 		up->ier |= UART_IER_THRI;
 		serial_out(up, UART_IER, up->ier);
