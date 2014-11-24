@@ -336,6 +336,21 @@ static struct da8xx_panel known_lcd_panels[] = {
 		.pxl_clk = 38000000,
 		.invert_pxl_clk = 1,
 	},
+	/* Innolux AT043TN24 */
+	[8] = {
+		.name = "Innolux_AT043TN24",
+		.width = 480,
+		.height = 272,
+		.hfp = 2,
+		.hbp = 2,
+		.hsw = 41,
+		.vfp = 2,
+		.vbp = 2,
+		.vsw = 10,
+		.pxl_clk = 9000000,
+		.invert_pxl_clk = 0,
+	},
+
 };
 
 /* Enable the Raster Engine of the LCD Controller */
