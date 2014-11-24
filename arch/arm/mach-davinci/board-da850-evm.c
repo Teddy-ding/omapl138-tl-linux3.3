@@ -1769,6 +1769,8 @@ static int __init da850_panel_setup(char *str)
 		da850_lcdc_panel = &vga_monitor_pdata;
 	else if (!strcmp(str, "SVGA"))
 		da850_lcdc_panel = &svga_monitor_pdata;
+	else if (!strcmp(str, "A043LCD"))
+		da850_lcdc_panel = &innolux_at043tn24_pdata;
 
 	return 1;
 }

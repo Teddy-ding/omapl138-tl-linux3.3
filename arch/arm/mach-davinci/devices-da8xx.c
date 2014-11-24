@@ -684,6 +684,12 @@ struct da8xx_lcdc_platform_data lnnolux_at070tn83_pdata = {
 	.type			= "Lnnolux_AT070TN83",
 };
 
+struct da8xx_lcdc_platform_data innolux_at043tn24_pdata = {
+	.manu_name		= "innolux",
+	.controller_data	= &lcd_cfg,
+	.type			= "Innolux_AT043TN24",
+};
+
 struct da8xx_lcdc_platform_data ti_dvi_vga_pdata = {
 	.manu_name		= "ti",
 	.controller_data	= &lcd_dvi_cfg,
