@@ -77,10 +77,12 @@
 #define DA850_HEARTBEAT_LED		GPIO_TO_PIN(6, 12)
 #define DA850_DISC_LED			GPIO_TO_PIN(6, 13)
 
-#define DA850_USER_LED0			GPIO_TO_PIN(0, 5)
-#define DA850_USER_LED1			GPIO_TO_PIN(0, 0)
+#if 0
+#define DA850_USER_LED0			GPIO_TO_PIN(0, 0)
+#define DA850_USER_LED1			GPIO_TO_PIN(0, 5)
 #define DA850_USER_LED2			GPIO_TO_PIN(0, 1)
 #define DA850_USER_LED3			GPIO_TO_PIN(0, 2)
+#endif
 
 #ifdef CONFIG_MACH_OMAPL138_XYSTART
 #define DA850_USER_VGA_POWER		GPIO_TO_PIN(6, 1)
@@ -1561,32 +1563,34 @@ static struct gpio_led da850_evm_tl_leds[] = {
 		.name = "disc",
 		.default_trigger = "mmc0",
 	},
-	[2] = {
+#if 0
+	{
 		.active_low = 0,
 		.gpio = DA850_USER_LED0,
 		.name = "user_led0",
 		.default_trigger = "default-on",
 	},
-	[3] = {
+	{
 		.active_low = 0,
 		.gpio = DA850_USER_LED1,
 		.name = "user_led1",
 		.default_trigger = "default-on",
 	},
-	[4] = {
+	{
 		.active_low = 0,
 		.gpio = DA850_USER_LED2,
 		.name = "user_led2",
 		.default_trigger = "default-on",
 	},
-	[5] = {
+	{
 		.active_low = 0,
 		.gpio = DA850_USER_LED3,
 		.name = "user_led3",
 		.default_trigger = "default-on",
 	},
+#endif
 #ifdef CONFIG_MACH_OMAPL138_XYSTART
-	[6] = {
+	{
 		.active_low = 1,
 		.gpio = DA850_USER_VGA_POWER,
 		.name = "vga_power",
