@@ -111,6 +111,7 @@
 
 #if defined(CONFIG_SERIAL_8250_EXTENDED)
 #define TL16754_RESET			GPIO_TO_PIN(5, 7)
+#if 0
 #define TL16754_UART0_IRQ		GPIO_TO_PIN(2, 2)
 #define TL16754_UART1_IRQ		GPIO_TO_PIN(2, 3)
 #define TL16754_UART2_IRQ		GPIO_TO_PIN(2, 5)
@@ -119,6 +120,7 @@
 #define TL16754_UART5_IRQ		GPIO_TO_PIN(5, 9)
 #define TL16754_UART6_IRQ		GPIO_TO_PIN(5, 14)
 #define TL16754_UART7_IRQ		GPIO_TO_PIN(5, 15)
+#endif
 #endif
 
 #if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
@@ -800,7 +802,8 @@ static inline void da850_evm_setup_ad7606_par(void)
 #endif
 
 #if defined(CONFIG_SERIAL_8250_EXTENDED)
-#define TL16754_CLK	14745600
+#define TL16754_CLK		14745600
+#define TL16754_PORT_N		8
 
 static const short tl16754_serial_gpio_pins[] = {
 	DA850_GPIO2_2, DA850_GPIO2_3, DA850_GPIO2_5, DA850_GPIO2_6,
@@ -818,76 +821,18 @@ static const short da850_evm_tl16754_serial_pins[] = {
 	-1
 };
 
+static const char tl16754_gpio_irq[][2] = {
+	{2, 2}, {2, 3}, {2, 5}, {2, 6},
+	{3, 9}, {5, 9}, {5, 14}, {5, 15},
+};
+
 static struct plat_serial8250_port tl16754_serial_pdata[] = {
-	{
+	[0 ... TL16754_PORT_N - 1] = {
 		.mapbase	= DA8XX_AEMIF_CS4_BASE,
 		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
 					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16750,
+		.type		= PORT_16654,
 		.iotype		= UPIO_MEM,
-		.regshift	= 0,
-		.uartclk	= TL16754_CLK,
-	},
-	{
-		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*1,
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
-					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16750,
-		.iotype		= UPIO_MEM,
-		.regshift	= 0,
-		.uartclk	= TL16754_CLK,
-	},
-	{
-		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*2,
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
-					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16750,
-		.iotype		= UPIO_MEM,
-		.regshift	= 0,
-		.uartclk	= TL16754_CLK,
-	},
-	{
-		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*3,
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
-					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16750,
-		.iotype 	= UPIO_MEM,
-		.regshift	= 0,
-		.uartclk	= TL16754_CLK,
-	},
-	{
-		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*4,
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
-					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16750,
-		.iotype 	= UPIO_MEM,
-		.regshift	= 0,
-		.uartclk	= TL16754_CLK,
-	},
-	{
-		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*5,
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
-					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16750,
-		.iotype 	= UPIO_MEM,
-		.regshift	= 0,
-		.uartclk	= TL16754_CLK,
-	},
-	{
-		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*6,
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
-					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16750,
-		.iotype 	= UPIO_MEM,
-		.regshift	= 0,
-		.uartclk	= TL16754_CLK,
-	},
-	{
-		.mapbase	= DA8XX_AEMIF_CS4_BASE + 8*7,
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
-					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16750,
-		.iotype 	= UPIO_MEM,
 		.regshift	= 0,
 		.uartclk	= TL16754_CLK,
 	},
@@ -908,6 +853,7 @@ static inline void da850_evm_setup_tl16754(void)
 {
 	void __iomem *aemif_addr;
 	unsigned set, val;
+	int i;
 	int ret = 0;
 
 	ret = davinci_cfg_reg_list(da850_evm_tl16754_serial_pins);
@@ -938,14 +884,12 @@ static inline void da850_evm_setup_tl16754(void)
 
 	iounmap(aemif_addr);
 
-	tl16754_serial_pdata[0].irq = gpio_to_irq(TL16754_UART0_IRQ);
-	tl16754_serial_pdata[1].irq = gpio_to_irq(TL16754_UART1_IRQ);
-	tl16754_serial_pdata[2].irq = gpio_to_irq(TL16754_UART2_IRQ);
-	tl16754_serial_pdata[3].irq = gpio_to_irq(TL16754_UART3_IRQ);
-	tl16754_serial_pdata[4].irq = gpio_to_irq(TL16754_UART4_IRQ);
-	tl16754_serial_pdata[5].irq = gpio_to_irq(TL16754_UART5_IRQ);
-	tl16754_serial_pdata[6].irq = gpio_to_irq(TL16754_UART6_IRQ);
-	tl16754_serial_pdata[7].irq = gpio_to_irq(TL16754_UART7_IRQ);
+	for (i = 0; i < TL16754_PORT_N; i++) {
+		tl16754_serial_pdata[i].mapbase = DA8XX_AEMIF_CS4_BASE + 8*i;
+		tl16754_serial_pdata[i].irq =
+			gpio_to_irq(GPIO_TO_PIN(tl16754_gpio_irq[i][0],
+					tl16754_gpio_irq[i][1]));
+	}
 
 	ret = gpio_request(TL16754_RESET, "tl16754-reset");
 	if (ret)
