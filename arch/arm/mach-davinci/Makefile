@@ -35,6 +35,7 @@ obj-$(CONFIG_MACH_DAVINCI_DA850_SDI)	+= board-da850-sdi.o
 obj-$(CONFIG_MACH_TNETV107X)		+= board-tnetv107x-evm.o
 obj-$(CONFIG_MACH_MITYOMAPL138)		+= board-mityomapl138.o
 obj-$(CONFIG_MACH_OMAPL138_LCDKBOARD)	+= board-omapl138-lcdk.o
+obj-$(CONFIG_AD5724R_SPI)	+= tl138evm-ad5724r.o
 
 # Power Management
 obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o
