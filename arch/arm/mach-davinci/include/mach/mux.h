@@ -1323,6 +1323,10 @@ enum davinci_tnetv107x_index {
 /* setup pin muxing */
 extern int davinci_cfg_reg(unsigned long reg_cfg);
 extern int davinci_cfg_reg_list(const short pins[]);
+extern int davinci_cfg_reg_name(const char *mux_name,
+					unsigned char *mode_old,
+					unsigned char *flag);
+
 #else
 /* boot loader does it all (no warnings from CONFIG_DAVINCI_MUX_WARNINGS) */
 static inline int davinci_cfg_reg(unsigned long reg_cfg) { return 0; }
@@ -1330,6 +1334,12 @@ static inline int davinci_cfg_reg_list(const short pins[])
 {
 	return 0;
 }
+static inline int davinci_cfg_reg_name(const char *mux_name,
+					unsigned char *mode_old,
+					unsigned char *flag)
+{
+	return 0;
+};
 #endif
 
 #endif /* __INC_MACH_MUX_H */

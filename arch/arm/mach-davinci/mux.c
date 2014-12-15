@@ -112,3 +112,89 @@ int __init_or_module davinci_cfg_reg_list(const short pins[])
 	return error;
 }
 EXPORT_SYMBOL(davinci_cfg_reg_list);
+
+/*
+ * Sets the DAVINCI MUX register based on the table by name
+ */
+int __init_or_module davinci_cfg_reg_name(const char *mux_name,
+						unsigned char *mode_old,
+						unsigned char *flag)
+{
+	static DEFINE_SPINLOCK(mux_spin_lock);
+	struct davinci_soc_info *soc_info = &davinci_soc_info;
+	unsigned long flags;
+	const struct mux_config *cfg;
+	unsigned int reg_orig = 0, reg = 0;
+	unsigned int mask, warn = 0;
+	unsigned int new_mode, old_mode;
+	int i;
+
+	if (WARN_ON(!soc_info->pinmux_pins))
+		return -ENODEV;
+
+	if (!pinmux_base) {
+		pinmux_base = ioremap(soc_info->pinmux_base, SZ_4K);
+		if (WARN_ON(!pinmux_base))
+			return -ENOMEM;
+	}
+
+	if (mux_name == NULL) {
+		printk(KERN_ERR "Invalid pin mux name\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < soc_info->pinmux_pins_num; i++) {
+		cfg = &soc_info->pinmux_pins[i];
+
+		if (cfg->name == NULL)
+			continue;
+
+		if (strcmp(cfg->name, mux_name))
+			continue;
+		else
+			break;
+	}
+
+	if (i >= soc_info->pinmux_pins_num) {
+		printk(KERN_ERR "Invalid pin mux index: %u (%lu)\n",
+		       i, soc_info->pinmux_pins_num);
+		dump_stack();
+		return -ENODEV;
+	}
+
+	/* Update the mux register in question */
+	if (cfg->mask) {
+		spin_lock_irqsave(&mux_spin_lock, flags);
+		reg_orig = __raw_readl(pinmux_base + cfg->mux_reg);
+
+		mask = (cfg->mask << cfg->mask_offset);
+		old_mode = reg_orig & mask;
+		reg = reg_orig & ~mask;
+
+		if (*flag == 0)
+			new_mode = (cfg->mode << cfg->mask_offset);
+		else
+			new_mode = (*mode_old << cfg->mask_offset);
+
+		reg |= new_mode;
+
+		if (old_mode != new_mode)
+			warn = 1;
+
+		__raw_writel(reg, pinmux_base + cfg->mux_reg);
+		spin_unlock_irqrestore(&mux_spin_lock, flags);
+	}
+
+	if (warn) {
+		*mode_old = old_mode >> cfg->mask_offset;
+		*flag = 1;
+
+		printk(KERN_WARNING "MUX: initialized %s\n", cfg->name);
+		printk(KERN_WARNING "MUX: Setting register %s\n", cfg->name);
+		printk(KERN_WARNING "	   %s (0x%08x) = 0x%08x -> 0x%08x\n",
+		       cfg->mux_reg_name, cfg->mux_reg, reg_orig, reg);
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL(davinci_cfg_reg_name);
