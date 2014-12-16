@@ -1717,18 +1717,40 @@ static const short da850_evm_mmcsd0_pins[] __initconst = {
 	-1
 };
 
+enum DA850_PANEL_INDEX {
+	DA850_PANEL_VGA = 0,
+	DA850_PANEL_SVGA,
+	DA850_PANEL_TL043A,
+	DA850_PANEL_TL070A,
+	DA850_PANEL_MAX,
+};
+
+static struct da8xx_lcdc_platform_data *da850_panel_ary[] = {
+	[DA850_PANEL_VGA] = &vga_monitor_pdata,
+	[DA850_PANEL_SVGA] = &svga_monitor_pdata,
+	[DA850_PANEL_TL043A] = &innolux_at043tn24_pdata,
+	[DA850_PANEL_TL070A] = &lnnolux_at070tn83_pdata,
+};
+
+static const char *da850_panel_name[] = {
+	[DA850_PANEL_VGA] = "VGA",
+	[DA850_PANEL_SVGA] = "SVGA",
+	[DA850_PANEL_TL043A] = "TL043A",
+	[DA850_PANEL_TL070A] = "TL070A",
+};
 static struct da8xx_lcdc_platform_data *da850_lcdc_panel = NULL;
 
 static int __init da850_panel_setup(char *str)
 {
-	if (!strcmp(str, "LCD"))
-		da850_lcdc_panel = &lnnolux_at070tn83_pdata;
-	else if (!strcmp(str, "VGA"))
-		da850_lcdc_panel = &vga_monitor_pdata;
-	else if (!strcmp(str, "SVGA"))
-		da850_lcdc_panel = &svga_monitor_pdata;
-	else if (!strcmp(str, "A043LCD"))
-		da850_lcdc_panel = &innolux_at043tn24_pdata;
+	int i;
+
+	for (i = 0; i < DA850_PANEL_MAX; i++) {
+		if (strcmp(str, da850_panel_name[i]))
+			continue;
+
+		da850_lcdc_panel = da850_panel_ary[i];
+		break;
+	}
 
 	return 1;
 }
