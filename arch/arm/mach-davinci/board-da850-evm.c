@@ -174,9 +174,6 @@ static struct platform_device da850evm_backlight = {
 
 static const short da850_spi1_pins[] = {
 	DA850_SPI1_CS_0, DA850_SPI1_CS_1,
-#if defined(CONFIG_AD5724R_SPI) || defined(CONFIG_AD5724R_SPI_MODULE)
-	DA850_SPI1_CS_2,
-#endif
 #if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
 	DA850_SPI1_CS_3,
 #endif
@@ -2870,19 +2867,6 @@ static __init void da850_evm_init(void)
 			pr_warning("da850_evm_init: VPIF display setup failed:"
 					"%d\n", ret);
 	}
-
-#if defined(CONFIG_AD5724R_SPI) || defined(CONFIG_AD5724R_SPI_MODULE)
-	ret = davinci_cfg_reg(DA850_GPIO6_14);
-	if (ret)
-		pr_warning("da850_evm_init: AD5724 LDAC mux failed:"
-				" %d\n", ret);
-
-	ret = gpio_request(GPIO_TO_PIN(6, 14), "AD5724 LDAC");
-	if (ret)
-		pr_warning("Fail to request AD5724 LDAC PIN.\n");
-
-	gpio_direction_output(GPIO_TO_PIN(6, 14), 0);
-#endif
 
 	ret = davinci_cfg_reg(DA850_GPIO2_12);
 	if (ret)
