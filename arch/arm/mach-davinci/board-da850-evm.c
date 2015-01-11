@@ -1722,6 +1722,7 @@ enum DA850_PANEL_INDEX {
 	DA850_PANEL_SVGA,
 	DA850_PANEL_TL043A,
 	DA850_PANEL_TL070A,
+	DA850_PANEL_XGA,
 	DA850_PANEL_MAX,
 };
 
@@ -1730,6 +1731,7 @@ static struct da8xx_lcdc_platform_data *da850_panel_ary[] = {
 	[DA850_PANEL_SVGA] = &svga_monitor_pdata,
 	[DA850_PANEL_TL043A] = &innolux_at043tn24_pdata,
 	[DA850_PANEL_TL070A] = &lnnolux_at070tn83_pdata,
+	[DA850_PANEL_XGA] = &xga_monitor_pdata,
 };
 
 static const char *da850_panel_name[] = {
@@ -1737,6 +1739,7 @@ static const char *da850_panel_name[] = {
 	[DA850_PANEL_SVGA] = "SVGA",
 	[DA850_PANEL_TL043A] = "TL043A",
 	[DA850_PANEL_TL070A] = "TL070A",
+	[DA850_PANEL_XGA] = "XGA"
 };
 static struct da8xx_lcdc_platform_data *da850_lcdc_panel = NULL;
 
