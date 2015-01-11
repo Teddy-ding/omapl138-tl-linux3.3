@@ -144,6 +144,7 @@ extern struct da8xx_lcdc_platform_data lnnolux_at070tn83_pdata;
 extern struct da8xx_lcdc_platform_data innolux_at043tn24_pdata;
 extern struct da8xx_lcdc_platform_data vga_monitor_pdata;
 extern struct da8xx_lcdc_platform_data svga_monitor_pdata;
+extern struct da8xx_lcdc_platform_data xga_monitor_pdata;
 extern struct davinci_spi_platform_data da8xx_spi_pdata[];
 extern struct da8xx_lcdc_platform_data ti_dvi_vga_pdata;
 extern struct da8xx_lcdc_platform_data ti_dvi_480p_pdata;

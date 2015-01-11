@@ -350,7 +350,20 @@ static struct da8xx_panel known_lcd_panels[] = {
 		.pxl_clk = 9000000,
 		.invert_pxl_clk = 0,
 	},
-
+	/* Generic XGA 1024x768 monitor */
+	[9] = {	/* da8xx platform can not generate the Generic XGA timing */
+		.name = "XGA_Monitor",
+		.width = 1024,
+		.height = 768,
+		.hfp = 230,		/* 24 -> 230 */
+		.hbp = 254,		/* 160 -> 254 */
+		.hsw = 63,		/* 136 -> 63 */
+		.vfp = 3,
+		.vbp = 29,
+		.vsw = 6,
+		.pxl_clk = 76000000,	/* 65MHz -> 76MHz */
+		.invert_pxl_clk = 1,
+	},
 };
 
 /* Enable the Raster Engine of the LCD Controller */
