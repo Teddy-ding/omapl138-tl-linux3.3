@@ -84,8 +84,8 @@
 #define DA850_USER_LED3			GPIO_TO_PIN(0, 2)
 #endif
 
-#ifdef CONFIG_MACH_OMAPL138_XYSTART
-#define DA850_USER_VGA_POWER		GPIO_TO_PIN(6, 1)
+#if defined(CONFIG_MACH_OMAPL138_XYSTART)
+#define DA850_USER_VGA_POWER			GPIO_TO_PIN(6, 1)
 #endif
 
 #define DA850_USER_KEY0			GPIO_TO_PIN(0, 6)
@@ -997,7 +997,6 @@ static inline void da850_evm_setup_emac_rmii(int rmii_sel) { }
 #endif
 
 #if 0
-#ifndef CONFIG_MACH_OMAPL138_XYSTART
 #define DA850_KEYS_DEBOUNCE_MS	10
 /*
  * At 200ms polling interval it is possible to miss an
@@ -1062,7 +1061,6 @@ static void da850_evm_tl_keys_init(void)
 	if (ret)
 		pr_warning("Could not register baseboard GPIO tronlong keys");
 }
-#endif
 #endif
 
 #if 0
@@ -1483,7 +1481,7 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 static const short da850_evm_tl_user_led_pins[] = {
 	DA850_GPIO6_12, DA850_GPIO6_13,
 	DA850_GPIO0_0, DA850_GPIO0_1, DA850_GPIO0_2, DA850_GPIO0_5,
-#ifdef CONFIG_MACH_OMAPL138_XYSTART
+#if defined(CONFIG_MACH_OMAPL138_XYSTART)
 	DA850_GPIO6_1,
 #endif
 	-1
@@ -1530,7 +1528,7 @@ static struct gpio_led da850_evm_tl_leds[] = {
 		.default_trigger = "default-on",
 	},
 #endif
-#ifdef CONFIG_MACH_OMAPL138_XYSTART
+#if defined(CONFIG_MACH_OMAPL138_XYSTART)
 	{
 		.active_low = 1,
 		.gpio = DA850_USER_VGA_POWER,
@@ -2074,10 +2072,6 @@ static int __init da850_evm_config_emac(void)
 	struct davinci_soc_info *soc_info = &davinci_soc_info;
 	u8 rmii_en = soc_info->emac_pdata->rmii_en;
 
-#ifdef CONFIG_DA850_UI_RMII
-	soc_info->emac_pdata->rmii_en = 1;
-	rmii_en = soc_info->emac_pdata->rmii_en;
-#endif
 	if (!machine_is_davinci_da850_evm())
 		return 0;
 
@@ -2707,16 +2701,14 @@ static __init void da850_evm_init(void)
 		pr_warning("da830_evm_init: watchdog registration failed: %d\n",
 				ret);
 
-#ifdef CONFIG_DA850_UI_RMII
+#if defined(CONFIG_DAVINCI_UART0_RS485)
 	/* UART0_TXD.RXD cannot be used since it is being used by MII_RXDx */
 	/* Support for UART 0 */
 	ret = davinci_cfg_reg_list(da850_uart0_pins);
 	if (ret)
 		pr_warning("da850_evm_init: UART 0 mux setup failed:"
 						" %d\n", ret);
-#endif
 
-#if defined(CONFIG_DAVINCI_UART0_RS485)
 	/* TL-OMAPL138 as it requires the GP8[1] pin for UART0 flow control. */
 	ret = davinci_cfg_reg(DA850_GPIO8_1);
 	if (ret)
@@ -3058,9 +3050,7 @@ static __init void da850_evm_init(void)
 #endif
 
 #if 0
-#ifndef CONFIG_MACH_OMAPL138_XYSTART
 	da850_evm_tl_keys_init();
-#endif
 #endif
 
 #if defined(CONFIG_SERIAL_8250_EXTENDED)

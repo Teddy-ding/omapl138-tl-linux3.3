@@ -100,7 +100,7 @@ static struct musb_hdrc_config musb_config = {
 
 static struct musb_hdrc_platform_data usb_data = {
 	/* OTG requires a Mini-AB connector */
-#ifdef CONFIG_MACH_OMAPL138_XYSTART
+#if defined(CONFIG_MACH_OMAPL138_XYSTART)
 	.mode           = MUSB_HOST,
 #else
 	.mode           = MUSB_OTG,
