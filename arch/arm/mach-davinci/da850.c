@@ -181,6 +181,18 @@ static struct clk timerp64_1_clk = {
 	.parent		= &pll0_aux_clk,
 };
 
+static struct clk timerp64_2_clk = {
+	.name		= "timer2",
+	.parent 	= &pll0_sysclk2,
+	.flags		= DA850_CLK_ASYNC3,
+};
+
+static struct clk timerp64_3_clk = {
+	.name		= "timer3",
+	.parent 	= &pll0_sysclk2,
+	.flags		= DA850_CLK_ASYNC3,
+};
+
 static struct clk dsp_clk = {
 	.name           = "dsp",
 	.parent         = &pll0_sysclk1,
@@ -430,6 +442,8 @@ static struct clk_lookup da850_clks[] = {
 	CLK("i2c_davinci.1",	NULL,		&i2c0_clk),
 	CLK(NULL,		"timer0",	&timerp64_0_clk),
 	CLK("watchdog",		NULL,		&timerp64_1_clk),
+	CLK(NULL,		"timer2",	&timerp64_2_clk),
+	CLK(NULL,		"timer3",	&timerp64_3_clk),
 	CLK(NULL,		"dsp",		&dsp_clk),
 	CLK(NULL,		"arm_rom",	&arm_rom_clk),
 	CLK(NULL,		"tpcc0",	&tpcc0_clk),
