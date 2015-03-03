@@ -734,6 +734,34 @@ static inline int have_imager(void)
 #endif
 }
 
+#if defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER) || \
+	defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER_MODULE)
+
+#define DA850_TIMER64P2_BASE		0x01f0c000 /* DA8XX_TIMER64P2_BASE */
+#define IIO_DAVINCI_TIMER_BASE	DA850_TIMER64P2_BASE
+#define IIO_DAVINCI_TIMER_IRQ		IRQ_DA850_TINT12_2
+
+static struct resource iio_davinci_trigger_resources[] = {
+	{
+		.start	= IIO_DAVINCI_TIMER_BASE,
+		.end	= IIO_DAVINCI_TIMER_BASE + SZ_4K - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.start	= IIO_DAVINCI_TIMER_IRQ,
+		.end	= IIO_DAVINCI_TIMER_IRQ,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device iio_davinci_trigger = {
+	.name		= "iio_davinci_tmr_trigger",
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(iio_davinci_trigger_resources),
+	.resource	= iio_davinci_trigger_resources,
+};
+#endif
+
 #if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
 	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
 static struct resource ad7606_resources[] = {
@@ -795,6 +823,11 @@ static inline void da850_evm_setup_ad7606_par(void)
 	ad7606_resources[1].end= ad7606_resources[1].start;
 
 	platform_device_register(&ad7606_device);
+
+#if defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER) || \
+		defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER_MODULE)
+	platform_device_register(&iio_davinci_trigger);
+#endif
 }
 #endif
 
