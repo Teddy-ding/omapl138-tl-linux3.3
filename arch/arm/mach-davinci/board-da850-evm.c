@@ -724,6 +724,7 @@ static const short da850_evm_nor_pins[] = {
 #define HAS_ADC	0
 #endif
 
+#if 0
 /* have_imager() - Check if we have support for imager interface */
 static inline int have_imager(void)
 {
@@ -733,6 +734,7 @@ static inline int have_imager(void)
 	return 0;
 #endif
 }
+#endif
 
 #if defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER) || \
 	defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER_MODULE)
@@ -2263,18 +2265,6 @@ static int __init da850_evm_smsc911x_init(void)
 device_initcall(da850_evm_smsc911x_init);
 #endif
 
-static const struct vpif_input da850_ch2_inputs[] = {
-		{
-		.input = {
-			.index = 0,
-			.name = "Camera",
-			.type = V4L2_INPUT_TYPE_CAMERA,
-			.std = V4L2_STD_BAYER_ALL
-		},
-		.subdev_name = "ov2640",
-	},
-};
-
 /*
  * The following EDMA channels/slots are not being used by drivers (for
  * example: Timer, GPIO, UART events etc) on da850/omap-l138 EVM, hence
@@ -2390,19 +2380,16 @@ static int da850_vpif_intr_status(void __iomem *vpif_base, int channel)
 	return status;
 }
 
-#if defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
 /* VPIF capture configuration */
 static struct tvp514x_platform_data tvp5146_pdata = {
 	.clk_polarity = 0,
 	.hs_polarity = 1,
 	.vs_polarity = 1
 };
-#endif
 
 #define TVP514X_STD_ALL (V4L2_STD_NTSC | V4L2_STD_PAL)
 
-static struct vpif_subdev_info da850_vpif_capture_sdev_info[] = {
-#if defined(CONFIG_DA850_UI_CAMERA)
+static struct vpif_subdev_info da850_vpif_capture_sdev_raw_info[] = {
 	{
 		.name	= "ov2640",
 		.board_info = {
@@ -2416,7 +2403,9 @@ static struct vpif_subdev_info da850_vpif_capture_sdev_info[] = {
 			.fid_pol = 0,
 		},
 	},
-#elif defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
+};
+
+static struct vpif_subdev_info da850_vpif_capture_sdev_sdtv_info[] = {
 	{
 		.name	= TVP5147_CH0,
 		.board_info = {
@@ -2433,23 +2422,6 @@ static struct vpif_subdev_info da850_vpif_capture_sdev_info[] = {
 			.fid_pol = 0,
 		},
 	},
-	{
-		.name	= TVP5147_CH1,
-		.board_info = {
-			I2C_BOARD_INFO("tvp5146", 0x5c),
-			.platform_data = &tvp5146_pdata,
-		},
-		.input = INPUT_SVIDEO_VI2C_VI1C,
-		.output = OUTPUT_10BIT_422_EMBEDDED_SYNC,
-		.can_route = 1,
-		.vpif_if = {
-			.if_type = VPIF_IF_BT656,
-			.hd_pol = 1,
-			.vd_pol = 1,
-			.fid_pol = 0,
-		},
-	},
-#endif
 };
 
 static const struct vpif_input da850_ch0_inputs[] = {
@@ -2476,29 +2448,63 @@ static const struct vpif_input da850_ch1_inputs[] = {
 	},
 };
 
+static const struct vpif_input da850_ch2_inputs[] = {
+		{
+		.input = {
+			.index = 0,
+			.name = "Camera",
+			.type = V4L2_INPUT_TYPE_CAMERA,
+			.std = V4L2_STD_BAYER_ALL
+		},
+		.subdev_name = "ov2640",
+	},
+};
+
 static struct vpif_capture_config da850_vpif_capture_config = {
 	.setup_input_channel_mode = da850_setup_vpif_input_channel_mode,
 	.setup_input_path = da850_vpif_setup_input_path,
 	.intr_status = da850_vpif_intr_status,
-	.subdev_info = da850_vpif_capture_sdev_info,
-	.subdev_count = ARRAY_SIZE(da850_vpif_capture_sdev_info),
-#if defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
-	.chan_config[0] = {
-		.inputs = da850_ch0_inputs,
-		.input_count = ARRAY_SIZE(da850_ch0_inputs),
-	},
-	.chan_config[1] = {
-		.inputs = da850_ch1_inputs,
-		.input_count = ARRAY_SIZE(da850_ch1_inputs),
-	},
-#elif defined(CONFIG_DA850_UI_CAMERA)
+	.subdev_info = da850_vpif_capture_sdev_raw_info,
+	.subdev_count = ARRAY_SIZE(da850_vpif_capture_sdev_raw_info),
 	.chan_config[0] = {
 		.inputs = da850_ch2_inputs,
 		.input_count = ARRAY_SIZE(da850_ch2_inputs),
 	},
-#endif
 	.card_name      = "DA850/OMAP-L138 Video Capture",
 };
+
+/*
+ * Handle Linux boot parameters. This routine allows for assigning a value
+ * to a parameter with vpif capture format mode.
+ * ie. vpif_capture_format=RAW
+ */
+
+static int __init vpif_capture_format_setup(char *str)
+{
+	if (!strcmp(str, "RAW")) {
+		da850_vpif_capture_config.chan_config[0].inputs = \
+					da850_ch2_inputs;
+		da850_vpif_capture_config.chan_config[0].input_count = \
+					ARRAY_SIZE(da850_ch2_inputs);
+		da850_vpif_capture_config.subdev_info = \
+					da850_vpif_capture_sdev_raw_info;
+		da850_vpif_capture_config.subdev_count = \
+					ARRAY_SIZE(da850_vpif_capture_sdev_raw_info);
+
+	} else if (!strcmp(str, "SDTV")) {
+		da850_vpif_capture_config.chan_config[0].inputs = \
+					da850_ch0_inputs;
+		da850_vpif_capture_config.chan_config[0].input_count = \
+					ARRAY_SIZE(da850_ch0_inputs);
+		da850_vpif_capture_config.subdev_info = \
+					da850_vpif_capture_sdev_sdtv_info;
+		da850_vpif_capture_config.subdev_count = \
+					ARRAY_SIZE(da850_vpif_capture_sdev_sdtv_info);
+	}
+
+	return 1;
+}
+__setup("vpif_capture_format=", vpif_capture_format_setup);
 
 /* VPIF display configuration */
 static struct vpif_subdev_info da850_vpif_subdev[] = {
