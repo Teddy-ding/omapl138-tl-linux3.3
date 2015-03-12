@@ -600,7 +600,11 @@ static int vpif_check_format(struct channel_obj *ch,
 		field = vpif_get_default_field(&vpif_params->iface);
 
 	/* validate the hpitch */
-	hpitch = pixfmt->bytesperline / 2;	/* each pixel have 2 bytes */
+	if (vpif_params->iface.if_type == VPIF_IF_RAW_BAYER)
+		hpitch = pixfmt->bytesperline / 2;	/* each pixel have 2 bytes */
+	else
+		hpitch = pixfmt->bytesperline;
+
 	if (hpitch < vpif_params->std_info.width) {
 		if (!update) {
 			vpif_dbg(2, debug, "invalid hpitch\n");
