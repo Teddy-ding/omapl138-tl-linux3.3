@@ -400,6 +400,13 @@ static struct clk vpif_clk = {
 	.gpsc		= 1,
 };
 
+static struct clk upp_clk = {
+	.name		= "upp",
+	.parent		= &pll0_sysclk2,
+	.lpsc		= DA850_LPSC1_UPP,
+	.gpsc		= 1,
+};
+
 static struct clk sata_clk = {
 	.name		= "sata",
 	.parent		= &pll0_sysclk2,
@@ -473,6 +480,7 @@ static struct clk_lookup da850_clks[] = {
 	CLK("spi_davinci.0",	NULL,		&spi0_clk),
 	CLK("spi_davinci.1",	NULL,		&spi1_clk),
 	CLK(NULL,		"vpif",		&vpif_clk),
+	CLK(NULL,		"upp",		&upp_clk),
 	CLK("ahci",		NULL,		&sata_clk),
 	CLK(NULL,               "ehrpwm",       &ehrpwm_clk),
 	CLK(NULL,		"ecap",		&ecap_clk),
@@ -1585,6 +1593,32 @@ int __init da850_register_backlight(struct platform_device *pdev,
 
 	pdev->dev.platform_data = backlight_data;
 	return platform_device_register(pdev);
+}
+
+/* UPP resource, platform data */
+static struct resource da850_upp_resource[] = {
+	{
+		.start	= DA8XX_UPP_BASE,
+		.end	= DA8XX_UPP_BASE + 0xfff,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.start	= IRQ_DA8XX_UPP_INT,
+		.end	= IRQ_DA8XX_UPP_INT,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device da850_upp_dev = {
+	.name		= "upp",
+	.id		= -1,
+	.resource	= da850_upp_resource,
+	.num_resources	= ARRAY_SIZE(da850_upp_resource),
+};
+
+int __init da850_register_upp(void)
+{
+	return platform_device_register(&da850_upp_dev);
 }
 
 /* VPIF resource, platform data */
