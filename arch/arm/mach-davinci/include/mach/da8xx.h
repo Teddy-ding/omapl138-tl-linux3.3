@@ -82,6 +82,7 @@ extern unsigned int da850_max_speed;
 #define DA8XX_MMCSD1_BASE	0x01e1b000
 #define DA8XX_AEMIF_CTL_BASE	0x68000000
 #define DA8XX_ARM_RAM_BASE	0xffff0000
+#define DA8XX_UPP_BASE		0x01e16000
 #define DA8XX_VPIF_BASE		0x01e17000
 #define DA8XX_SHARED_RAM_BASE	0x80000000
 

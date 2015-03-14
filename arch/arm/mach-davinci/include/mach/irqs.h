@@ -316,6 +316,7 @@
 #define IRQ_DA8XX_ECAP1			70
 #define IRQ_DA8XX_ECAP2			71
 #define IRQ_DA8XX_ARMCLKSTOPREQ		90
+#define IRQ_DA8XX_UPP_INT		91
 
 /* DA830 specific interrupts */
 #define IRQ_DA830_MPUERR		27
