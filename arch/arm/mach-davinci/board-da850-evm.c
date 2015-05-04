@@ -544,12 +544,27 @@ static struct mtd_partition da850_evm_nandflash_partition[] = {
 		.size		= SZ_4M,
 		.mask_flags	= 0,
 	},
+#if defined(CONFIG_MACH_OMAPL138_CFGZ)
+	{
+		.name		= "filesystem",
+		.offset 	= MTDPART_OFS_APPEND,
+		.size		= SZ_32M,
+		.mask_flags = 0,
+	},
+	{
+		.name		= "data",
+		.offset		= MTDPART_OFS_APPEND,
+		.size		= MTDPART_SIZ_FULL,
+		.mask_flags	= 0,
+	},
+#else
 	{
 		.name		= "filesystem",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= MTDPART_SIZ_FULL,
 		.mask_flags	= 0,
 	},
+#endif
 };
 
 static struct davinci_aemif_timing da850_evm_nandflash_timing = {

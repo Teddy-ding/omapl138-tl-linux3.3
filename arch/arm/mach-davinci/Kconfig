@@ -345,6 +345,12 @@ config MACH_OMAPL138_XYSTART
 	help
 	  Say Y here to select the TI OMAP-L138 XY-START board.
 
+config MACH_OMAPL138_CFGZ
+	bool "TI OMAP-L138 CFGZ board platform"
+	depends on ARCH_DAVINCI_DA850
+	help
+	  Say Y here to select the TI OMAP-L138 CFGZ board.
+
 config MACH_DAVINCI_DA850_SDI
 	bool "DA850 SDI Development Board"
 	default ARCH_DAVINCI_DA850
