@@ -1809,7 +1809,6 @@ __setup("da850-panel=", da850_panel_setup);
 
 static void da850_panel_power_ctrl(int val)
 {
-#if 0
 	/* lcd power */
 	gpio_set_value_cansleep(DA850_LCD_PWR_PIN, val);
 
@@ -1817,7 +1816,6 @@ static void da850_panel_power_ctrl(int val)
 
 	/* lcd backlight */
 	gpio_set_value_cansleep(DA850_LCD_BL_PIN, val);
-#endif
 }
 
 static int da850_lcd_hw_init(void)
@@ -2880,6 +2878,13 @@ static __init void da850_evm_init(void)
 #endif
 	if (da850_lcdc_panel != NULL)
 		lcd_pdata = da850_lcdc_panel;
+
+	/* request lcd_pwr_pin and set diretion ouput mode */
+	ret = gpio_request(DA850_LCD_PWR_PIN, "lcd_pwr_pin");
+	if (ret)
+		pr_warning("Fail to request DA850_LCD_PWR_PIN.\n");
+
+	gpio_direction_output(DA850_LCD_PWR_PIN, 1);
 
 	lcd_pdata->panel_power_ctrl = da850_panel_power_ctrl;
 	ret = da8xx_register_lcdc(lcd_pdata);
