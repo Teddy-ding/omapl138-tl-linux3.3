@@ -173,23 +173,23 @@ static struct edma_soc_info *da830_edma_info[EDMA_MAX_CC] = {
 static struct edma_soc_info da850_edma_cc_info[] = {
 	{
 		.n_channel		= 32,
-		.n_region		= 4,
+		.n_region		= 1,	/* AINTC: Shadow Region 0 */
 		.n_slot			= 128,
 		.n_tc			= 2,
 		.n_cc			= 1,
 		.queue_tc_mapping	= da8xx_queue_tc_mapping,
 		.queue_priority_mapping	= da8xx_queue_priority_mapping,
-		.default_queue		= EVENTQ_1,
+		.default_queue		= EVENTQ_0,/* Q0 TRs are submitted to TC0 */
 	},
 	{
 		.n_channel		= 32,
-		.n_region		= 4,
+		.n_region		= 1,	/* AINTC: Shadow Region 0 */
 		.n_slot			= 128,
 		.n_tc			= 1,
 		.n_cc			= 1,
 		.queue_tc_mapping	= da850_queue_tc_mapping,
 		.queue_priority_mapping	= da850_queue_priority_mapping,
-		.default_queue		= EVENTQ_0,
+		.default_queue		= EVENTQ_1,/* Q1 TRs are submitted to TC1 */
 	},
 };
 
