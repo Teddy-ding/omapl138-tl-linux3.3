@@ -1022,7 +1022,7 @@ int __init da8xx_register_spi(int instance, struct spi_board_info *info,
 		pr_warning("%s: failed to register board info for spi %d :"
 			   " %d\n", __func__, instance, ret);
 
-	da8xx_spi_pdata[instance].num_chipselect = len;
+	da8xx_spi_pdata[instance].num_chipselect = 8;
 
 	if (instance == 1 && cpu_is_davinci_da850()) {
 		da8xx_spi1_resources[0].start = DA850_SPI1_BASE;
