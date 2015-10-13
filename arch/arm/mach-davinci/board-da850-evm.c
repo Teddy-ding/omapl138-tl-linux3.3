@@ -3095,6 +3095,7 @@ static __init void da850_evm_init(void)
 		pr_warning("Fail to request gpio0_8 PIN.\n");
 
 	gpio_direction_output(GPIO_TO_PIN(0, 8), 0);
+	gpio_free(GPIO_TO_PIN(0, 8));
 
 	/* TL138-EVM as it requires the GP0[9] pin at low for experiment box. */
 	ret = davinci_cfg_reg(DA850_GPIO0_9);
@@ -3106,6 +3107,7 @@ static __init void da850_evm_init(void)
 		pr_warning("Fail to request gpio0_9 PIN.\n");
 
 	gpio_direction_output(GPIO_TO_PIN(0, 9), 0);
+	gpio_free(GPIO_TO_PIN(0, 9));
 #endif
 
 #if 0
