@@ -16,6 +16,7 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
+#include <linux/spi/spi.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -35,6 +36,17 @@ static unsigned char flag_list[PINMUX_SET_NUM];
 
 #define AD5724_LDAC		GPIO_TO_PIN(6, 14)
 
+static struct spi_board_info ad5724r_spi_info[] = {
+	[0] = {
+		/* the modalias must be the same as spi device driver name */
+		.modalias = "ad5724r", /* Name of spi_driver for this device */
+		.max_speed_hz = 1000000, /* max spi clock (SCK) speed in HZ */
+		.bus_num = 1, /* Framework bus number */
+		.chip_select = 2, /* Framework chip select */
+		.mode = SPI_MODE_1,
+	},
+};
+
 static int __init tl138_evm_ad5724r_init(void)
 {
 	int i;
@@ -53,6 +65,12 @@ static int __init tl138_evm_ad5724r_init(void)
 
 	gpio_direction_output(AD5724_LDAC, 0);
 
+	ret = spi_register_board_info(ad5724r_spi_info,
+				 ARRAY_SIZE(ad5724r_spi_info));
+	if (ret)
+		pr_warning("%s: failed to register board info for spi 1 :"
+			   " %d\n", __func__, ret);
+
 	return 0;
 }
 
@@ -69,6 +87,8 @@ static void __exit tl138_evm_ad5724r_exit(void)
 		davinci_cfg_reg_name(ad5724r_mux_name[i],
 					&mode_old_list[i], &flag_list[i]);
 	}
+
+	pr_warning("WARNING: ad5724r not unregister board for spi 1\n");
 }
 
 module_init(tl138_evm_ad5724r_init);
