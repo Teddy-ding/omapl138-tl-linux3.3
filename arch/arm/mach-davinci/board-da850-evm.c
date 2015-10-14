@@ -363,16 +363,6 @@ static struct spi_board_info da850evm_spi_info[] = {
 		.bus_num		= 1,
 		.chip_select		= 1,
 	},
-#if defined(CONFIG_AD5724R_SPI) || defined(CONFIG_AD5724R_SPI_MODULE)
-	[2] = {
-		/* the modalias must be the same as spi device driver name */
-		.modalias = "ad5724r", /* Name of spi_driver for this device */
-		.max_speed_hz = 1000000, /* max spi clock (SCK) speed in HZ */
-		.bus_num = 1, /* Framework bus number */
-		.chip_select = 2, /* Framework chip select */
-		.mode = SPI_MODE_1,
-	},
-#endif
 #if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
 	[3] = {
 		.modalias		= "ad7606-8",
