@@ -1772,26 +1772,38 @@ static const short da850_evm_mmcsd0_pins[] __initconst = {
 enum DA850_PANEL_INDEX {
 	DA850_PANEL_VGA = 0,
 	DA850_PANEL_SVGA,
-	DA850_PANEL_TL043A,
-	DA850_PANEL_TL070A,
 	DA850_PANEL_XGA,
+	DA850_PANEL_TL043A,
+	DA850_PANEL_TL056A,
+	DA850_PANEL_TL070A,
+	DA850_PANEL_TL104A,
+	DA850_PANEL_TL121A,
+	DA850_PANEL_TL150A,
 	DA850_PANEL_MAX,
 };
 
 static struct da8xx_lcdc_platform_data *da850_panel_ary[] = {
 	[DA850_PANEL_VGA] = &vga_monitor_pdata,
 	[DA850_PANEL_SVGA] = &svga_monitor_pdata,
-	[DA850_PANEL_TL043A] = &innolux_at043tn24_pdata,
-	[DA850_PANEL_TL070A] = &lnnolux_at070tn83_pdata,
 	[DA850_PANEL_XGA] = &xga_monitor_pdata,
+	[DA850_PANEL_TL043A] = &innolux_at043tn24_pdata,
+	[DA850_PANEL_TL056A] = &innolux_at056tn53_pdata,
+	[DA850_PANEL_TL070A] = &lnnolux_at070tn83_pdata,
+	[DA850_PANEL_TL104A] = &innolux_lsa04at_pdata,
+	[DA850_PANEL_TL121A] = &sharp_lq121s1lg75_pdata,
+	[DA850_PANEL_TL150A] = &sharp_lq150x1lw94_pdata,
 };
 
 static const char *da850_panel_name[] = {
 	[DA850_PANEL_VGA] = "VGA",
 	[DA850_PANEL_SVGA] = "SVGA",
+	[DA850_PANEL_XGA] = "XGA",
 	[DA850_PANEL_TL043A] = "TL043A",
+	[DA850_PANEL_TL056A] = "TL056A",
 	[DA850_PANEL_TL070A] = "TL070A",
-	[DA850_PANEL_XGA] = "XGA"
+	[DA850_PANEL_TL104A] = "TL104A",
+	[DA850_PANEL_TL121A] = "TL121A",
+	[DA850_PANEL_TL150A] = "TL150A",
 };
 static struct da8xx_lcdc_platform_data *da850_lcdc_panel = NULL;
 

@@ -364,6 +364,62 @@ static struct da8xx_panel known_lcd_panels[] = {
 		.pxl_clk = 76000000,	/* 65MHz -> 76MHz */
 		.invert_pxl_clk = 1,
 	},
+	/* Innolux LSA40AT */
+	[10] = {
+		.name = "Innolux_LSA40AT",
+		.width = 800,
+		.height = 600,
+		.hfp = 209,
+		.hbp = 45,
+		.hsw = 9,
+		.vfp = 11,
+		.vbp = 22,
+		.vsw = 9,
+		.pxl_clk = 40000000,
+		.invert_pxl_clk = 0,
+	},
+	/* Innolux AT056TN53 */
+	[11] = {
+		.name = "Innolux_AT056TN53",
+		.width = 640,
+		.height = 480,
+		.hfp = 15,
+		.hbp = 133,
+		.hsw = 9,
+		.vfp = 31,
+		.vbp = 10,
+		.vsw = 1,
+		.pxl_clk = 25190000,
+		.invert_pxl_clk = 0,
+	},
+	/* Sharp LQ150X1LW94 */
+	[12] = {
+		.name = "Sharp_LQ150X1LW94",
+		.width = 1024,
+		.height = 768,
+		.hfp = 200,
+		.hbp = 54,
+		.hsw = 63,
+		.vfp = 20,
+		.vbp = 15,
+		.vsw = 3,
+		.pxl_clk = 65000000,
+		.invert_pxl_clk = 0,
+	},
+	/* Sharp LQ121S1LG75 */
+	[13] = {
+		.name = "Sharp_LQ121S1LG75",
+		.width = 800,
+		.height = 600,
+		.hfp = 100,
+		.hbp = 90,
+		.hsw = 63,
+		.vfp = 34,
+		.vbp = 24,
+		.vsw = 5,
+		.pxl_clk = 38000000,
+		.invert_pxl_clk = 0,
+	},
 };
 
 /* Enable the Raster Engine of the LCD Controller */

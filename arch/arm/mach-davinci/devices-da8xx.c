@@ -690,6 +690,30 @@ struct da8xx_lcdc_platform_data innolux_at043tn24_pdata = {
 	.type			= "Innolux_AT043TN24",
 };
 
+struct da8xx_lcdc_platform_data innolux_at056tn53_pdata = {
+	.manu_name		= "innolux",
+	.controller_data	= &lcd_cfg,
+	.type			= "Innolux_AT056TN53",
+};
+
+struct da8xx_lcdc_platform_data innolux_lsa04at_pdata = {
+	.manu_name		= "innolux",
+	.controller_data	= &lcd_cfg,
+	.type			= "Innolux_LSA40AT",
+};
+
+struct da8xx_lcdc_platform_data sharp_lq121s1lg75_pdata = {
+	.manu_name		= "sharp",
+	.controller_data	= &lcd_cfg,
+	.type			= "Sharp_LQ121S1LG75",
+};
+
+struct da8xx_lcdc_platform_data sharp_lq150x1lw94_pdata = {
+	.manu_name		= "sharp",
+	.controller_data	= &lcd_cfg,
+	.type			= "Sharp_LQ150X1LW94",
+};
+
 struct da8xx_lcdc_platform_data ti_dvi_vga_pdata = {
 	.manu_name		= "ti",
 	.controller_data	= &lcd_dvi_cfg,
