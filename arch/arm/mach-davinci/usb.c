@@ -99,10 +99,10 @@ static struct musb_hdrc_config musb_config = {
 };
 
 static struct musb_hdrc_platform_data usb_data = {
-	/* OTG requires a Mini-AB connector */
-#if defined(CONFIG_MACH_OMAPL138_XYSTART)
-	.mode           = MUSB_HOST,
+#if defined(DAVINCI_DA850_MUSB_HOST)
+	.mode		= MUSB_HOST,
 #else
+	/* OTG requires a Mini-AB connector */
 	.mode           = MUSB_OTG,
 #endif
 	.clock		= "usb",

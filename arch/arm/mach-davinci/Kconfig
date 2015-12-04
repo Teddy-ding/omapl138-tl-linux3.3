@@ -63,6 +63,13 @@ config DAVINCI_UART1_RS485
 	  is necessary to detect pinmux clash between UART1 RTS/CTS lines with
 	  MCASP.
 
+config DAVINCI_DA850_MUSB_HOST
+	bool "Select MUSB HOST mode"
+	depends on ARCH_DAVINCI_DA850=y
+	help
+	  Say Y here if you want to select host mode on musb. The usb2.0 musb
+	  default otg mode then requires a Mini-AB or Micro-AB connector.
+
 config ARCH_DAVINCI_DA8XX
 	select CPU_ARM926T
 	bool
