@@ -41,9 +41,6 @@
 #include <linux/videodev2.h>
 #include <linux/module.h>
 #include <linux/serial_8250.h>
-#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
-#include <linux/smsc911x.h>
-#endif
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -91,24 +88,6 @@
 #define DA850_USER_KEY0			GPIO_TO_PIN(0, 6)
 #define DA850_USER_KEY1			GPIO_TO_PIN(6, 1)
 
-#if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
-#define AD7606_SPI_BUSY			GPIO_TO_PIN(6, 8)
-#define AD7606_SPI_CONVST		GPIO_TO_PIN(6, 10)
-#define AD7606_SPI_RESET		GPIO_TO_PIN(0, 13)
-#endif
-
-#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
-	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
-#define AD7606_PAR_BUSY			GPIO_TO_PIN(5, 11)
-#define AD7606_PAR_CONVST		GPIO_TO_PIN(5, 13)
-#define AD7606_PAR_RESET		GPIO_TO_PIN(5, 12)
-#define AD7606_PAR_FRSTDATA		GPIO_TO_PIN(5, 10)
-#define AD7606_PAR_RANGE		GPIO_TO_PIN(5, 6)
-#define AD7606_PAR_OS0			GPIO_TO_PIN(5, 4)
-#define AD7606_PAR_OS1			GPIO_TO_PIN(5, 2)
-#define AD7606_PAR_OS2			GPIO_TO_PIN(5, 0)
-#endif
-
 #if defined(CONFIG_SERIAL_8250_EXTENDED)
 #define TL16754_RESET			GPIO_TO_PIN(5, 7)
 #if 0
@@ -121,11 +100,6 @@
 #define TL16754_UART6_IRQ		GPIO_TO_PIN(5, 14)
 #define TL16754_UART7_IRQ		GPIO_TO_PIN(5, 15)
 #endif
-#endif
-
-#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
-#define SMSC911X_GPIO_IRQ		GPIO_TO_PIN(2, 1)
-#define SMSC911X_FIFO_SEL		GPIO_TO_PIN(5, 8)
 #endif
 
 /* Timing value configuration */
@@ -174,37 +148,9 @@ static struct platform_device da850evm_backlight = {
 
 static const short da850_spi1_pins[] = {
 	DA850_SPI1_CS_0, DA850_SPI1_CS_1,
-#if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
-	DA850_SPI1_CS_3,
-#endif
 	DA850_SPI1_CLK, DA850_SPI1_SOMI, DA850_SPI1_SIMO,
 	-1
 };
-
-#if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
-static const short ad7606_spi_gpio_pins[] = {
-	DA850_GPIO6_8, DA850_GPIO6_10, DA850_GPIO0_13,
-	-1
-};
-#endif
-
-#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
-	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
-static const short ad7606_par_gpio_pins[] = {
-	/*DA850_GPIO5_0, DA850_GPIO5_2, DA850_GPIO5_4, */DA850_GPIO5_6,
-	DA850_GPIO5_10, DA850_GPIO5_11, DA850_GPIO5_12, DA850_GPIO5_13,
-	-1
-};
-
-static const short da850_evm_ad7606_par_pins[] = {
-	DA850_NEMA_CS_2, DA850_EMA_CLK, DA850_EMA_D_0, DA850_EMA_D_1,
-	DA850_EMA_D_2, DA850_EMA_D_3, DA850_EMA_D_4, DA850_EMA_D_5,
-	DA850_EMA_D_6, DA850_EMA_D_7, DA850_EMA_D_8, DA850_EMA_D_9,
-	DA850_EMA_D_10, DA850_EMA_D_11, DA850_EMA_D_12, DA850_EMA_D_13,
-	DA850_EMA_D_14, DA850_EMA_D_15,
-	-1
-};
-#endif
 
 static struct mtd_partition da850evm_spiflash_part[] = {
 	[0] = {
@@ -279,71 +225,6 @@ static struct davinci_spi_config da850evm_spits_cfg = {
 	.io_type	= SPI_IO_TYPE_DMA,
 };
 
-#if defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE)
-/**
- * struct ad7606_platform_data - platform/board specifc information
- * @default_os:		default oversampling value {0, 2, 4, 8, 16, 32, 64}
- * @default_range:	default range +/-{5000, 10000} mVolt
- * @gpio_convst:	number of gpio connected to the CONVST pin
- * @gpio_reset:		gpio connected to the RESET pin, if not used set to -1
- * @gpio_range:		gpio connected to the RANGE pin, if not used set to -1
- * @gpio_os0:		gpio connected to the OS0 pin, if not used set to -1
- * @gpio_os1:		gpio connected to the OS1 pin, if not used set to -1
- * @gpio_os2:		gpio connected to the OS2 pin, if not used set to -1
- * @gpio_frstdata:	gpio connected to the FRSTDAT pin, if not used set to -1
- * @gpio_stby:		gpio connected to the STBY pin, if not used set to -1
- */
-
-struct ad7606_platform_data {
-	unsigned			default_os;
-	unsigned			default_range;
-	unsigned			gpio_convst;
-	unsigned			gpio_reset;
-	unsigned			gpio_range;
-	unsigned			gpio_os0;
-	unsigned			gpio_os1;
-	unsigned			gpio_os2;
-	unsigned			gpio_frstdata;
-	unsigned			gpio_stby;
-};
-
-#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
-	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
-static struct ad7606_platform_data ad7606_par_pdata = {
-	.default_os		= 0,
-	.default_range		= 5000,
-	.gpio_convst		= AD7606_PAR_CONVST,
-	.gpio_reset		= AD7606_PAR_RESET,
-	.gpio_range		= AD7606_PAR_RANGE,
-	.gpio_os0		= AD7606_PAR_OS0,
-	.gpio_os1		= AD7606_PAR_OS1,
-	.gpio_os2		= AD7606_PAR_OS2,
-	.gpio_frstdata		= -1,
-	.gpio_stby		= -1,
-};
-#endif
-
-#if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
-static struct ad7606_platform_data ad7606_spi_pdata = {
-	.default_os		= 0,
-	.default_range		= 5000,
-	.gpio_convst		= AD7606_SPI_CONVST,
-	.gpio_reset		= AD7606_SPI_RESET,
-	.gpio_range		= -1,
-	.gpio_os0		= -1,
-	.gpio_os1		= -1,
-	.gpio_os2		= -1,
-	.gpio_frstdata		= -1,
-	.gpio_stby		= -1,
-};
-
-static struct davinci_spi_config da850evm_spiad_cfg = {
-	.io_type	= SPI_IO_TYPE_DMA,
-};
-#endif
-#endif	/* defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE) */
-
-
 static struct spi_board_info da850evm_spi_info[] = {
 	{
 		.modalias		= "m25p80",
@@ -363,17 +244,6 @@ static struct spi_board_info da850evm_spi_info[] = {
 		.bus_num		= 1,
 		.chip_select		= 1,
 	},
-#if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
-	[3] = {
-		.modalias		= "ad7606-8",
-		.platform_data		= &ad7606_spi_pdata,
-		.controller_data	= &da850evm_spiad_cfg,
-		.mode			= SPI_MODE_3,
-		.max_speed_hz		= 15000000, /* max sample rate at 3.3V */
-		.bus_num		= 1,
-		.chip_select		= 3,
-	},
-#endif
 };
 
 #define TVP5147_CH0		"tvp514x-0"
@@ -723,12 +593,6 @@ static const short da850_evm_nor_pins[] = {
 #define HAS_ECAP_CAP 0
 #endif
 
-#if defined(CONFIG_AD7606) || defined(CONFIG_AD7606_MODULE)
-#define HAS_ADC	1
-#else
-#define HAS_ADC	0
-#endif
-
 #if 0
 /* have_imager() - Check if we have support for imager interface */
 static inline int have_imager(void)
@@ -737,103 +601,6 @@ static inline int have_imager(void)
 	return 1;
 #else
 	return 0;
-#endif
-}
-#endif
-
-#if defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER) || \
-	defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER_MODULE)
-
-#define DA850_TIMER64P2_BASE		0x01f0c000 /* DA8XX_TIMER64P2_BASE */
-#define IIO_DAVINCI_TIMER_BASE	DA850_TIMER64P2_BASE
-#define IIO_DAVINCI_TIMER_IRQ		IRQ_DA850_TINT12_2
-
-static struct resource iio_davinci_trigger_resources[] = {
-	{
-		.start	= IIO_DAVINCI_TIMER_BASE,
-		.end	= IIO_DAVINCI_TIMER_BASE + SZ_4K - 1,
-		.flags	= IORESOURCE_MEM,
-	},
-	{
-		.start	= IIO_DAVINCI_TIMER_IRQ,
-		.end	= IIO_DAVINCI_TIMER_IRQ,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-static struct platform_device iio_davinci_trigger = {
-	.name		= "iio_davinci_tmr_trigger",
-	.id		= 0,
-	.num_resources	= ARRAY_SIZE(iio_davinci_trigger_resources),
-	.resource	= iio_davinci_trigger_resources,
-};
-#endif
-
-#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
-	defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
-static struct resource ad7606_resources[] = {
-	[0] = {
-		.start	= DA8XX_AEMIF_CS2_BASE,
-		.end	= DA8XX_AEMIF_CS2_BASE + 1,
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] = {
-		.start	= -1,
-		.end	= -1,
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
-	},
-};
-
-static struct platform_device ad7606_device = {
-	.name		= "ad7606-8",
-	.dev = {
-		.platform_data = &ad7606_par_pdata,
-	},
-	.num_resources	= ARRAY_SIZE(ad7606_resources),
-	.resource	= ad7606_resources,
-};
-
-static inline void da850_evm_setup_ad7606_par(void)
-{
-	void __iomem *aemif_addr;
-	unsigned set, val;
-	int ret = 0;
-
-	ret = davinci_cfg_reg_list(ad7606_par_gpio_pins);
-	if (ret)
-		pr_warning("da850_evm_init : "
-			"ad7606_gpio_pins mux failed :%d\n", ret);
-
-	ret = davinci_cfg_reg_list(da850_evm_ad7606_par_pins);
-	if (ret)
-		pr_warning("da850_evm_init: ad7606 mux setup failed: %d\n", ret);
-
-	aemif_addr = ioremap(DA8XX_AEMIF_CTL_BASE, SZ_32K);
-
-	/* Configure data bus width of CS2 to 16 bit */
-	writel(readl(aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET) |
-		DA8XX_AEMIF_ASIZE_16BIT,
-		aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET);
-
-	/* setup timing values for a given AEMIF interface */
-	set = TA(1) | RHOLD(1) | RSTROBE(3) | RSETUP(1) |
-		WHOLD(3) | WSTROBE(3) | WSETUP(3);
-
-	val = readl(aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET);
-	val &= ~TIMING_MASK;
-	val |= set;
-	writel(val, aemif_addr + DA8XX_AEMIF_CE2CFG_OFFSET);
-
-	iounmap(aemif_addr);
-
-	ad7606_resources[1].start = gpio_to_irq(AD7606_PAR_BUSY);
-	ad7606_resources[1].end= ad7606_resources[1].start;
-
-	platform_device_register(&ad7606_device);
-
-#if defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER) || \
-		defined(CONFIG_IIO_DAVINCI_TMR_TRIGGER_MODULE)
-	platform_device_register(&iio_davinci_trigger);
 #endif
 }
 #endif
@@ -2190,110 +1957,6 @@ static int __init da850_evm_config_emac(void)
 }
 device_initcall(da850_evm_config_emac);
 
-
-#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
-
-static const short da850_evm_smsc911x_pins[] = {
-	DA850_NEMA_CS_5, DA850_EMA_CLK, DA850_EMA_D_0, DA850_EMA_D_1,
-	DA850_EMA_D_2, DA850_EMA_D_3, DA850_EMA_D_4, DA850_EMA_D_5,
-	DA850_EMA_D_6, DA850_EMA_D_7, DA850_EMA_D_8, DA850_EMA_D_9,
-	DA850_EMA_D_10, DA850_EMA_D_11, DA850_EMA_D_12, DA850_EMA_D_13,
-	DA850_EMA_D_14, DA850_EMA_D_15, DA850_EMA_BA_1, DA850_EMA_A_0,
-	DA850_EMA_A_1, DA850_EMA_A_2, DA850_EMA_A_3, DA850_EMA_A_4,
-	DA850_EMA_A_5, DA850_NEMA_WE, DA850_NEMA_OE,
-	-1
-};
-
-static struct resource smsc911x_resources[] = {
-	[0] = {
-		.start	= DA8XX_AEMIF_CS5_BASE,
-		.end	= DA8XX_AEMIF_CS5_BASE + 0xff,
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] = {
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_LOWEDGE,
-	},
-};
-
-static struct smsc911x_platform_config da850_evm_smsc911x_config = {
-	.phy_interface	= PHY_INTERFACE_MODE_MII,
-	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
-	.irq_type	= SMSC911X_IRQ_TYPE_OPEN_DRAIN,
-	.flags		= SMSC911X_USE_16BIT,
-};
-
-struct platform_device smsc911x_device = {
-	.name	= "smsc911x",
-	.id	= -1,
-	.dev	= {
-		.platform_data	= &da850_evm_smsc911x_config,
-	},
-	.num_resources	= ARRAY_SIZE(smsc911x_resources),
-	.resource	= smsc911x_resources,
-};
-
-/* Initialize smsc911x device connected to the EMIFA. */
-static int __init da850_evm_smsc911x_init(void)
-{
-	void __iomem *aemif_addr;
-	unsigned set, val;
-	int ret = 0;
-
-	ret = davinci_cfg_reg_list(da850_evm_smsc911x_pins);
-	if (ret)
-		pr_warning("da850_evm_init: smsc911x mux setup failed: "
-				"%d\n", ret);
-
-	ret = davinci_cfg_reg(DA850_GPIO2_1);
-	if (ret)
-		pr_warning("da850_evm_init: smsc911x gpio irq mux setup failed: "
-				"%d\n", ret);
-
-	ret = davinci_cfg_reg(DA850_GPIO5_8);
-	if (ret)
-		pr_warning("da850_evm_init: smsc911x FIFO_SEL mux setup failed: "
-				"%d\n", ret);
-
-
-	aemif_addr = ioremap(DA8XX_AEMIF_CTL_BASE, SZ_32K);
-
-	/* Configure data bus width of CS5 to 16 bit */
-	writel(readl(aemif_addr + DA8XX_AEMIF_CE5CFG_OFFSET) |
-		DA8XX_AEMIF_ASIZE_16BIT,
-		aemif_addr + DA8XX_AEMIF_CE5CFG_OFFSET);
-
-
-	/* setup timing values for a given AEMIF interface */
-	set = TA(2) | RHOLD(2) | RSTROBE(5) | RSETUP(1) |
-		WHOLD(2) | WSTROBE(5) | WSETUP(1);
-
-	val = readl(aemif_addr + DA8XX_AEMIF_CE5CFG_OFFSET);
-	val &= ~TIMING_MASK;
-	val |= set;
-	writel(val, aemif_addr + DA8XX_AEMIF_CE5CFG_OFFSET);
-
-	iounmap(aemif_addr);
-
-	smsc911x_resources[1].start = gpio_to_irq(SMSC911X_GPIO_IRQ);
-
-	ret = gpio_request(SMSC911X_FIFO_SEL, "smsc911x-fifo-sel");
-	if (ret)
-		pr_warning("Fail to request smsc911x-fifo-sel gpio PIN %d.\n",
-				SMSC911X_FIFO_SEL);
-
-	/*
-	When driven high all accesses to the
-	LAN9221/LAN9221i are to the RX or TX Data FIFOs.
-	In this mode, the A[7:3] upper address inputs are
-	ignored. The chip need to setup and set FIFO_SEL low.
-	*/
-	gpio_direction_output(SMSC911X_FIFO_SEL, 0);
-
-	return platform_device_register(&smsc911x_device);
-}
-device_initcall(da850_evm_smsc911x_init);
-#endif
-
 /*
  * The following EDMA channels/slots are not being used by drivers (for
  * example: Timer, GPIO, UART events etc) on da850/omap-l138 EVM, hence
@@ -2971,29 +2634,6 @@ static __init void da850_evm_init(void)
 				"%d\n", ret);
 
 	da850evm_spi_info[1].irq = gpio_to_irq(DA850_TS_INT);
-
-	if (HAS_ADC) {
-#if defined(CONFIG_AD7606_IFACE_SPI) || defined(CONFIG_AD7606_IFACE_SPI_MODULE)
-		ret = davinci_cfg_reg_list(ad7606_spi_gpio_pins);
-		if (ret)
-			pr_warning("da850_evm_init : "
-				"ad7606_spi_gpio_pins mux failed :%d\n", ret);
-		else {
-			pr_warning("da850_evm_init:"
-				" UART1 module UART1_RXD cannot be used since"
-				" it is being used by ADC SPI1_CS3\n");
-			pr_warning("da850_evm_init:"
-				" McASP module McASP_AFSR cannot be used since"
-				" it is being used by ADC reset pin\n");
-		}
-
-		da850evm_spi_info[3].irq = gpio_to_irq(AD7606_SPI_BUSY);
-#endif
-#if defined(CONFIG_AD7606_IFACE_PARALLEL) ||\
-			defined(CONFIG_AD7606_IFACE_PARALLEL_MODULE)
-		da850_evm_setup_ad7606_par();
-#endif
-	}
 
 	ret = da8xx_register_spi(1, da850evm_spi_info,
 				 ARRAY_SIZE(da850evm_spi_info));
