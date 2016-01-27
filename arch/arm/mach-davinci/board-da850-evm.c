@@ -1474,21 +1474,9 @@ static struct pca953x_platform_data da850_evm_bb_expander_info = {
 };
 #endif
 
-#if defined(CONFIG_EEPROM_24C64)
-#define EEPROM_DEVICE		"24c64"
-#else
-#define EEPROM_DEVICE		"24c02"
-#endif
-
 static struct at24_platform_data da850_evm_i2c_eeprom_info = {
-#if defined(CONFIG_EEPROM_24C64)
-	.byte_len	= SZ_64K / 8,
-	.page_size	= 8192,
-	.flags		= AT24_FLAG_ADDR16 | AT24_FLAG_IRUGO,
-#else
 	.byte_len	= SZ_2K / 8,
 	.page_size	= 8,
-#endif
 };
 
 static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
@@ -1496,7 +1484,7 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 		I2C_BOARD_INFO("tlv320aic3x", 0x18),
 	},
 	{
-		I2C_BOARD_INFO(EEPROM_DEVICE, 0x50),
+		I2C_BOARD_INFO("24c02", 0x50),
 		.platform_data	= &da850_evm_i2c_eeprom_info,
 	},
 #if 0
@@ -1516,6 +1504,32 @@ static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
 	},
 #endif
 };
+
+/*
+ * Handle Linux boot parameters. This routine allows for assigning a value
+ * to a parameter with eeprom type.
+ * ie. eeprom=24c02
+ */
+static int __init da850_eeprom_setup(char *str)
+{
+	if (!strcmp(str, "24c64")) {
+		da850_evm_i2c_eeprom_info.byte_len	= SZ_64K / 8;
+		da850_evm_i2c_eeprom_info.page_size	= 8192;
+		da850_evm_i2c_eeprom_info.flags		= AT24_FLAG_ADDR16 | AT24_FLAG_IRUGO;
+	} else if (!strcmp(str, "24c256")) {
+		da850_evm_i2c_eeprom_info.byte_len	= SZ_256K / 8;
+		da850_evm_i2c_eeprom_info.page_size	= 64;
+		da850_evm_i2c_eeprom_info.flags		= AT24_FLAG_ADDR16;
+	} else if (strcmp(str, "24c02")) {
+		da850_evm_i2c_devices[1].platform_data = NULL;
+	}
+
+	strcpy(da850_evm_i2c_devices[1].type, str);
+
+	return 1;
+}
+
+__setup("eeprom=", da850_eeprom_setup);
 
 /* assign the tl som board LED-GPIOs*/
 static const short da850_evm_tl_user_led_pins[] = {
