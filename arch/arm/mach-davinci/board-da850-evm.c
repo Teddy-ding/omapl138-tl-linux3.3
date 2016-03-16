@@ -2433,13 +2433,6 @@ static __init void da850_evm_init(void)
 				ret);
 
 #if defined(CONFIG_DAVINCI_UART0_RS485)
-	/* UART0_TXD.RXD cannot be used since it is being used by MII_RXDx */
-	/* Support for UART 0 */
-	ret = davinci_cfg_reg_list(da850_uart0_pins);
-	if (ret)
-		pr_warning("da850_evm_init: UART 0 mux setup failed:"
-						" %d\n", ret);
-
 	/* TL-OMAPL138 as it requires the GP8[1] pin for UART0 flow control. */
 	ret = davinci_cfg_reg(DA850_GPIO8_1);
 	if (ret)
@@ -2454,6 +2447,15 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init:GPIO(0,11) mux setup "
 				"failed\n");
 #endif
+
+	if (rmii_en) {
+		/* UART0_TXD.RXD cannot be used since it is being used by MII_RXDx */
+		/* Support for UART 0 */
+		ret = davinci_cfg_reg_list(da850_uart0_pins);
+		if (ret)
+			pr_warning("da850_evm_init: UART 0 mux setup failed:"
+							" %d\n", ret);
+	}
 
 	/* UART1_RXD cannot be used since it is being used by ADC SPI1_CS3 */
 	/* Support for UART 1 */
