@@ -88,21 +88,6 @@
 #define DA850_USER_KEY0			GPIO_TO_PIN(0, 6)
 #define DA850_USER_KEY1			GPIO_TO_PIN(6, 1)
 
-#if defined(CONFIG_SERIAL_8250_EXTENDED)
-#define TL16754_RESET			GPIO_TO_PIN(5, 7)
-#if 0
-#define TL16754_UART0_IRQ		GPIO_TO_PIN(2, 2)
-#define TL16754_UART1_IRQ		GPIO_TO_PIN(2, 3)
-#define TL16754_UART2_IRQ		GPIO_TO_PIN(2, 5)
-#define TL16754_UART3_IRQ		GPIO_TO_PIN(2, 6)
-#define TL16754_UART4_IRQ		GPIO_TO_PIN(3, 9)
-#define TL16754_UART5_IRQ		GPIO_TO_PIN(5, 9)
-#define TL16754_UART6_IRQ		GPIO_TO_PIN(5, 14)
-#define TL16754_UART7_IRQ		GPIO_TO_PIN(5, 15)
-#endif
-#endif
-
-
 #define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
 #define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
 #define DAVINCI_PWM_PERIOD_NANO_SECONDS		10000000
@@ -580,109 +565,6 @@ static inline int have_imager(void)
 #else
 	return 0;
 #endif
-}
-#endif
-
-#if defined(CONFIG_SERIAL_8250_EXTENDED)
-#define TL16754_CLK		14745600
-#define TL16754_PORT_N		8
-
-static const short tl16754_serial_gpio_pins[] = {
-	DA850_GPIO2_2, DA850_GPIO2_3, DA850_GPIO2_5, DA850_GPIO2_6,
-	DA850_GPIO3_9, DA850_GPIO5_9, DA850_GPIO5_14, DA850_GPIO5_15,
-	DA850_GPIO5_7,
-	-1
-};
-
-static const short da850_evm_tl16754_serial_pins[] = {
-	DA850_NEMA_CS_4, DA850_EMA_CLK, DA850_EMA_D_0, DA850_EMA_D_1,
-	DA850_EMA_D_2, DA850_EMA_D_3, DA850_EMA_D_4, DA850_EMA_D_5,
-	DA850_EMA_D_6, DA850_EMA_D_7, DA850_EMA_BA_0, DA850_EMA_BA_1,
-	DA850_EMA_A_0, DA850_EMA_A_1, DA850_EMA_A_2, DA850_EMA_A_3,
-	DA850_NEMA_WE, DA850_NEMA_OE,
-	-1
-};
-
-static const char tl16754_gpio_irq[][2] = {
-	{2, 2}, {2, 3}, {2, 5}, {2, 6},
-	{3, 9}, {5, 9}, {5, 14}, {5, 15},
-};
-
-static struct plat_serial8250_port tl16754_serial_pdata[] = {
-	[0 ... TL16754_PORT_N - 1] = {
-		.mapbase	= DA8XX_AEMIF_CS4_BASE,
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST |
-					UPF_IOREMAP | UPF_FIXED_TYPE,
-		.type		= PORT_16654,
-		.iotype		= UPIO_MEM,
-		.regshift	= 0,
-		.uartclk	= TL16754_CLK,
-	},
-	{
-		.flags	= 0,
-	},
-};
-
-struct platform_device tl16754_serial_device = {
-	.name	= "serial8250",
-	.id	= PLAT8250_DEV_PLATFORM1,
-	.dev	= {
-		.platform_data	= tl16754_serial_pdata,
-	},
-};
-
-static inline void da850_evm_setup_tl16754(void)
-{
-	void __iomem *aemif_addr;
-	unsigned set, val;
-	int i;
-	int ret = 0;
-
-	ret = davinci_cfg_reg_list(da850_evm_tl16754_serial_pins);
-	if (ret)
-		pr_warning("da850_evm_init: tl16754 serial mux setup failed: "
-				"%d\n", ret);
-
-	ret = davinci_cfg_reg_list(tl16754_serial_gpio_pins);
-	if (ret)
-		pr_warning("da850_evm_init: tl16754 gpio mux setup failed: "
-				"%d\n", ret);
-
-	aemif_addr = ioremap(DA8XX_AEMIF_CTL_BASE, SZ_32K);
-
-	/* Configure data bus width of CS4 to 8 bit */
-	writel(readl(aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET) &
-		(~DA8XX_AEMIF_ASIZE_MASK),
-		aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET);
-
-	/* setup timing values for a given AEMIF interface */
-	set = TA(10) | RHOLD(3) | RSTROBE(10) | RSETUP(4) |
-		WHOLD(3) | WSTROBE(10) | WSETUP(4);
-
-	val = readl(aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET);
-	val &= ~TIMING_MASK;
-	val |= set;
-	writel(val, aemif_addr + DA8XX_AEMIF_CE4CFG_OFFSET);
-
-	iounmap(aemif_addr);
-
-	for (i = 0; i < TL16754_PORT_N; i++) {
-		tl16754_serial_pdata[i].mapbase = DA8XX_AEMIF_CS4_BASE + 8*i;
-		tl16754_serial_pdata[i].irq =
-			gpio_to_irq(GPIO_TO_PIN(tl16754_gpio_irq[i][0],
-					tl16754_gpio_irq[i][1]));
-	}
-
-	ret = gpio_request(TL16754_RESET, "tl16754-reset");
-	if (ret)
-		pr_warning("Fail to request tl16754-reset gpio PIN %d.\n",
-				TL16754_RESET);
-
-	gpio_direction_output(TL16754_RESET, 1);
-	ndelay(200);
-	gpio_set_value(TL16754_RESET, 0);
-
-	platform_device_register(&tl16754_serial_device);
 }
 #endif
 
@@ -2748,10 +2630,6 @@ static __init void da850_evm_init(void)
 
 #if 0
 	da850_evm_tl_keys_init();
-#endif
-
-#if defined(CONFIG_SERIAL_8250_EXTENDED)
-	da850_evm_setup_tl16754();
 #endif
 }
 
