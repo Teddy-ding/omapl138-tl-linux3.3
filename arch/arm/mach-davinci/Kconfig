@@ -340,6 +340,18 @@ config MACH_TL138EVM_EMIFA_SRAM
 	tristate "TL138EVM EMIFA SRAM connect with FPGA etc"
 	depends on MACH_DAVINCI_DA850_EVM
 
+config MACH_TL138EVM_MULT_UARTS
+	tristate "TL138EVM MULT_UARTS tl16754 daughter board"
+	depends on MACH_DAVINCI_DA850_EVM
+
+config TL16754_NR_CHIPS
+    int "Number of tl16754 mult uarts chips"
+    depends on MACH_TL138EVM_MULT_UARTS
+    default "2"
+    help
+      Set this to the number of tl16754 mult uarts chips. One chip
+      have four serial ports.
+
 config GPIO_PCA953X
 	default MACH_DAVINCI_DA850_EVM
 

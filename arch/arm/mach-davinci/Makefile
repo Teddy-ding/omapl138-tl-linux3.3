@@ -41,6 +41,7 @@ obj-$(CONFIG_MACH_TL138EVM_AD7606_PAR)	+= tl138evm-ad7606-par.o
 obj-$(CONFIG_MACH_TL138EVM_AD7606_SPI)	+= tl138evm-ad7606-spi.o
 obj-$(CONFIG_MACH_TL138EVM_SMSC911X)	+= tl138evm-smsc911x.o
 obj-$(CONFIG_MACH_TL138EVM_EMIFA_SRAM)	+= tl138evm-emifa-sram.o
+obj-$(CONFIG_MACH_TL138EVM_MULT_UARTS)  += tl138evm-tl16754-serials.o
 
 # Power Management
 obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o
