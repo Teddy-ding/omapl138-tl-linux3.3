@@ -316,6 +316,10 @@ config DA850_WL12XX
 	  Say Y if you want to use a wl1271 expansion card connected to the
 	  AM18x EVM.
 
+config MACH_TL138EVM_EXPERIMENT_BOX
+	bool "TL138EVM experiment box"
+	depends on MACH_DAVINCI_DA850_EVM
+
 config MACH_TL138EVM_AD5724R_SPI
 	tristate "TL5724 DAC daughter board"
 	depends on MACH_DAVINCI_DA850_EVM

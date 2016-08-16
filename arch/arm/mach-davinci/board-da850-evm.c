@@ -2603,7 +2603,7 @@ static __init void da850_evm_init(void)
 
 	da850_evm_tl_leds_init();
 
-#if 1
+#ifdef CONFIG_MACH_TL138EVM_EXPERIMENT_BOX
 	/* TL138-EVM as it requires the GP0[8] pin at low for experiment box. */
 	ret = davinci_cfg_reg(DA850_GPIO0_8);
 	if (ret)
